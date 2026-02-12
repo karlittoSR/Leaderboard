@@ -4,7 +4,7 @@ Configuration **automatique** en 5 minutes pour streamers !
 
 ---
 
-## Méthode automatique (recommandée)
+## Méthode automatique
 
 ### Première utilisation
 1. **Double-clic** sur `get_game_id.ps1`
@@ -54,37 +54,6 @@ F. Quitter le programme
 - **Source navigateur** : Width 400, Height 280
 - **Actualise seul** : toutes les 30 secondes
 - **Pas de paramètres** : lit automatiquement le preset actif
-
----
-
-## Méthode manuelle (si PowerShell bloqué)
-
-### 1. Ouvre `config.json`
-
-### 2. Ajoute dans "presets"
-```json
-"mon-nouveau-jeu": {
-  "name": "Mon Jeu - Ma Catégorie",
-  "gameId": "xxxxx",      // ← ID à trouver
-  "category": "Any%",
-  "subcategory": null     // ou "nom-subcategory"
-}
-```
-
-### 3️⃣ Trouve l'ID du jeu
-1. Va sur https://www.speedrun.com
-2. Cherche ton jeu → URL ressemble à `https://www.speedrun.com/xxxxx`
-3. L'ID = `xxxxx` dans l'URL
-4. Voir [FIND_GAME_ID.md](FIND_GAME_ID.md) pour détails
-
-### 4. Activer le preset
-Dans `config.json`, modifie :
-```json
-"activePreset": "mon-nouveau-jeu"
-```
-
-### 5. Test
-URL : `leaderboard.html` (lit automatiquement le preset actif)
 
 ---
 

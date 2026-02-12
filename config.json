@@ -1,5 +1,5 @@
 {
-  "activePreset": "darksoulsiii-any",
+  "activePreset": "mon-preset",
   "presets": {
     "mon-preset": {
       "name": "Elden Ring - Any% Glitchless",
@@ -12,6 +12,12 @@
       "name": "Dark Souls III - Any%",
       "category": "Any%",
       "gameId": "k6qg0xdg"
+    },
+    "hkssanynmg": {
+      "subcategory": "No Major Glitches",
+      "gameId": "y65r7g81",
+      "category": "Any%",
+      "name": "Hollow Knight: Silksong - Any% No Major Glitches"
     }
   },
   "defaults": {

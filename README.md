@@ -11,7 +11,9 @@ Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, enti�
 
 2. **Mets-les dans le même dossier**
 
-3. **Double-clique** sur le HTML → c'est prêt !
+3. **Double-clique** sur le .ps1 → trouve ton jeu et ta caté !
+
+4. **Ajoute le fichier dans OBS** (Navigateur) avec ces valeurs: Width 400, Height 280
 
 ## Features
 
