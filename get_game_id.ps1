@@ -3,27 +3,6 @@
 # Version 1.1.0 - Support multilingue (FR/EN) + Navigation par flèches et affichage persistant des presets
 # Par karlitto__
 
-# Check execution policy and provide helpful guidance
-try {
-    $execPolicy = Get-ExecutionPolicy -Scope CurrentUser
-    if ($execPolicy -eq "Restricted") {
-        Write-Host "`n" -ForegroundColor Red
-        Write-Host "⚠️  EXECUTION POLICY ISSUE DETECTED" -ForegroundColor Yellow
-        Write-Host "Windows is blocking PowerShell scripts for security." -ForegroundColor White
-        Write-Host "`nEASIEST SOLUTION:" -ForegroundColor Green
-        Write-Host "1. Close this window" -ForegroundColor White
-        Write-Host "2. Double-click 'run_leaderboard_setup.bat' instead" -ForegroundColor Cyan
-        Write-Host "   (This file bypasses the security restriction safely)" -ForegroundColor Gray
-        Write-Host "`nALTERNATIVE:" -ForegroundColor Green
-        Write-Host "Run this command first:" -ForegroundColor White
-        Write-Host "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser" -ForegroundColor Yellow
-        Write-Host "`nPress any key to continue anyway..." -ForegroundColor Gray
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    }
-} catch {
-    # Ignore errors and continue - probably means scripts are allowed
-}
-
 # === DICTIONNAIRE DE LANGUES ===
 $Global:Languages = @{
     fr = @{
@@ -38,8 +17,8 @@ $Global:Languages = @{
         menu_what_to_do = "Que voulez-vous faire ?"
         
         # Navigation
-        nav_instructions = "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner"
-        nav_instructions_cancel = "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner, ⌫ pour annuler"
+        nav_instructions = "Utilisez flèches HAUT/BAS pour naviguer, Entrée pour sélectionner"
+        nav_instructions_cancel = "Utilisez flèches HAUT/BAS pour naviguer, Entrée pour sélectionner, Backspace pour annuler"
         
         # Presets existants
         existing_presets = "Presets existants :"
@@ -63,7 +42,7 @@ $Global:Languages = @{
         no = "NON"
         null_value = "null"
         cancelled = "Annulé."
-        success = "✓"
+        success = "[OK]"
         
         # Nouveau preset
         add_title = "=== AJOUT D'UN NOUVEAU PRESET ==="
@@ -97,13 +76,13 @@ $Global:Languages = @{
         final_active_now = "Activé comme preset principal"
         final_saved_inactive = "Sauvegardé sans activation"
         final_url_copied = "URL OBS copiée dans le presse-papiers :"
-        final_obs_will_show = "✓ OBS affichera automatiquement ce preset !"
+        final_obs_will_show = "[OK] OBS affichera automatiquement ce preset !"
         final_activate_later = "Pour activer ce preset plus tard, utilisez l'option de changement de preset actif."
         
         # Changer preset actif
         change_active_title = "=== CHANGER LE PRESET ACTIF ==="
         change_active_available = "Presets disponibles :"
-        change_active_changed = "✓ Preset actif changé vers :"
+        change_active_changed = "[OK] Preset actif changé vers :"
         change_active_obs_info = "OBS va automatiquement utiliser ce preset !"
         
         # Supprimer preset
@@ -115,7 +94,7 @@ $Global:Languages = @{
         remove_confirm = "Êtes-vous sûr de vouloir supprimer ce preset ? (o/N)"
         remove_cancelled = "Suppression annulée."
         remove_active_deleted = "Le preset actif a été supprimé. Choisissez le nouveau preset actif :"
-        remove_success = "✓ Preset '%s' supprimé avec succès !"
+        remove_success = "[OK] Preset '%s' supprimé avec succès !"
         remove_new_active = "Nouveau preset actif :"
         
         # Premier lancement
@@ -125,7 +104,7 @@ $Global:Languages = @{
         language_title = "=== PARAMÈTRES DE LANGUE ==="
         language_current = "Langue actuelle :"
         language_available = "Langues disponibles :"
-        language_changed = "✓ Langue changée vers :"
+        language_changed = "[OK] Langue changée vers :"
         language_restart_info = "Le changement sera effectif immédiatement dans l'interface."
         
         # Erreurs
@@ -149,8 +128,8 @@ $Global:Languages = @{
         menu_what_to_do = "What would you like to do?"
         
         # Navigation
-        nav_instructions = "Use ↑↓ to navigate, Enter to select"
-        nav_instructions_cancel = "Use ↑↓ to navigate, Enter to select, ⌫ to cancel"
+        nav_instructions = "Use UP/DOWN arrows to navigate, Enter to select"
+        nav_instructions_cancel = "Use UP/DOWN arrows to navigate, Enter to select, Backspace to cancel"
         
         # Presets existants
         existing_presets = "Existing presets:"
@@ -174,7 +153,7 @@ $Global:Languages = @{
         no = "NO"
         null_value = "null"
         cancelled = "Cancelled."
-        success = "✓"
+        success = "[OK]"
         
         # Nouveau preset
         add_title = "=== ADD NEW PRESET ==="
@@ -208,13 +187,13 @@ $Global:Languages = @{
         final_active_now = "Activated as main preset"
         final_saved_inactive = "Saved without activation"
         final_url_copied = "OBS URL copied to clipboard:"
-        final_obs_will_show = "✓ OBS will automatically display this preset!"
+        final_obs_will_show = "[OK] OBS will automatically display this preset!"
         final_activate_later = "To activate this preset later, use the active preset change option."
         
         # Changer preset actif
         change_active_title = "=== CHANGE ACTIVE PRESET ==="
         change_active_available = "Available presets:"
-        change_active_changed = "✓ Active preset changed to:"
+        change_active_changed = "[OK] Active preset changed to:"
         change_active_obs_info = "OBS will automatically use this preset!"
         
         # Supprimer preset
@@ -226,7 +205,7 @@ $Global:Languages = @{
         remove_confirm = "Are you sure you want to delete this preset? (y/N)"
         remove_cancelled = "Deletion cancelled."
         remove_active_deleted = "The active preset was deleted. Choose the new active preset:"
-        remove_success = "✓ Preset '%s' deleted successfully!"
+        remove_success = "[OK] Preset '%s' deleted successfully!"
         remove_new_active = "New active preset:"
         
         # Premier lancement
@@ -236,7 +215,7 @@ $Global:Languages = @{
         language_title = "=== LANGUAGE SETTINGS ==="
         language_current = "Current language:"
         language_available = "Available languages:"
-        language_changed = "✓ Language changed to:"
+        language_changed = "[OK] Language changed to:"
         language_restart_info = "The change will take effect immediately in the interface."
         
         # Erreurs
@@ -260,8 +239,8 @@ $Global:Languages = @{
         menu_what_to_do = "¿Qué te gustaría hacer?"
         
         # Navegación
-        nav_instructions = "Usa ↑↓ para navegar, Enter para seleccionar"
-        nav_instructions_cancel = "Usa ↑↓ para navegar, Enter para seleccionar, ⌫ para cancelar"
+        nav_instructions = "Usa flechas ARRIBA/ABAJO para navegar, Enter para seleccionar"
+        nav_instructions_cancel = "Usa flechas ARRIBA/ABAJO para navegar, Enter para seleccionar, Backspace para cancelar"
         
         # Presets existentes
         existing_presets = "Presets existentes:"
@@ -285,7 +264,7 @@ $Global:Languages = @{
         no = "NO"
         null_value = "null"
         cancelled = "Cancelado."
-        success = "✓"
+        success = "[OK]"
         
         # Nuevo preset
         add_title = "=== AÑADIR NUEVO PRESET ==="
@@ -319,13 +298,13 @@ $Global:Languages = @{
         final_active_now = "Activado como preset principal"
         final_saved_inactive = "Guardado sin activar"
         final_url_copied = "URL de OBS copiada al portapapeles:"
-        final_obs_will_show = "¡✓ OBS mostrará automáticamente este preset!"
+        final_obs_will_show = "¡[OK] OBS mostrará automáticamente este preset!"
         final_activate_later = "Para activar este preset más tarde, usa la opción de cambio de preset activo."
         
         # Cambiar preset activo
         change_active_title = "=== CAMBIAR PRESET ACTIVO ==="
         change_active_available = "Presets disponibles:"
-        change_active_changed = "✓ Preset activo cambiado a:"
+        change_active_changed = "[OK] Preset activo cambiado a:"
         change_active_obs_info = "¡OBS usará automáticamente este preset!"
         
         # Eliminar preset
@@ -337,7 +316,7 @@ $Global:Languages = @{
         remove_confirm = "¿Estás seguro de que quieres eliminar este preset? (s/N)"
         remove_cancelled = "Eliminación cancelada."
         remove_active_deleted = "El preset activo fue eliminado. Elige el nuevo preset activo:"
-        remove_success = "¡✓ Preset '%s' eliminado con éxito!"
+        remove_success = "¡[OK] Preset '%s' eliminado con éxito!"
         remove_new_active = "Nuevo preset activo:"
         
         # Primer lanzamiento
@@ -347,7 +326,7 @@ $Global:Languages = @{
         language_title = "=== CONFIGURACIÓN DE IDIOMA ==="
         language_current = "Idioma actual:"
         language_available = "Idiomas disponibles:"
-        language_changed = "✓ Idioma cambiado a:"
+        language_changed = "[OK] Idioma cambiado a:"
         language_restart_info = "El cambio se aplicará inmediatamente en la interfaz."
         
         # Errores
@@ -371,8 +350,8 @@ $Global:Languages = @{
         menu_what_to_do = "O que você gostaria de fazer?"
         
         # Navegação
-        nav_instructions = "Use ↑↓ para navegar, Enter para selecionar"
-        nav_instructions_cancel = "Use ↑↓ para navegar, Enter para selecionar, ⌫ para cancelar"
+        nav_instructions = "Use setas CIMA/BAIXO para navegar, Enter para selecionar"
+        nav_instructions_cancel = "Use setas CIMA/BAIXO para navegar, Enter para selecionar, Backspace para cancelar"
         
         # Presets existentes
         existing_presets = "Presets existentes:"
@@ -396,7 +375,7 @@ $Global:Languages = @{
         no = "NÃO"
         null_value = "null"
         cancelled = "Cancelado."
-        success = "✓"
+        success = "[OK]"
         
         # Novo preset
         add_title = "=== ADICIONAR NOVO PRESET ==="
@@ -430,13 +409,13 @@ $Global:Languages = @{
         final_active_now = "Ativado como preset principal"
         final_saved_inactive = "Salvo sem ativar"
         final_url_copied = "URL do OBS copiada para área de transferência:"
-        final_obs_will_show = "✓ O OBS mostrará automaticamente este preset!"
+        final_obs_will_show = "[OK] O OBS mostrará automaticamente este preset!"
         final_activate_later = "Para ativar este preset mais tarde, use a opção de mudança de preset ativo."
         
         # Alterar preset ativo
         change_active_title = "=== ALTERAR PRESET ATIVO ==="
         change_active_available = "Presets disponíveis:"
-        change_active_changed = "✓ Preset ativo alterado para:"
+        change_active_changed = "[OK] Preset ativo alterado para:"
         change_active_obs_info = "O OBS usará automaticamente este preset!"
         
         # Remover preset
@@ -448,7 +427,7 @@ $Global:Languages = @{
         remove_confirm = "Tem certeza de que quer remover este preset? (s/N)"
         remove_cancelled = "Remoção cancelada."
         remove_active_deleted = "O preset ativo foi removido. Escolha o novo preset ativo:"
-        remove_success = "✓ Preset '%s' removido com sucesso!"
+        remove_success = "[OK] Preset '%s' removido com sucesso!"
         remove_new_active = "Novo preset ativo:"
         
         # Primeiro lançamento
@@ -458,7 +437,7 @@ $Global:Languages = @{
         language_title = "=== CONFIGURAÇÕES DE IDIOMA ==="
         language_current = "Idioma atual:"
         language_available = "Idiomas disponíveis:"
-        language_changed = "✓ Idioma alterado para:"
+        language_changed = "[OK] Idioma alterado para:"
         language_restart_info = "A mudança será aplicada imediatamente na interface."
         
         # Erros
@@ -482,8 +461,8 @@ $Global:Languages = @{
         menu_what_to_do = "您想要做什么？"
         
         # 导航
-        nav_instructions = "使用↑↓导航，回车选择"
-        nav_instructions_cancel = "使用↑↓导航，回车选择，⌫取消"
+        nav_instructions = "使用上/下箭头导航，回车选择"
+        nav_instructions_cancel = "使用上/下箭头导航，回车选择，Backspace取消"
         
         # 现有预设
         existing_presets = "现有预设："
@@ -507,7 +486,7 @@ $Global:Languages = @{
         no = "否"
         null_value = "空"
         cancelled = "已取消。"
-        success = "✓"
+        success = "[OK]"
         
         # 新预设
         add_title = "=== 添加新预设 ==="
@@ -541,13 +520,13 @@ $Global:Languages = @{
         final_active_now = "激活为主要预设"
         final_saved_inactive = "保存而不激活"
         final_url_copied = "OBS URL已复制到剪贴板："
-        final_obs_will_show = "✓ OBS将自动显示此预设！"
+        final_obs_will_show = "[OK] OBS将自动显示此预设！"
         final_activate_later = "要稍后激活此预设，请使用活动预设更改选项。"
         
         # 更改活动预设
         change_active_title = "=== 更改活动预设 ==="
         change_active_available = "可用预设："
-        change_active_changed = "✓ 活动预设已更改为："
+        change_active_changed = "[OK] 活动预设已更改为："
         change_active_obs_info = "OBS将自动使用此预设！"
         
         # 删除预设
@@ -559,7 +538,7 @@ $Global:Languages = @{
         remove_confirm = "您确定要删除此预设吗？(y/N)"
         remove_cancelled = "删除已取消。"
         remove_active_deleted = "活动预设已删除。选择新的活动预设："
-        remove_success = "✓ 预设 '%s' 删除成功！"
+        remove_success = "[OK] 预设 '%s' 删除成功！"
         remove_new_active = "新活动预设："
         
         # 首次启动
@@ -569,7 +548,7 @@ $Global:Languages = @{
         language_title = "=== 语言设置 ==="
         language_current = "当前语言："
         language_available = "可用语言："
-        language_changed = "✓ 语言已更改为："
+        language_changed = "[OK] 语言已更改为："
         language_restart_info = "更改将立即在界面中生效。"
         
         # 错误
@@ -1230,7 +1209,7 @@ function Start-MainLoop {
         $contextLines += ""
         
         foreach ($preset in $presetList) {
-          $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " ✓ [ACTIF]" } else { "" }
+          $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " [OK] [ACTIF]" } else { "" }
           $contextLines += "• $($preset.Value.name)$isActive"
           $contextLines += "  ID: $($preset.Name)"
         }
