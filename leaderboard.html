@@ -14,6 +14,17 @@
       display: grid; place-items: start; padding: 8px;
     }
     canvas { display:block; width:900px; height:174px; }
+    
+    /* Rainbow CSS for recent PBs */
+    @keyframes rainbow {
+      0% { color: #ff0000; }
+      16.66% { color: #ff8000; }
+      33.33% { color: #ffff00; }
+      50% { color: #80ff00; }
+      66.66% { color: #00ff80; }
+      83.33% { color: #0080ff; }
+      100% { color: #8000ff; }
+    }
   </style>
 </head>
 <body>
@@ -97,6 +108,22 @@
     const imageCache = {
       flags: new Map()
     };
+    
+    // Rainbow effect for recent PBs
+    function getRainbowColor(time) {
+      const cycle = (time / 2000) % 1; // 2 second cycle (slower for better visibility)
+      const hue = cycle * 360;
+      return `hsl(${hue}, 100%, 70%)`;
+    }
+    
+    // Check if run is recent (less than 5 days old)
+    function isRecentRun(submittedDate) {
+      if (!submittedDate) return false;
+      const now = new Date();
+      const submitted = new Date(submittedDate);
+      const diffDays = (now - submitted) / (1000 * 60 * 60 * 24);
+      return diffDays <= 5;
+    }
 
     // État du carousel
     let carouselPage = 0;
@@ -208,6 +235,9 @@
       ctx.font = DRAW.FONT_BASE;
       ctx.textAlign = 'left';
 
+      // Get current time for rainbow animation
+      const currentTime = Date.now();
+
       const allDisplay = [...topRuns, ...carouselBatch];
       const { padX, startY, rowH } = DRAW.LAYOUT;
       const colRank = padX;
@@ -225,8 +255,12 @@
           ctx.globalAlpha = fadeProgress;
         }
 
-        // Draw rank number
-        ctx.fillStyle = color;
+        // Draw rank number with rainbow effect for recent PBs
+        if (r.isRecentPB) {
+          ctx.fillStyle = getRainbowColor(currentTime + i * 500 + 2000); // Different offset for rank
+        } else {
+          ctx.fillStyle = color;
+        }
         ctx.textAlign = 'left';
         ctx.fillText(`#${r.rank}`, colRank, y);
 
@@ -238,14 +272,27 @@
         }
 
         const displayName = truncatePlayer(r.player);
-        ctx.fillStyle = color;
+        
+        // Apply rainbow effect for recent PBs
+        if (r.isRecentPB) {
+          ctx.fillStyle = getRainbowColor(currentTime + i * 500); // Offset for each row
+        } else {
+          ctx.fillStyle = color;
+        }
+        
         applyTextStyle(x, y, displayName, r.nameStyle);
         ctx.textAlign = 'left';
         ctx.fillText(displayName, x, y);
 
-        // Draw time (right-aligned)
+        // Draw time (right-aligned) with rainbow effect for recent PBs
         ctx.font = DRAW.FONT_MONO;
-        ctx.fillStyle = color;
+        
+        if (r.isRecentPB) {
+          ctx.fillStyle = getRainbowColor(currentTime + i * 500 + 1000); // Different offset for time
+        } else {
+          ctx.fillStyle = color;
+        }
+        
         ctx.textAlign = 'right';
         ctx.fillText(r.time, timeX, y);
 
@@ -360,7 +407,9 @@
             player: playerInfo.name,
             nameStyle: playerInfo.style,
             country: playerInfo.country,
-            time: formatTime(run.times?.primary_t || 0)
+            time: formatTime(run.times?.primary_t || 0),
+            submitted: run.submitted,
+            isRecentPB: isRecentRun(run.submitted)
           };
         });
 
@@ -398,6 +447,16 @@
         // Draw and start carousel
         const firstBatch = carouselRuns.slice(0, RUNS_PER_BATCH);
         draw(processedTop, firstBatch);
+
+        // Start rainbow animation for recent PBs (always running)
+        if (processedTop.some(run => run.isRecentPB) || carouselRuns.some(run => run.isRecentPB)) {
+          if (rainbowInterval) clearInterval(rainbowInterval);
+          window.rainbowInterval = setInterval(() => {
+            const batchStart = carouselPage * RUNS_PER_BATCH;
+            const batch = carouselRuns.slice(batchStart, batchStart + RUNS_PER_BATCH);
+            draw(processedTop, batch, 1); // Force redraw for rainbow animation
+          }, 50); // 20 FPS for rainbow effect
+        }
 
         if (carouselRuns.length > 0) {
           if (carouselInterval) clearInterval(carouselInterval);
