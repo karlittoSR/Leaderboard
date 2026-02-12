@@ -1,7 +1,8 @@
 # Speedrun Leaderboard Canvas
 
-**Version** : 1.0.1  
-**Gestionnaire de presets avec interface par flèches**
+**Version** : 1.1.0  
+**Gestionnaire de presets multilingue avec interface par flèches**  
+🌐 **Support de 5 langues** : Français, English, Español, Português, 中文
 
 Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, entièrement configurable.
 
@@ -13,21 +14,31 @@ Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, enti�
 1. **Télécharge** ces fichiers :
    - `leaderboard.html`
    - `config.json`
-   - `get_game_id.ps1` (script pour configurer facilement un nouveau jeu)
+   - `get_game_id.ps1` (script pour configurer facilement avec interface multilingue)
 
 2. **Mets-les dans le même dossier**
 
 3. **Double-clique** sur le .ps1 → trouve ton jeu et ta catégorie avec les flèches ↑↓
+   - **Choisir la langue** : Option 5 dans le menu principal
+   - Interface disponible en **5 langues**
 
 4. **Ajoute le fichier dans OBS** (Navigateur) avec ces valeurs: Width 400, Height 280
 
-## 🎯 Fonctionnalités v1.0.1
+## � Fonctionnalités v1.1.0
+
+### Support multilingue
+- ✅ **5 langues disponibles** : FR, EN, ES, PT, ZH
+- ✅ **Interface complètement traduite**
+- ✅ **Changement de langue en temps réel** sans redémarrage
+- ✅ **Configuration persistante** - langue sauvegardée automatiquement
+- ✅ **Accessibilité mondiale** pour toute la communauté speedrun
 
 ### Interface
 - ✅ **Navigation par flèches** (↑↓) au lieu de saisie numérique
 - ✅ **Affichage persistant** des presets pendant la navigation
 - ✅ **Indicateurs visuels** : ✓ [ACTIF] et 📍 pour le preset actif
 - ✅ **Interface moderne** sans erreurs de saisie
+- ✅ **Menu de langue** intégré
 
 ### Leaderboard
 - Affichage du **top 3** + **carousel** animé des autres runs
@@ -57,18 +68,22 @@ Tu peux accéder à un preset ainsi :
 
 ## Ajouter un jeu
 
-Vois **[QUICK_START.md](QUICK_START.md)** pour le tutoriel complet (5 minutes).
+🎆 **Méthode recommandée** : Utilise le script `get_game_id.ps1` !
 
-Résumé rapide :
-1. Ouvre `config.json`
-2. Ajoute un preset avec `gameId`, `category`, `subcategory`
-3. Accède via `?preset=son-nom`
+1. **Double-clique** sur `get_game_id.ps1`
+2. **Choisir la langue** (Option 5) si nécessaire
+3. **Sélectionner** "Ajouter un nouveau preset"
+4. **Suivre** l'assistant automatique
+
+Tout est géré automatiquement, y compris l'activation du preset !
+
+Vois **[QUICK_START.md](QUICK_START.md)** pour le tutoriel détaillé avec captures.
 
 ## Guides complets
 
 - **Comment ajouter un jeu ?** → [QUICK_START.md](QUICK_START.md)
-- **Trouver un Game ID ?** → [FIND_GAME_ID.md](FIND_GAME_ID.md)
 - **Configuration détaillée ?** → Vois les commentaires dans `config.json`
+- **Interface multilingue** → Option 5 dans le menu du script
 
 ## Personnaliser l'apparence
 

@@ -1,10 +1,11 @@
 # QUICK START : Leaderboard Speedrun
 
 Configuration **automatique** en 5 minutes pour streamers !
+🌐 **Nouveau** : Interface disponible en 5 langues !
 
 ---
 
-## Méthode automatique (v1.0.1+)
+## Méthode automatique (v1.1.0+)
 
 ### Première utilisation
 1. **Double-clic** sur `get_game_id.ps1`
@@ -20,8 +21,8 @@ Configuration **automatique** en 5 minutes pour streamers !
 
 **Résultat** : preset sauvé + activé automatiquement + URL copiée !
 
-### Interface du menu principal (v1.0.1)
-Le script affiche un menu avec navigation intuitive :
+### Interface du menu principal (v1.1.0)
+Le script affiche un menu avec navigation intuitive dans votre langue :
 
 ```
 ================================================
@@ -41,10 +42,25 @@ Que voulez-vous faire ?
   Voir les détails d'un preset existant  
   Changer le preset actif
   Supprimer un preset
+  Paramètres de langue
   Quitter le programme
 
 Utilisez ↑↓ pour naviguer, Entrée pour sélectionner
 ```
+
+### 🌐 Support multilingue (v1.1.0)
+L'interface est disponible dans **5 langues** :
+- **🇫🇷 Français** (par défaut)
+- **🇺🇸 English**  
+- **🇪🇸 Español**
+- **🇧🇷 Português**
+- **🇨🇳 中文**
+
+**Changer de langue** :
+1. Menu principal → **Option 5** "Paramètres de langue"
+2. Naviguer avec ↑↓ pour choisir votre langue
+3. Appuyer sur **Entrée** → Changement immédiat !
+4. La langue est **sauvegardée automatiquement**
 
 **Navigation** : Utilisez **↑↓** pour vous déplacer entre les options  
 **Sélection** : Appuyez sur **Entrée** pour confirmer  
@@ -56,7 +72,8 @@ Utilisez ↑↓ pour naviguer, Entrée pour sélectionner
 **2. Voir les détails** : Consulter détails complets d'un preset  
 **3. Changer le preset actif** : Sélectionner quel preset est actif dans OBS  
 **4. Supprimer un preset** : Supprimer un preset (avec confirmation)  
-**5. Quitter** : Fermer le programme
+**5. Paramètres de langue** : Changer la langue de l'interface (5 langues disponibles)  
+**6. Quitter** : Fermer le programme
 
 ### Utilisation dans OBS
 - **URL simple** : `leaderboard.html` (toujours la même !)
@@ -77,78 +94,30 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 **Normal** : limitations CORS. **Fonctionne parfaitement dans OBS !**
 
 ### Preset non affiché
-1. Vérifie que `activePreset` existe dans [config.json](config.json)
-2. Ou utilise [get_game_id.ps1](get_game_id.ps1) → **Choix C** pour changer le preset actif
+1. Utilise [get_game_id.ps1](get_game_id.ps1) → **Option 3** pour changer le preset actif
+2. Tous les paramètres sont gérés automatiquement par le script
 
 ---
 
 ## Liens utiles
 
-- **Configuration auto** : [get_game_id.ps1](get_game_id.ps1)
+- **Configuration auto** : [get_game_id.ps1](get_game_id.ps1) (interface multilingue)
 - **Affichage** : [leaderboard.html](leaderboard.html)
-- **Config manuelle** : [config.json](config.json)  
 - **Doc complète** : [README.md](README.md)
-- **Recherche manuelle** : [FIND_GAME_ID.md](FIND_GAME_ID.md)
 
 ---
 
-**Astuce streamer** : Une seule URL dans OBS (`leaderboard.html`) ! Changez de jeu avec le script → **Choix C** pendant le stream !
+**Astuce streamer** : Une seule URL dans OBS (`leaderboard.html`) ! Changez de jeu avec le script → **Option 3** pendant le stream !
 
----
-
-## Guide d'utilisation du script
-
-### Options disponibles dans le menu :
-- **A. Ajouter un nouveau preset** : Workflow complet pour nouveau jeu
-- **B. Voir les détails** : Affiche toutes les infos + URL d'un preset
-- **C. Changer le preset actif** : Switch rapide entre jeux (idéal en stream !)
-- **D. Supprimer un preset** : Suppression sécurisée avec confirmation
-- **F. Quitter** : Fermer le programme
-
-### Validation automatique :
-- **Saisie sécurisée** : Plus de boucles infinies sur entrée invalide
-- **Confirmations** : Demandes de confirmation pour suppressions
-- **Suggestions intelligentes** : IDs de presets auto-générés
-- **Gestion des erreurs** : Messages clairs en cas de problème
-
----
-
-## Personnaliser le Carousel
-
-Pour modifier les paramètres d'affichage, édite `config.json` → `defaults` :
-
-```json
-"defaults": {
-  "carouselInterval": 4000,  // Durée entre les slides (ms)
-  "runsPerBatch": 3,         // Nombre de runs par slide
-  "topCount": 3              // Nombre de top runs toujours visibles
-}
-```
-
----
-
-## Personnaliser l'apparence
-
-Pour modifier les couleurs, polices, ou layout du canvas, édite le HTML directement. 
-
-Cherche la section `DRAW` (vers la ligne 90) :
-
-```javascript
-const DRAW = {
-  FLAG: { w: 20, h: 15, yOffset: 14, radius: 5 },
-  COLORS: { top1: '#ffd700', top2: '#c0c0c0', top3: '#cd7f32', other: '#9fb4ca' }
-}
-```
-
-Tu peux modifier les couleurs HEX, les tailles, les polices, etc.
+**Astuce multilingue** : Configurez une fois dans votre langue, tout est sauvegardé automatiquement !
 
 ---
 
 ## Besoin d'aide ?
 
-- **Je ne trouve pas le Game ID** → Lance `get_game_id.ps1`
-- **Aucun run n'apparaît** → Vérifie `gameId`, `category`, `subcategory` (casse sensible!)
-- **Le carousel ne défile pas** → Il y a moins de runs que `runsPerBatch` + `topCount`
-- **"Erreur de configuration"** → Regarde la console (F12) pour plus de détails
+- **Je ne trouve pas le Game ID** → Lance `get_game_id.ps1` - tout est automatique !
+- **Aucun run n'apparaît** → Utilise le script pour reconfigurer le preset
+- **Le carousel ne défile pas** → Il y a moins de runs que configuré
 - **"Failed to fetch" en double-cliquant** → Lance un serveur local : `python -m http.server 8000`
 - **Le script PS ne s'exécute pas** : Clique-droit → "Exécuter avec PowerShell"
+- **Changer de langue** → Option 5 dans le menu principal du script
