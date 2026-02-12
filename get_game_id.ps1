@@ -1,3 +1,6 @@
+# Encoding: UTF-8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 # Script PowerShell pour gérer les presets speedrun.com facilement
 # Gère plusieurs jeux et categories pour streamers
 # Version 1.1.0 - Support multilingue (FR/EN) + Navigation par flèches et affichage persistant des presets
