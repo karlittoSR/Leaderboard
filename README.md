@@ -10,16 +10,15 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 ## Installation (2 minutes)
 
 1. **Download** these files:
-   - leaderboard.html
-   - config.json
-   - get_game_id.ps1 (script for easy configuration with multilingual interface)
-   - `setup_leaderboard.bat` (launcher that fixes encoding issues)
+   - `leaderboard.html`
+   - `config.json`
+   - `get_game_id.ps1` (script for configuration)
 
 2. **Place them in the same folder**
 
-3. **Run the setup** - Choose the easiest method:
-   - **EASIEST:** Double-click `setup_leaderboard.bat` ✅ *(Fixes all compatibility issues)*
-   - **Alternative:** Double-click `get_game_id.ps1` *(May have encoding issues in some systems)*
+3. **Run the setup** - Double-click one of these:
+   - **EASIEST:** Double-click `get_game_id.ps1` directly ✅ *(Best compatibility)*
+   - **Alternative:** Right-click `get_game_id.ps1` → "Run with PowerShell"
    
    Then navigate with arrow keys to find your game and category.
    - **Choose language**: Option 5 in the main menu
@@ -108,11 +107,16 @@ Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them
 ## Help
 
 **PowerShell won't run the script?**  
-→ **Use `setup_leaderboard.bat` instead** - it fixes both execution policy and encoding issues
+→ **Right-click on `get_game_id.ps1` → "Run with PowerShell"** - This is the most reliable method
 
-**Manual solutions if needed:**
-- **Execution policy error:** `powershell.exe -ExecutionPolicy Bypass -File "get_game_id.ps1"`
-- **Encoding error (garbled characters):** `powershell.exe -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; & '.\get_game_id.ps1'"`
+**If that doesn't work:**
+- Try: Double-click the .ps1 file directly
+- Or: Enable execution policy: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
+**Command line alternative (advanced):**
+```
+powershell.exe -ExecutionPolicy Bypass -File "get_game_id.ps1"
+```
 
 **The carousel doesn't scroll?**  
 → Check that there are more runs than the topCount

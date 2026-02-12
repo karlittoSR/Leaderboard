@@ -277,15 +277,15 @@ $Global:Languages = @{
         add_no_categories = "¡No se encontraron categorías para este juego!"
         add_categories_available = "Categorías disponibles:"
         add_subcategories_available = "Subcategorías disponibles:"
-        add_no_subcategory = "Sin subcategoría (null)"
+        add_no_subcategory = "Sin subcategoria (null)"
         
-        # Configuración final
-        final_config = "========================================\n         CONFIGURACIÓN FINAL\n========================================"
+        # Configuracion final
+        final_config = "========================================\n         CONFIGURACION FINAL\n========================================"
         final_game = "Juego    :"
         final_game_id = "ID Juego :"
-        final_category = "Categoría :"
-        final_subcategory = "Subcategoría :"
-        final_preset_id = "Introduce un ID único para este preset:"
+        final_category = "Categoria :"
+        final_subcategory = "Subcategoria :"
+        final_preset_id = "Introduce un ID unico para este preset:"
         final_suggestion = "Sugerencia:"
         final_preset_id_prompt = "ID del preset (o Enter para sugerencia)"
         final_id_exists = "ATENCIÓN: ¡Ya existe un preset con ID '%s'!"
