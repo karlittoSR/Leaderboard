@@ -31,6 +31,8 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
    - Select "Properties" → "Font" tab
    - Change font to a Chinese-compatible font (e.g., SimSun, SimHei, or Microsoft YaHei)
    - Click "OK"
+  <img width="460" height="427" alt="image" src="https://github.com/user-attachments/assets/d3f435c3-ae3b-40ac-a1ec-0ca4c09392c0" />
+
 
 ### Installation Steps
 
