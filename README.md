@@ -34,12 +34,12 @@ Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, enti�
 - ✅ **Accessibilité mondiale** pour toute la communauté speedrun
 
 ### Interface
-- ✅ **Navigation par flèches** (↑↓) au lieu de saisie numérique
-- ✅ **Touche Backspace** pour retour (plus intuitive qu'Échap)
-- ✅ **Confirmations simplifiées** : dialogues oui/non au lieu de saisie de texte
+- ✅ **Navigation par flèches** (↑↓) 
+- ✅ **Touche Backspace** pour retour
+- ✅ **Confirmations simplifiées** : dialogues oui/non
 - ✅ **Affichage persistant** des presets pendant la navigation
 - ✅ **Indicateurs visuels** : ✓ [ACTIF] et 📍 pour le preset actif
-- ✅ **Interface moderne** sans erreurs de saisie
+- ✅ **Interface moderne**
 - ✅ **Menu de langue** intégré
 
 ### Leaderboard
