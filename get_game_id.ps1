@@ -3,6 +3,10 @@
 # Version 1.1.0 - Support multilingue (FR/EN) + Navigation par flèches et affichage persistant des presets
 # Par karlitto__
 
+# Ensure we're in the correct directory (where the script is located)
+$scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
+Set-Location $scriptDir
+
 # === DICTIONNAIRE DE LANGUES ===
 $Global:Languages = @{
     fr = @{
