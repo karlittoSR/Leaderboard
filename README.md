@@ -12,15 +12,13 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 1. **Download** these files:
    - `leaderboard.html`
    - `config.json`
-   - `get_game_id.ps1` (configuration script)
-   - `run.vbs` (launcher for Windows)
+   - `get_game_id.ps1` (script for configuration)
 
 2. **Place them in the same folder**
 
-3. **Run the setup** - Choose the easiest method:
-   - **BEST:** Double-click `run.vbs` ✅ *(Works on all Windows systems)*
+3. **Run the setup** - Double-click one of these:
+   - **EASIEST:** Double-click `get_game_id.ps1` directly ✅ *(Best compatibility)*
    - **Alternative:** Right-click `get_game_id.ps1` → "Run with PowerShell"
-   - **If .ps1 opens in editor:** Use `run.vbs` instead (Windows file association issue)
    
    Then navigate with arrow keys to find your game and category.
    - **Choose language**: Option 5 in the main menu
@@ -108,14 +106,14 @@ Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them
 
 ## Help
 
-**Double-clicking .ps1 opens it in an editor instead of running it?**  
-→ **Use `run.vbs` instead** - This is a Windows file association issue (very common)
+**PowerShell won't run the script?**  
+→ **Right-click on `get_game_id.ps1` → "Run with PowerShell"** - This is the most reliable method
 
-**Normal execution methods:**
-- **Best:** Double-click `run.vbs` (works on all Windows)
-- **Alternative:** Right-click `get_game_id.ps1` → "Run with PowerShell"
+**If that doesn't work:**
+- Try: Double-click the .ps1 file directly
+- Or: Enable execution policy: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
-**Advanced option (command line):**
+**Command line alternative (advanced):**
 ```
 powershell.exe -ExecutionPolicy Bypass -File "get_game_id.ps1"
 ```
