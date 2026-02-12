@@ -6,21 +6,21 @@ function Write-MainMenu {
   param($currentConfig)
   
   Clear-Host
-  Write-Host "================================================" -ForegroundColor DarkYellow
-  Write-Host "  Gestionnaire de presets SRC by karlitto__" -ForegroundColor DarkYellow
-  Write-Host "================================================" -ForegroundColor DarkYellow
+  Write-Host "================================================" -ForegroundColor Cyan
+  Write-Host "  Gestionnaire de presets SRC by karlitto__" -ForegroundColor Cyan
+  Write-Host "================================================" -ForegroundColor Cyan
   Write-Host ""
 
   if ($currentConfig -and $currentConfig.presets -and $currentConfig.presets.PSObject.Properties.Count -gt 0) {
     $existingPresets = $currentConfig.presets.PSObject.Properties
     
-    Write-Host "Presets existants :" -ForegroundColor DarkRed
+    Write-Host "Presets existants :" -ForegroundColor Green
     Write-Host ""
     $count = 1
     $presetList = @()
     foreach ($preset in $existingPresets) {
       Write-Host "[$count] $($preset.Value.name)" -ForegroundColor White
-      Write-Host "     Preset: '$($preset.Name)'" -ForegroundColor DarkGray
+      Write-Host "     Preset: '$($preset.Name)'" -ForegroundColor Gray
       $presetList += $preset
       $count++
     }
@@ -34,21 +34,21 @@ function Write-MainMenu {
       "Non défini" 
     }
     Write-Host "" 
-    Write-Host "Preset actuellement actif : $activePresetName" -ForegroundColor DarkRed
-    Write-Host "(ID: $activePreset)" -ForegroundColor DarkGray
+    Write-Host "Preset actuellement actif : $activePresetName" -ForegroundColor Green
+    Write-Host "(ID: $activePreset)" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "Que voulez-vous faire ?" -ForegroundColor DarkYellow
+    Write-Host "Que voulez-vous faire ?" -ForegroundColor Yellow
     Write-Host "A. Ajouter un nouveau preset" -ForegroundColor White
     Write-Host "B. Voir les details d'un preset existant" -ForegroundColor White
-    Write-Host "C. Changer le preset actif" -ForegroundColor DarkYellow
+    Write-Host "C. Changer le preset actif" -ForegroundColor Cyan
     Write-Host "D. Supprimer un preset" -ForegroundColor Red
-    Write-Host "E. Retour au menu principal" -ForegroundColor DarkGray  
-    Write-Host "F. Quitter le programme" -ForegroundColor DarkGray
+    Write-Host "E. Retour au menu principal" -ForegroundColor Gray  
+    Write-Host "F. Quitter le programme" -ForegroundColor Gray
     Write-Host ""
     
     return $presetList
   } else {
-    Write-Host "Aucun preset trouve. Creation du premier preset..." -ForegroundColor DarkYellow
+    Write-Host "Aucun preset trouve. Creation du premier preset..." -ForegroundColor Yellow
     Write-Host ""
     return @()
   }
@@ -57,7 +57,7 @@ function Write-MainMenu {
 # === FONCTION SHOW PRESET DETAILS ===
 function Write-PresetDetails($presetList, $currentConfig) {
   Clear-Host
-  Write-Host "=== DETAILS D'UN PRESET ===" -ForegroundColor DarkYellow
+  Write-Host "=== DETAILS D'UN PRESET ===" -ForegroundColor Cyan
   Write-Host ""
   
   if ($presetList.Count -gt 1) {
@@ -91,27 +91,27 @@ function Write-PresetDetails($presetList, $currentConfig) {
   }
   
   Write-Host ""
-  Write-Host "=== DETAILS DU PRESET ===" -ForegroundColor DarkYellow
+  Write-Host "=== DETAILS DU PRESET ===" -ForegroundColor Cyan
   Write-Host "Nom : $($selectedPreset.Value.name)" -ForegroundColor White
-  Write-Host "Preset ID : $($selectedPreset.Name)" -ForegroundColor DarkYellow
-  Write-Host "Game ID : $($selectedPreset.Value.gameId)" -ForegroundColor DarkYellow
-  Write-Host "Category : $($selectedPreset.Value.category)" -ForegroundColor DarkYellow
+  Write-Host "Preset ID : $($selectedPreset.Name)" -ForegroundColor Cyan
+  Write-Host "Game ID : $($selectedPreset.Value.gameId)" -ForegroundColor Cyan
+  Write-Host "Category : $($selectedPreset.Value.category)" -ForegroundColor Cyan
   $subcat = if ($selectedPreset.Value.subcategory) { $selectedPreset.Value.subcategory } else { "null" }
-  Write-Host "Subcategory : $subcat" -ForegroundColor DarkYellow
+  Write-Host "Subcategory : $subcat" -ForegroundColor Cyan
   $isActive = if ($currentConfig.activePreset -eq $selectedPreset.Name) { "OUI" } else { "NON" }
   Write-Host "Actif dans OBS : $isActive" -ForegroundColor $(if ($isActive -eq "OUI") { "Green" } else { "Yellow" })
   Write-Host ""
-  Write-Host "URL OBS (toujours la meme) :" -ForegroundColor DarkYellow
-  Write-Host "leaderboard.html" -ForegroundColor DarkGray
+  Write-Host "URL OBS (toujours la meme) :" -ForegroundColor Cyan
+  Write-Host "leaderboard.html" -ForegroundColor Gray
   Write-Host ""
-  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
 # === FONCTION CHANGE ACTIVE PRESET ===
 function Update-ActivePreset($presetList, $currentConfig) {
   Clear-Host
-  Write-Host "=== CHANGER LE PRESET ACTIF ===" -ForegroundColor DarkYellow
+  Write-Host "=== CHANGER LE PRESET ACTIF ===" -ForegroundColor Cyan
   Write-Host ""
   Write-Host "Presets disponibles :"
   for ($i = 0; $i -lt $presetList.Count; $i++) {
@@ -147,10 +147,10 @@ function Update-ActivePreset($presetList, $currentConfig) {
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
   
   Write-Host ""
-  Write-Host "✓ Preset actif change vers : $($newActivePreset.Value.name)" -ForegroundColor DarkRed
-  Write-Host "OBS va automatiquement utiliser ce preset !" -ForegroundColor DarkRed
+  Write-Host "✓ Preset actif change vers : $($newActivePreset.Value.name)" -ForegroundColor Green
+  Write-Host "OBS va automatiquement utiliser ce preset !" -ForegroundColor Green
   Write-Host ""
-  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
@@ -162,9 +162,9 @@ function Remove-Preset($presetList, $currentConfig) {
     Write-Host "=== IMPOSSIBLE DE SUPPRIMER ===" -ForegroundColor Red
     Write-Host ""
     Write-Host "Impossible de supprimer le dernier preset !" -ForegroundColor Red
-    Write-Host "Vous devez avoir au moins un preset configure." -ForegroundColor DarkYellow
+    Write-Host "Vous devez avoir au moins un preset configure." -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+    Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
     return
   }
@@ -188,7 +188,7 @@ function Remove-Preset($presetList, $currentConfig) {
     
     $deleteChoiceInt = [int]$deleteChoice
     if ($deleteChoiceInt -eq 0) {
-      Write-Host "Suppression annulee." -ForegroundColor DarkYellow
+      Write-Host "Suppression annulee." -ForegroundColor Cyan
       return
     }
     
@@ -204,12 +204,12 @@ function Remove-Preset($presetList, $currentConfig) {
   
   Write-Host ""
   Write-Host "ATTENTION : Vous allez supprimer definitivement :" -ForegroundColor Red
-  Write-Host "$($presetToDelete.Value.name)" -ForegroundColor DarkYellow
+  Write-Host "$($presetToDelete.Value.name)" -ForegroundColor Cyan
   Write-Host ""
   $confirm = Read-Host "Etes-vous sur ? Tapez 'SUPPRIMER' pour confirmer"
   
   if ($confirm -ne "SUPPRIMER") {
-    Write-Host "Suppression annulee." -ForegroundColor DarkYellow
+    Write-Host "Suppression annulee." -ForegroundColor Cyan
     return
   }
   
@@ -222,7 +222,7 @@ function Remove-Preset($presetList, $currentConfig) {
     $remainingPresets = $currentConfig.presets.PSObject.Properties
     if ($remainingPresets.Count -gt 0) {
       Write-Host ""
-      Write-Host "Le preset actif a ete supprime. Choisissez le nouveau preset actif :" -ForegroundColor DarkYellow
+      Write-Host "Le preset actif a ete supprime. Choisissez le nouveau preset actif :" -ForegroundColor Cyan
       Write-Host ""
       $count = 1
       $newPresetList = @()
@@ -262,32 +262,32 @@ function Remove-Preset($presetList, $currentConfig) {
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
   
   Write-Host ""
-  Write-Host "✓ Preset '$($presetToDelete.Value.name)' supprime avec succes !" -ForegroundColor DarkRed
+  Write-Host "✓ Preset '$($presetToDelete.Value.name)' supprime avec succes !" -ForegroundColor Green
   if ($currentConfig.activePreset) {
     $newActiveName = $currentConfig.presets.($currentConfig.activePreset).name
-    Write-Host "Nouveau preset actif : $newActiveName" -ForegroundColor DarkYellow
+    Write-Host "Nouveau preset actif : $newActiveName" -ForegroundColor Cyan
   }
   Write-Host ""
-  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
 # === FONCTION ADD NEW PRESET ===
 function New-Preset($currentConfig) {
   Clear-Host
-  Write-Host "=== AJOUT D'UN NOUVEAU PRESET ===" -ForegroundColor DarkRed
+  Write-Host "=== AJOUT D'UN NOUVEAU PRESET ===" -ForegroundColor Green
   Write-Host ""
 
   $gameName = Read-Host "Nom du jeu"
 
   if ([string]::IsNullOrWhiteSpace($gameName)) {
     Write-Host "Erreur : Vous devez entrer un nom de jeu!" -ForegroundColor Red
-    Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+    Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
     return
   }
 
-  Write-Host "Recherche en cours pour : $gameName" -ForegroundColor DarkYellow
+  Write-Host "Recherche en cours pour : $gameName" -ForegroundColor Yellow
 
   try {
     # === ETAPE 1: Chercher le jeu ===
@@ -298,13 +298,13 @@ function New-Preset($currentConfig) {
     
     if ($games.Count -eq 0) {
       Write-Host "Aucun jeu trouve pour : $gameName" -ForegroundColor Red
-      Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+      Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
       $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
       return
     }
     
     Write-Host ""
-    Write-Host "Jeux trouves :" -ForegroundColor DarkRed
+    Write-Host "Jeux trouves :" -ForegroundColor Green
     Write-Host ""
     
     $count = 0
@@ -312,7 +312,7 @@ function New-Preset($currentConfig) {
       $count++
       $releaseYear = if ($game.released) { " ($($game.released))" } else { "" }
       Write-Host "[$count] $($game.names.international)$releaseYear" -ForegroundColor White
-      Write-Host "     ID: $($game.id)" -ForegroundColor DarkYellow
+      Write-Host "     ID: $($game.id)" -ForegroundColor Cyan
       Write-Host ""
     }
     
@@ -330,7 +330,7 @@ function New-Preset($currentConfig) {
         $gameChoiceInt = [int]$gameChoice
         
         if ($gameChoiceInt -eq 0) {
-          Write-Host "Annule." -ForegroundColor DarkYellow
+          Write-Host "Annule." -ForegroundColor Cyan
           return
         }
         
@@ -350,7 +350,7 @@ function New-Preset($currentConfig) {
     
     # === ETAPE 2: Recuperer les categories ===
     Write-Host ""
-    Write-Host "Chargement des categories..." -ForegroundColor DarkYellow
+    Write-Host "Chargement des categories..." -ForegroundColor Yellow
     
     $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
     $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
@@ -359,13 +359,13 @@ function New-Preset($currentConfig) {
     
     if ($categories.Count -eq 0) {
       Write-Host "Aucune categorie trouvee pour ce jeu!" -ForegroundColor Red
-      Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+      Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
       $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
       return
     }
     
     Write-Host ""
-    Write-Host "Categories disponibles :" -ForegroundColor DarkRed
+    Write-Host "Categories disponibles :" -ForegroundColor Green
     Write-Host ""
     
     for ($i = 0; $i -lt $categories.Count; $i++) {
@@ -403,14 +403,14 @@ function New-Preset($currentConfig) {
     
     if ($subcategoryVariables.Count -gt 0) {
       Write-Host ""
-      Write-Host "Sous-categories disponibles :" -ForegroundColor DarkRed
+      Write-Host "Sous-categories disponibles :" -ForegroundColor Green
       
       # On prend la premiere variable de sous-categorie trouvee
       $subcatVariable = $subcategoryVariables[0]
       $subcatValues = $subcatVariable.values.values.PSObject.Properties
       
       Write-Host ""
-      Write-Host "0. Aucune sous-categorie (null)" -ForegroundColor DarkGray
+      Write-Host "0. Aucune sous-categorie (null)" -ForegroundColor Gray
       
       $subcatCount = 1
       $subcatArray = @()
@@ -452,14 +452,14 @@ function New-Preset($currentConfig) {
     
     # === ETAPE 4: Preset ID et sauvegarde ===
     Write-Host ""
-    Write-Host "========================================" -ForegroundColor DarkRed
-    Write-Host "           CONFIGURATION FINALE" -ForegroundColor DarkRed
-    Write-Host "========================================" -ForegroundColor DarkRed
+    Write-Host "========================================" -ForegroundColor Green
+    Write-Host "           CONFIGURATION FINALE" -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "Jeu      : $($selectedGame.names.international)" -ForegroundColor White
-    Write-Host "Game ID  : $($selectedGame.id)" -ForegroundColor DarkYellow
-    Write-Host "Category : $($selectedCategory.name)" -ForegroundColor DarkYellow
-    Write-Host "Subcategory : $selectedSubcategoryLabel" -ForegroundColor DarkYellow
+    Write-Host "Game ID  : $($selectedGame.id)" -ForegroundColor Cyan
+    Write-Host "Category : $($selectedCategory.name)" -ForegroundColor Cyan
+    Write-Host "Subcategory : $selectedSubcategoryLabel" -ForegroundColor Cyan
     Write-Host ""
     
     # Generer le nom complet avec sous-categorie si elle existe
@@ -474,8 +474,8 @@ function New-Preset($currentConfig) {
     $catPart = $selectedCategory.name -replace '[^a-zA-Z0-9]', '' -replace '\s+', ''
     $defaultPresetId = ($gamePart.ToLower() + "-" + $catPart.ToLower()) -replace '--+', '-'
     
-    Write-Host "Entrez un ID unique pour ce preset :" -ForegroundColor DarkYellow
-    Write-Host "Suggestion : $defaultPresetId" -ForegroundColor DarkGray
+    Write-Host "Entrez un ID unique pour ce preset :" -ForegroundColor Yellow
+    Write-Host "Suggestion : $defaultPresetId" -ForegroundColor Gray
     $presetId = Read-Host "ID du preset (ou Entree pour suggestion)"
     
     if ([string]::IsNullOrWhiteSpace($presetId)) {
@@ -487,8 +487,8 @@ function New-Preset($currentConfig) {
       Write-Host "ATTENTION : Un preset avec l'ID '$presetId' existe deja !" -ForegroundColor Red
       $overwrite = Read-Host "Voulez-vous l'ecraser ? (o/N)"
       if ($overwrite.ToLower() -ne "o") {
-        Write-Host "Operation annulee." -ForegroundColor DarkYellow
-        Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+        Write-Host "Operation annulee." -ForegroundColor Cyan
+        Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
         $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
         return
       }
@@ -558,21 +558,21 @@ function New-Preset($currentConfig) {
     $jsonOutput | Set-Content "config.json" -Encoding UTF8
     
     Write-Host ""
-    Write-Host "✓ Preset '$presetId' sauvegarde avec succes !" -ForegroundColor DarkRed
-    Write-Host "Status : $activationMessage" -ForegroundColor DarkYellow
+    Write-Host "✓ Preset '$presetId' sauvegarde avec succes !" -ForegroundColor Green
+    Write-Host "Status : $activationMessage" -ForegroundColor Cyan
     
     # Copier l'URL simplifiee dans le presse-papiers
     $simpleUrl = "leaderboard.html"
     $simpleUrl | Set-Clipboard
     
     Write-Host ""
-    Write-Host "URL OBS copiee dans le presse-papiers :" -ForegroundColor DarkRed
+    Write-Host "URL OBS copiee dans le presse-papiers :" -ForegroundColor Green
     Write-Host "$simpleUrl" -ForegroundColor White
     Write-Host ""
     if ($config.activePreset -eq $presetId) {
-      Write-Host "✓ OBS affichera automatiquement ce preset !" -ForegroundColor DarkRed
+      Write-Host "✓ OBS affichera automatiquement ce preset !" -ForegroundColor Green
     } else {
-      Write-Host "Pour activer ce preset plus tard, utilisez l'option C." -ForegroundColor DarkYellow
+      Write-Host "Pour activer ce preset plus tard, utilisez l'option C." -ForegroundColor Cyan
     }
     Write-Host ""
   } catch {
@@ -580,7 +580,7 @@ function New-Preset($currentConfig) {
     Write-Host "Erreur : $_" -ForegroundColor Red
   }
   
-  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+  Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
@@ -605,7 +605,7 @@ function Start-MainLoop {
         switch ($choice.ToUpper()) {
           "F" {
             Clear-Host
-            Write-Host "Au revoir !" -ForegroundColor DarkRed 
+            Write-Host "Au revoir !" -ForegroundColor Green 
             return 
           }
           "E" { 
@@ -628,7 +628,7 @@ function Start-MainLoop {
     } catch {
       Write-Host ""
       Write-Host "Erreur lors du chargement de la config : $_" -ForegroundColor Red
-      Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor DarkGray
+      Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
       $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
     }
   }
@@ -641,6 +641,6 @@ try {
   Write-Host ""
   Write-Host "Erreur critique : $_" -ForegroundColor Red
   Write-Host ""
-  Write-Host "Appuyez sur une touche pour fermer..." -ForegroundColor DarkGray
+  Write-Host "Appuyez sur une touche pour fermer..." -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
