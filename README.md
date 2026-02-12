@@ -49,18 +49,6 @@ Résumé rapide :
 2. Ajoute un preset avec `gameId`, `category`, `subcategory`
 3. Accède via `?preset=son-nom`
 
-## Héberger en ligne
-
-### GitHub Pages (simple)
-1. Crée un compte https://github.com
-2. Crée un repo public `leaderboards`
-3. Upload les fichiers (renomme le HTML en `index.html`)
-4. Active GitHub Pages dans Settings
-5. Ton site : `https://tonusername.github.io/leaderboards/`
-
-### Ton propre serveur
-Copie simplement les fichiers sur ton serveur web !
-
 ## Guides complets
 
 - **Comment ajouter un jeu ?** → [QUICK_START.md](QUICK_START.md)
