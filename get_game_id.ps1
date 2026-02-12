@@ -1,55 +1,82 @@
 # Script PowerShell pour gérer les presets speedrun.com facilement
 # Gère plusieurs jeux et categories pour streamers
+# Version 1.0.1 - Navigation par flèches et affichage persistant des presets
+# Par karlitto__
+
+# === FONCTION NAVIGATION PAR FLÈCHES ===
+function Show-ArrowMenu {
+  param(
+    [string]$Title,
+    [array]$Options,
+    [int]$SelectedIndex = 0,
+    [switch]$AllowCancel = $false,
+    [string]$ContextText = ""
+  )
+  
+  $currentIndex = $SelectedIndex
+  $maxIndex = $Options.Count - 1
+  
+  while ($true) {
+    Clear-Host
+    
+    # Afficher le contexte si fourni
+    if ($ContextText) {
+      Write-Host $ContextText
+    }
+    
+    if ($Title) {
+      Write-Host $Title -ForegroundColor Cyan
+      Write-Host ""
+    }
+    
+    for ($i = 0; $i -lt $Options.Count; $i++) {
+      if ($i -eq $currentIndex) {
+        Write-Host "► $($Options[$i])" -ForegroundColor Yellow
+      } else {
+        Write-Host "  $($Options[$i])" -ForegroundColor White
+      }
+    }
+    
+    Write-Host ""
+    if ($AllowCancel) {
+      Write-Host "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner, Échap pour annuler" -ForegroundColor Gray
+    } else {
+      Write-Host "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner" -ForegroundColor Gray
+    }
+    
+    $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    
+    switch ($key.VirtualKeyCode) {
+      38 { # Flèche haut
+        $currentIndex = if ($currentIndex -eq 0) { $maxIndex } else { $currentIndex - 1 }
+      }
+      40 { # Flèche bas
+        $currentIndex = if ($currentIndex -eq $maxIndex) { 0 } else { $currentIndex + 1 }
+      }
+      13 { # Entrée
+        return $currentIndex
+      }
+      27 { # Échap
+        if ($AllowCancel) {
+          return -1
+        }
+      }
+    }
+  }
+}
 
 # === FONCTION MENU PRINCIPAL ===
 function Write-MainMenu {
   param($currentConfig)
   
-  Clear-Host
-  Write-Host "================================================" -ForegroundColor Cyan
-  Write-Host "  Gestionnaire de presets SRC by karlitto__" -ForegroundColor Cyan
-  Write-Host "================================================" -ForegroundColor Cyan
-  Write-Host ""
-
   if ($currentConfig -and $currentConfig.presets -and $currentConfig.presets.PSObject.Properties.Count -gt 0) {
     $existingPresets = $currentConfig.presets.PSObject.Properties
-    
-    Write-Host "Presets existants :" -ForegroundColor Green
-    Write-Host ""
-    $count = 1
     $presetList = @()
     foreach ($preset in $existingPresets) {
-      Write-Host "[$count] $($preset.Value.name)" -ForegroundColor White
-      Write-Host "     Preset: '$($preset.Name)'" -ForegroundColor Gray
       $presetList += $preset
-      $count++
     }
-    Write-Host ""
-    
-    # Afficher le preset actif
-    $activePreset = if ($currentConfig.activePreset) { $currentConfig.activePreset } else { "aucun" }
-    $activePresetName = if ($currentConfig.activePreset -and $currentConfig.presets.($currentConfig.activePreset)) { 
-      $currentConfig.presets.($currentConfig.activePreset).name 
-    } else { 
-      "Non défini" 
-    }
-    Write-Host "" 
-    Write-Host "Preset actuellement actif : $activePresetName" -ForegroundColor Green
-    Write-Host "(ID: $activePreset)" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "Que voulez-vous faire ?" -ForegroundColor Yellow
-    Write-Host "A. Ajouter un nouveau preset" -ForegroundColor White
-    Write-Host "B. Voir les details d'un preset existant" -ForegroundColor White
-    Write-Host "C. Changer le preset actif" -ForegroundColor Cyan
-    Write-Host "D. Supprimer un preset" -ForegroundColor Red
-    Write-Host "E. Retour au menu principal" -ForegroundColor Gray  
-    Write-Host "F. Quitter le programme" -ForegroundColor Gray
-    Write-Host ""
-    
     return $presetList
   } else {
-    Write-Host "Aucun preset trouve. Creation du premier preset..." -ForegroundColor Yellow
-    Write-Host ""
     return @()
   }
 }
@@ -61,36 +88,20 @@ function Write-PresetDetails($presetList, $currentConfig) {
   Write-Host ""
   
   if ($presetList.Count -gt 1) {
-    Write-Host "Choisissez un preset :"
-    for ($i = 0; $i -lt $presetList.Count; $i++) {
-      Write-Host "[$($i + 1)] $($presetList[$i].Value.name)" -ForegroundColor White
+    $options = @()
+    foreach ($preset in $presetList) {
+      $options += "$($preset.Value.name)"
     }
-    Write-Host ""
-    do {
-      $presetChoice = Read-Host "Numero du preset a voir (1-$($presetList.Count)) ou 0 pour annuler"
-      
-      # Validation: vérifier que c'est un nombre
-      if (-not [int]::TryParse($presetChoice, [ref]$null)) {
-        Write-Host "Veuillez entrer un numero valide." -ForegroundColor Red
-        continue
-      }
-      
-      $presetChoiceInt = [int]$presetChoice
-      if ($presetChoiceInt -eq 0) { return }
-      
-      if ($presetChoiceInt -lt 1 -or $presetChoiceInt -gt $presetList.Count) {
-        Write-Host "Numero invalide. Choisissez entre 1 et $($presetList.Count)." -ForegroundColor Red
-        continue
-      }
-      
-      break
-    } while ($true)
-    $selectedPreset = $presetList[$presetChoiceInt - 1]
+    
+    $selectedIndex = Show-ArrowMenu -Title "Choisissez un preset à voir :" -Options $options -AllowCancel
+    
+    if ($selectedIndex -eq -1) { return }
+    $selectedPreset = $presetList[$selectedIndex]
   } else {
     $selectedPreset = $presetList[0]
   }
   
-  Write-Host ""
+  Clear-Host
   Write-Host "=== DETAILS DU PRESET ===" -ForegroundColor Cyan
   Write-Host "Nom : $($selectedPreset.Value.name)" -ForegroundColor White
   Write-Host "Preset ID : $($selectedPreset.Name)" -ForegroundColor Cyan
@@ -113,41 +124,26 @@ function Update-ActivePreset($presetList, $currentConfig) {
   Clear-Host
   Write-Host "=== CHANGER LE PRESET ACTIF ===" -ForegroundColor Cyan
   Write-Host ""
-  Write-Host "Presets disponibles :"
-  for ($i = 0; $i -lt $presetList.Count; $i++) {
-    $isActive = if ($presetList[$i].Name -eq $currentConfig.activePreset) { " [ACTIF]" } else { "" }
-    Write-Host "[$($i + 1)] $($presetList[$i].Value.name)$isActive" -ForegroundColor White
-  }
-  Write-Host ""
-  do {
-    $newActiveChoice = Read-Host "Choisir le nouveau preset actif (1-$($presetList.Count)) ou 0 pour annuler"
-    
-    # Validation: vérifier que c'est un nombre
-    if (-not [int]::TryParse($newActiveChoice, [ref]$null)) {
-      Write-Host "Veuillez entrer un numero valide." -ForegroundColor Red
-      continue
-    }
-    
-    $newActiveChoiceInt = [int]$newActiveChoice
-    if ($newActiveChoiceInt -eq 0) { return }
-    
-    if ($newActiveChoiceInt -lt 1 -or $newActiveChoiceInt -gt $presetList.Count) {
-      Write-Host "Numero invalide. Choisissez entre 1 et $($presetList.Count)." -ForegroundColor Red
-      continue
-    }
-    
-    break
-  } while ($true)
   
-  $newActivePreset = $presetList[$newActiveChoiceInt - 1]
+  $options = @()
+  foreach ($preset in $presetList) {
+    $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " [ACTIF]" } else { "" }
+    $options += "$($preset.Value.name)$isActive"
+  }
+  
+  $selectedIndex = Show-ArrowMenu -Title "Presets disponibles :" -Options $options -AllowCancel
+  
+  if ($selectedIndex -eq -1) { return }
+  
+  $newActivePreset = $presetList[$selectedIndex]
   $currentConfig.activePreset = $newActivePreset.Name
   
   # Sauvegarder
   $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
   
-  Write-Host ""
-  Write-Host "✓ Preset actif change vers : $($newActivePreset.Value.name)" -ForegroundColor Green
+  Clear-Host
+  Write-Host "✓ Preset actif changé vers : $($newActivePreset.Value.name)" -ForegroundColor Green
   Write-Host "OBS va automatiquement utiliser ce preset !" -ForegroundColor Green
   Write-Host ""
   Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
@@ -162,7 +158,7 @@ function Remove-Preset($presetList, $currentConfig) {
     Write-Host "=== IMPOSSIBLE DE SUPPRIMER ===" -ForegroundColor Red
     Write-Host ""
     Write-Host "Impossible de supprimer le dernier preset !" -ForegroundColor Red
-    Write-Host "Vous devez avoir au moins un preset configure." -ForegroundColor Cyan
+    Write-Host "Vous devez avoir au moins un preset configuré." -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
@@ -171,45 +167,34 @@ function Remove-Preset($presetList, $currentConfig) {
   
   Write-Host "=== SUPPRIMER UN PRESET ===" -ForegroundColor Red
   Write-Host ""
-  Write-Host "Presets disponibles :"
-  for ($i = 0; $i -lt $presetList.Count; $i++) {
-    $isActive = if ($presetList[$i].Name -eq $currentConfig.activePreset) { " [ACTIF]" } else { "" }
-    Write-Host "[$($i + 1)] $($presetList[$i].Value.name)$isActive" -ForegroundColor White
+  
+  $options = @()
+  foreach ($preset in $presetList) {
+    $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " [ACTIF]" } else { "" }
+    $options += "$($preset.Value.name)$isActive"
   }
-  Write-Host ""
-  do {
-    $deleteChoice = Read-Host "Choisir le preset a supprimer (1-$($presetList.Count)) ou 0 pour annuler"
-    
-    # Validation: vérifier que c'est un nombre
-    if (-not [int]::TryParse($deleteChoice, [ref]$null)) {
-      Write-Host "Veuillez entrer un numero valide." -ForegroundColor Red
-      continue
-    }
-    
-    $deleteChoiceInt = [int]$deleteChoice
-    if ($deleteChoiceInt -eq 0) {
-      Write-Host "Suppression annulee." -ForegroundColor Cyan
-      return
-    }
-    
-    if ($deleteChoiceInt -lt 1 -or $deleteChoiceInt -gt $presetList.Count) {
-      Write-Host "Numero invalide. Choisissez entre 1 et $($presetList.Count)." -ForegroundColor Red
-      continue
-    }
-    
-    break
-  } while ($true)
   
-  $presetToDelete = $presetList[$deleteChoiceInt - 1]
+  $selectedIndex = Show-ArrowMenu -Title "Presets disponibles :" -Options $options -AllowCancel
   
-  Write-Host ""
-  Write-Host "ATTENTION : Vous allez supprimer definitivement :" -ForegroundColor Red
+  if ($selectedIndex -eq -1) {
+    Write-Host "Suppression annulée." -ForegroundColor Cyan
+    Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+  
+  $presetToDelete = $presetList[$selectedIndex]
+  
+  Clear-Host
+  Write-Host "ATTENTION : Vous allez supprimer définitivement :" -ForegroundColor Red
   Write-Host "$($presetToDelete.Value.name)" -ForegroundColor Cyan
   Write-Host ""
-  $confirm = Read-Host "Etes-vous sur ? Tapez 'SUPPRIMER' pour confirmer"
+  $confirm = Read-Host "Êtes-vous sûr ? Tapez 'SUPPRIMER' pour confirmer"
   
   if ($confirm -ne "SUPPRIMER") {
-    Write-Host "Suppression annulee." -ForegroundColor Cyan
+    Write-Host "Suppression annulée." -ForegroundColor Cyan
+    Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
     return
   }
   
@@ -217,41 +202,19 @@ function Remove-Preset($presetList, $currentConfig) {
   $deletedPresetId = $presetToDelete.Name
   $currentConfig.presets.PSObject.Properties.Remove($deletedPresetId)
   
-  # Gerer le cas ou le preset supprime etait actif
+  # Gérer le cas où le preset supprimé était actif
   if ($currentConfig.activePreset -eq $deletedPresetId) {
     $remainingPresets = $currentConfig.presets.PSObject.Properties
     if ($remainingPresets.Count -gt 0) {
-      Write-Host ""
-      Write-Host "Le preset actif a ete supprime. Choisissez le nouveau preset actif :" -ForegroundColor Cyan
-      Write-Host ""
-      $count = 1
+      $newOptions = @()
       $newPresetList = @()
       foreach ($preset in $remainingPresets) {
-        Write-Host "[$count] $($preset.Value.name)" -ForegroundColor White
+        $newOptions += "$($preset.Value.name)"
         $newPresetList += $preset
-        $count++
       }
-      Write-Host ""
-      do {
-        $newActiveChoice = Read-Host "Nouveau preset actif (1-$($newPresetList.Count))"
-        
-        # Validation: vérifier que c'est un nombre
-        if (-not [int]::TryParse($newActiveChoice, [ref]$null)) {
-          Write-Host "Veuillez entrer un numero valide." -ForegroundColor Red
-          continue
-        }
-        
-        $newActiveChoiceInt = [int]$newActiveChoice
-        
-        if ($newActiveChoiceInt -lt 1 -or $newActiveChoiceInt -gt $newPresetList.Count) {
-          Write-Host "Numero invalide. Choisissez entre 1 et $($newPresetList.Count)." -ForegroundColor Red
-          continue
-        }
-        
-        break
-      } while ($true)
       
-      $currentConfig.activePreset = $newPresetList[$newActiveChoiceInt - 1].Name
+      $newActiveIndex = Show-ArrowMenu -Title "Le preset actif a été supprimé. Choisissez le nouveau preset actif :" -Options $newOptions
+      $currentConfig.activePreset = $newPresetList[$newActiveIndex].Name
     } else {
       $currentConfig.activePreset = $null
     }
@@ -261,8 +224,8 @@ function Remove-Preset($presetList, $currentConfig) {
   $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
   
-  Write-Host ""
-  Write-Host "✓ Preset '$($presetToDelete.Value.name)' supprime avec succes !" -ForegroundColor Green
+  Clear-Host
+  Write-Host "✓ Preset '$($presetToDelete.Value.name)' supprimé avec succès !" -ForegroundColor Green
   if ($currentConfig.activePreset) {
     $newActiveName = $currentConfig.presets.($currentConfig.activePreset).name
     Write-Host "Nouveau preset actif : $newActiveName" -ForegroundColor Cyan
@@ -303,47 +266,22 @@ function New-Preset($currentConfig) {
       return
     }
     
-    Write-Host ""
-    Write-Host "Jeux trouves :" -ForegroundColor Green
-    Write-Host ""
-    
-    $count = 0
-    foreach ($game in $games) {
-      $count++
-      $releaseYear = if ($game.released) { " ($($game.released))" } else { "" }
-      Write-Host "[$count] $($game.names.international)$releaseYear" -ForegroundColor White
-      Write-Host "     ID: $($game.id)" -ForegroundColor Cyan
-      Write-Host ""
-    }
-    
     # Selection du jeu
     if ($games.Count -gt 1) {
-      do {
-        $gameChoice = Read-Host "Selectionnez le numero du jeu (1-$($games.Count)) ou 0 pour annuler"
-        
-        # Validation: vérifier que c'est un nombre
-        if (-not [int]::TryParse($gameChoice, [ref]$null)) {
-          Write-Host "Veuillez entrer un numero valide." -ForegroundColor Red
-          continue
-        }
-        
-        $gameChoiceInt = [int]$gameChoice
-        
-        if ($gameChoiceInt -eq 0) {
-          Write-Host "Annule." -ForegroundColor Cyan
-          return
-        }
-        
-        if ($gameChoiceInt -lt 1 -or $gameChoiceInt -gt $games.Count) {
-          Write-Host "Numero invalide. Choisissez entre 1 et $($games.Count)." -ForegroundColor Red
-          continue
-        }
-        
-        break  # Sortir de la boucle si tout est valide
-        
-      } while ($true)
+      $gameOptions = @()
+      foreach ($game in $games) {
+        $releaseYear = if ($game.released) { " ($($game.released))" } else { "" }
+        $gameOptions += "$($game.names.international)$releaseYear"
+      }
       
-      $selectedGame = $games[$gameChoiceInt - 1]
+      $selectedGameIndex = Show-ArrowMenu -Title "Jeux trouvés :" -Options $gameOptions -AllowCancel
+      
+      if ($selectedGameIndex -eq -1) {
+        Write-Host "Annulé." -ForegroundColor Cyan
+        return
+      }
+      
+      $selectedGame = $games[$selectedGameIndex]
     } else {
       $selectedGame = $games[0]
     }
@@ -358,94 +296,48 @@ function New-Preset($currentConfig) {
     $categories = $categoriesData.data.categories.data | Where-Object { $_.type -eq "per-game" }
     
     if ($categories.Count -eq 0) {
-      Write-Host "Aucune categorie trouvee pour ce jeu!" -ForegroundColor Red
+      Write-Host "Aucune catégorie trouvée pour ce jeu!" -ForegroundColor Red
       Write-Host "Appuyez sur une touche pour continuer..." -ForegroundColor Gray
       $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
       return
     }
     
-    Write-Host ""
-    Write-Host "Categories disponibles :" -ForegroundColor Green
-    Write-Host ""
-    
-    for ($i = 0; $i -lt $categories.Count; $i++) {
-      Write-Host "[$($i + 1)] $($categories[$i].name)" -ForegroundColor White
+    # Sélection de la catégorie
+    $categoryOptions = @()
+    foreach ($category in $categories) {
+      $categoryOptions += $category.name
     }
     
-    # Selection de la categorie
-    do {
-      $categoryChoice = Read-Host "`nSelectionnez le numero de la categorie (1-$($categories.Count))"
-      
-      # Validation: vérifier que c'est un nombre
-      if (-not [int]::TryParse($categoryChoice, [ref]$null)) {
-        Write-Host "Veuillez entrer un numero valide." -ForegroundColor Red
-        continue
-      }
-      
-      $categoryChoiceInt = [int]$categoryChoice
-      
-      if ($categoryChoiceInt -lt 1 -or $categoryChoiceInt -gt $categories.Count) {
-        Write-Host "Numero invalide. Choisissez entre 1 et $($categories.Count)." -ForegroundColor Red
-        continue
-      }
-      
-      break  # Sortir de la boucle si tout est valide
-      
-    } while ($true)
+    $selectedCategoryIndex = Show-ArrowMenu -Title "Catégories disponibles :" -Options $categoryOptions
+    $selectedCategory = $categories[$selectedCategoryIndex]
     
-    $selectedCategory = $categories[$categoryChoiceInt - 1]
-    
-    # === ETAPE 3: Gerer les sous-categories ===
+    # === ETAPE 3: Gérer les sous-catégories ===
     $selectedSubcategory = $null
     $selectedSubcategoryLabel = "null"
     
     $subcategoryVariables = $selectedCategory.variables.data | Where-Object { $_.'is-subcategory' -eq $true -and $_.values.values }
     
     if ($subcategoryVariables.Count -gt 0) {
-      Write-Host ""
-      Write-Host "Sous-categories disponibles :" -ForegroundColor Green
-      
-      # On prend la premiere variable de sous-categorie trouvee
+      # On prend la première variable de sous-catégorie trouvée
       $subcatVariable = $subcategoryVariables[0]
       $subcatValues = $subcatVariable.values.values.PSObject.Properties
       
-      Write-Host ""
-      Write-Host "0. Aucune sous-categorie (null)" -ForegroundColor Gray
-      
-      $subcatCount = 1
+      $subcatOptions = @("Aucune sous-catégorie (null)")
       $subcatArray = @()
+      
       foreach ($value in $subcatValues) {
-        Write-Host "$subcatCount. $($value.Value.label)" -ForegroundColor White
+        $subcatOptions += $value.Value.label
         $subcatArray += @{
           id = $value.Name
           label = $value.Value.label
         }
-        $subcatCount++
       }
       
-      # Selection de la sous-categorie
-      do {
-        $subcatChoice = Read-Host "`nSelectionnez le numero de la sous-categorie (0-$($subcatArray.Count))"
-        
-        # Validation: vérifier que c'est un nombre
-        if (-not [int]::TryParse($subcatChoice, [ref]$null)) {
-          Write-Host "Veuillez entrer un numero valide." -ForegroundColor Red
-          continue
-        }
-        
-        $subcatChoiceInt = [int]$subcatChoice
-        
-        if ($subcatChoiceInt -lt 0 -or $subcatChoiceInt -gt $subcatArray.Count) {
-          Write-Host "Numero invalide. Choisissez entre 0 et $($subcatArray.Count)." -ForegroundColor Red
-          continue
-        }
-        
-        break  # Sortir de la boucle si tout est valide
-        
-      } while ($true)
+      # Sélection de la sous-catégorie
+      $selectedSubcatIndex = Show-ArrowMenu -Title "Sous-catégories disponibles :" -Options $subcatOptions
       
-      if ($subcatChoiceInt -gt 0) {
-        $selectedSubcategory = $subcatArray[$subcatChoiceInt - 1]
+      if ($selectedSubcatIndex -gt 0) {
+        $selectedSubcategory = $subcatArray[$selectedSubcatIndex - 1]
         $selectedSubcategoryLabel = $selectedSubcategory.label
       }
     }
@@ -600,29 +492,63 @@ function Start-MainLoop {
       $presetList = Write-MainMenu $currentConfig
       
       if ($presetList.Count -gt 0) {
-        $choice = Read-Host "Votre choix (A/B/C/D/E/F)"
+        # Préparer le contexte à afficher au-dessus du menu
+        $contextLines = @()
+        $contextLines += "================================================"
+        $contextLines += "  Gestionnaire de presets SRC by karlitto__"
+        $contextLines += "================================================"
+        $contextLines += ""
+        $contextLines += "Presets existants :"
+        $contextLines += ""
         
-        switch ($choice.ToUpper()) {
-          "F" {
+        foreach ($preset in $presetList) {
+          $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " ✓ [ACTIF]" } else { "" }
+          $contextLines += "• $($preset.Value.name)$isActive"
+          $contextLines += "  ID: $($preset.Name)"
+        }
+        $contextLines += ""
+        
+        # Affichage du preset actif en évidence
+        $activePresetName = if ($currentConfig.activePreset -and $currentConfig.presets.($currentConfig.activePreset)) { 
+          $currentConfig.presets.($currentConfig.activePreset).name 
+        } else { 
+          "Non défini" 
+        }
+        $contextLines += "📍 Preset actuellement actif : $activePresetName"
+        $contextLines += ""
+        
+        $contextText = $contextLines -join "`n"
+        
+        $menuOptions = @(
+          "Ajouter un nouveau preset",
+          "Voir les détails d'un preset existant", 
+          "Changer le preset actif",
+          "Supprimer un preset",
+          "Quitter le programme"
+        )
+        
+        $selectedOption = Show-ArrowMenu -Title "Que voulez-vous faire ?" -Options $menuOptions -ContextText $contextText
+        
+        switch ($selectedOption) {
+          4 { # Quitter le programme
             Clear-Host
-            Write-Host "Au revoir !" -ForegroundColor Green 
+            Write-Host "GL pour tes runs !" -ForegroundColor Green 
             return 
           }
-          "E" { 
-            # Retour au menu principal (continue la boucle)
-            continue 
-          }
-          "A" { New-Preset $currentConfig }
-          "B" { Write-PresetDetails $presetList $currentConfig }
-          "C" { Update-ActivePreset $presetList $currentConfig }
-          "D" { Remove-Preset $presetList $currentConfig }
-          default { 
-            Write-Host "Option invalide ! Appuyez sur une touche pour continuer..." -ForegroundColor Red
-            $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-          }
+          0 { New-Preset $currentConfig }
+          1 { Write-PresetDetails $presetList $currentConfig }
+          2 { Update-ActivePreset $presetList $currentConfig }
+          3 { Remove-Preset $presetList $currentConfig }
         }
       } else {
-        # Premier preset
+        # Premier preset - affichage direct
+        Clear-Host
+        Write-Host "================================================" -ForegroundColor Cyan
+        Write-Host "  Gestionnaire de presets SRC by karlitto__" -ForegroundColor Cyan
+        Write-Host "================================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "Aucun preset trouvé. Création du premier preset..." -ForegroundColor Yellow
+        Write-Host ""
         New-Preset $currentConfig
       }
     } catch {
