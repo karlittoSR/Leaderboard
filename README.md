@@ -26,6 +26,12 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
    - Select "PowerShell 7" from the list
    - If not visible: click "More apps" and scroll to find it
 
+3. **For Chinese language support** (if experiencing Chinese character display issues):
+   - Right-click the PowerShell window title bar
+   - Select "Properties" → "Font" tab
+   - Change font to a Chinese-compatible font (e.g., SimSun, SimHei, or Microsoft YaHei)
+   - Click "OK"
+
 ### Installation Steps
 
 1. **Download** these files:
