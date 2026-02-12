@@ -1,12 +1,12 @@
-# 🎯 QUICK START : Leaderboard Speedrun
+# QUICK START : Leaderboard Speedrun
 
 Configuration **automatique** en 5 minutes pour streamers !
 
 ---
 
-## ⚡ Méthode automatique (recommandée)
+## Méthode automatique (recommandée)
 
-### 🚀 Première utilisation
+### Première utilisation
 1. **Double-clic** sur `get_game_id.ps1`
 2. **Menu principal** s'affiche automatiquement
 3. **Choix A** : Ajouter un nouveau preset
@@ -17,9 +17,9 @@ Configuration **automatique** en 5 minutes pour streamers !
 8. **Donner un ID** au preset (suggestion auto fournie)
 9. **Activer automatiquement** le preset (si c'est le premier)
 
-✅ **Résultat** : preset sauvé + activé automatiquement + URL copiée !
+**Résultat** : preset sauvé + activé automatiquement + URL copiée !
 
-### 🎮 Menu système complet
+### Menu système complet
 Le script affiche un menu avec toutes les options :
 
 ```
@@ -49,7 +49,7 @@ F. Quitter le programme
 **Choix D** : Supprimer un preset (avec confirmation)  
 **Choix F** : Quitter le programme
 
-### 🎯 Utilisation dans OBS
+### Utilisation dans OBS
 - **URL simple** : `leaderboard.html` (toujours la même !)
 - **Source navigateur** : Width 400, Height 280
 - **Actualise seul** : toutes les 30 secondes
@@ -57,11 +57,11 @@ F. Quitter le programme
 
 ---
 
-## 📝 Méthode manuelle (si PowerShell bloqué)
+## Méthode manuelle (si PowerShell bloqué)
 
-### 1️⃣ Ouvre `config.json`
+### 1. Ouvre `config.json`
 
-### 2️⃣ Ajoute dans "presets"
+### 2. Ajoute dans "presets"
 ```json
 "mon-nouveau-jeu": {
   "name": "Mon Jeu - Ma Catégorie",
@@ -77,18 +77,18 @@ F. Quitter le programme
 3. L'ID = `xxxxx` dans l'URL
 4. Voir [FIND_GAME_ID.md](FIND_GAME_ID.md) pour détails
 
-### 4️⃣ Activer le preset
+### 4. Activer le preset
 Dans `config.json`, modifie :
 ```json
 "activePreset": "mon-nouveau-jeu"
 ```
 
-### 5️⃣ Test
+### 5. Test
 URL : `leaderboard.html` (lit automatiquement le preset actif)
 
 ---
 
-## ⚠️ Problèmes courants
+## Problèmes courants
 
 ### Script PowerShell bloqué
 ```powershell
@@ -104,7 +104,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-## 🔗 Liens utiles
+## Liens utiles
 
 - **Configuration auto** : [get_game_id.ps1](get_game_id.ps1)
 - **Affichage** : [leaderboard.html](leaderboard.html)
@@ -114,11 +114,11 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-**💡 Astuce streamer** : Une seule URL dans OBS (`leaderboard.html`) ! Changez de jeu avec le script → **Choix C** pendant le stream !
+**Astuce streamer** : Une seule URL dans OBS (`leaderboard.html`) ! Changez de jeu avec le script → **Choix C** pendant le stream !
 
 ---
 
-## 🎮 Guide d'utilisation du script
+## Guide d'utilisation du script
 
 ### Options disponibles dans le menu :
 - **A. Ajouter un nouveau preset** : Workflow complet pour nouveau jeu
@@ -135,7 +135,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-## ⚡ Personnaliser le Carousel
+## Personnaliser le Carousel
 
 Pour modifier les paramètres d'affichage, édite `config.json` → `defaults` :
 
@@ -149,7 +149,7 @@ Pour modifier les paramètres d'affichage, édite `config.json` → `defaults` :
 
 ---
 
-## 🎨 Personnaliser l'apparence
+## Personnaliser l'apparence
 
 Pour modifier les couleurs, polices, ou layout du canvas, édite le HTML directement. 
 
@@ -166,7 +166,7 @@ Tu peux modifier les couleurs HEX, les tailles, les polices, etc.
 
 ---
 
-## ❓ Besoin d'aide ?
+## Besoin d'aide ?
 
 - **Je ne trouve pas le Game ID** → Lance `get_game_id.ps1`
 - **Aucun run n'apparaît** → Vérifie `gameId`, `category`, `subcategory` (casse sensible!)

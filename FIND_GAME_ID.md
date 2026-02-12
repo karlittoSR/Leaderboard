@@ -1,6 +1,6 @@
 # Trouver les Game IDs Speedrun.com
 
-## 🚀 Méthode recommandée (script PowerShell menu)
+## Méthode recommandée (script PowerShell menu)
 
 Double-clique sur **`get_game_id.ps1`** pour le menu complet !
 
@@ -43,13 +43,13 @@ Entrez un ID unique pour ce preset :
 Suggestion : eldenring-any
 ID du preset (ou Entrée pour suggestion) : 
 
-✓ Preset 'eldenring-any' sauvegardé avec succès !
+Preset 'eldenring-any' sauvegardé avec succès !
 Status : Actif automatiquement (premier preset)
 
 URL OBS copiée dans le presse-papiers :
 leaderboard.html
 
-✓ OBS affichera automatiquement ce preset !
+OBS affichera automatiquement ce preset !
 ```
 
 ### Launches suivants (avec presets existants)
@@ -77,7 +77,7 @@ E. Retour au menu principal
 F. Quitter le programme
 ```
 
-Le script te guide **étape par étape** avec un **menu complet** : création → gestion → activation → suppression ! ✨
+Le script te guide **étape par étape** avec un **menu complet** : création → gestion → activation → suppression !
 
 ---
 
@@ -166,7 +166,7 @@ Regarde le JSON pour trouver :
 - **API** : https://github.com/speedruncomorg/api
 - **API Docs** : https://github.com/speedruncomorg/api/blob/master/README.md
 
-## 🐛 Dépannage du script PowerShell
+## Dépannage du script PowerShell
 
 ### Le script ne s'exécute pas ?
 - **Clique-droit** sur `get_game_id.ps1` → "Exécuter avec PowerShell"
