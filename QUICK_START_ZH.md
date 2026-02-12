@@ -5,6 +5,25 @@
 
 ---
 
+## ⚠️ 前置要求
+
+**需要 PowerShell 7**（仅限 Windows 10/11）
+
+1. **安装 PowerShell 7**:
+   - 打开 Microsoft Store（Windows 10/11）
+   - 搜索 "PowerShell"（微软官方应用）
+   - 点击 "安装"
+   - 或从以下网址下载：https://github.com/PowerShell/PowerShell/releases
+
+2. **将 .ps1 文件与 PowerShell 7 关联**:
+   - 右键点击 `get_game_id.ps1`
+   - 选择 "打开方式" → "选择其他应用"
+   - 勾选 "总是用此应用打开 .ps1 文件"
+   - 从列表中选择 "PowerShell 7"
+   - 如果看不到：点击 "更多应用" 并滚动查找
+
+---
+
 ## 自动方法 (v1.1.0+)
 
 ### 首次使用

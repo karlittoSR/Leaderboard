@@ -9,17 +9,33 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 
 ## Installation (2 minutes)
 
+### Prerequisites
+
+**PowerShell 7 is required** (Windows 10/11 only - handles UTF-8 encoding correctly)
+
+1. **Install PowerShell 7**:
+   - Open Microsoft Store on Windows 10/11
+   - Search for "PowerShell" (official Microsoft app)
+   - Click "Install"
+   - Or download from: https://github.com/PowerShell/PowerShell/releases
+
+2. **Associate .ps1 files with PowerShell 7**:
+   - Right-click `get_game_id.ps1`
+   - Select "Open with" → "Choose another app"
+   - Check "Always use this app to open .ps1 files"
+   - Select "PowerShell 7" from the list
+   - If not visible: click "More apps" and scroll to find it
+
+### Installation Steps
+
 1. **Download** these files:
    - `leaderboard.html`
    - `config.json`
-   - `run_leaderboard.bat` ⭐ (Easy launcher - use this to run the setup!)
    - `get_game_id.ps1` (PowerShell script for configuration)
 
 2. **Place them in the same folder**
 
-3. **Run the setup** - Double-click one of these:
-   - **EASIEST:** Double-click `run_leaderboard.bat` ✅ *(Best compatibility - no PowerShell errors)*
-   - **Alternative:** Double-click `get_game_id.ps1` (if PowerShell execution enabled)
+3. **Run the setup** - Double-click `get_game_id.ps1`:
    
    Then navigate with arrow keys to find your game and category.
    - **Choose language**: Option 5 in the main menu
@@ -107,18 +123,12 @@ Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them
 
 ## Help
 
-**PowerShell won't run the script?**  
-→ **Double-click `run_leaderboard.bat`** - This bypasses PowerShell restrictions automatically ✅
+**Script won't run when double-clicking?**  
+→ Make sure you installed **PowerShell 7** and associated `.ps1` files with it (see Prerequisites above)
 
-**If you still want to run the script directly:**
-- Try: Right-click `get_game_id.ps1` → "Run with PowerShell"  
-- Or: Double-click the .ps1 file directly  
-- Or: Enable execution policy: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-
-**Command line alternative (advanced):**
-```
-powershell.exe -ExecutionPolicy Bypass -File "get_game_id.ps1"
-```
+**If it still doesn't work:**
+- Try: Right-click `get_game_id.ps1` → "Run with PowerShell 7"
+- Or: Open PowerShell 7 directly and run: `cd <folder>; .\get_game_id.ps1`
 
 **The carousel doesn't scroll?**  
 → Check that there are more runs than the topCount

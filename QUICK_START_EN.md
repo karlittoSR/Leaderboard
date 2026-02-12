@@ -5,6 +5,25 @@
 
 ---
 
+## ⚠️ Prerequisites
+
+**PowerShell 7 is required** (Windows 10/11 only)
+
+1. **Install PowerShell 7**:
+   - Open Microsoft Store (Windows 10/11)
+   - Search for "PowerShell" (official Microsoft app)
+   - Click "Install"
+   - Or download from: https://github.com/PowerShell/PowerShell/releases
+
+2. **Associate .ps1 files with PowerShell 7**:
+   - Right-click `get_game_id.ps1`
+   - Select "Open with" → "Choose another app"
+   - Check "Always use this app to open .ps1 files"
+   - Select "PowerShell 7" from the list
+   - If not visible: click "More apps" and scroll to find it
+
+---
+
 ## Automatic method (v1.1.0+)
 
 ### First use

@@ -5,6 +5,25 @@ Configuration **automatique** en 5 minutes pour streamers !
 
 ---
 
+## ⚠️ Prérequis
+
+**PowerShell 7 est requis** (Windows 10/11 uniquement)
+
+1. **Installer PowerShell 7**:
+   - Ouvrir le Microsoft Store (Windows 10/11)
+   - Rechercher "PowerShell" (application officielle Microsoft)
+   - Cliquer sur "Installer"
+   - Ou télécharger depuis : https://github.com/PowerShell/PowerShell/releases
+
+2. **Associer les fichiers .ps1 avec PowerShell 7**:
+   - Clic droit sur `get_game_id.ps1`
+   - Sélectionner "Ouvrir avec" → "Choisir une autre application"
+   - Cocher "Toujours utiliser cette app pour ouvrir les fichiers .ps1"
+   - Sélectionner "PowerShell 7" dans la liste
+   - Si non visible : cliquer "Plus d'applications" et faire défiler
+
+---
+
 ## Méthode automatique (v1.1.0+)
 
 ### Première utilisation
