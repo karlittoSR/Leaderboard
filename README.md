@@ -1,60 +1,59 @@
 # Speedrun Leaderboard Canvas
 
-**Version** : 1.1.0  
-**Gestionnaire de presets multilingue avec interface par flèches**  
-🌐 **Support de 5 langues** : Français, English, Español, Português, 中文
+**Version**: 1.1.0  
+**Multilingual preset manager with arrow-based navigation**  
+**Supports 5 languages**: French, English, Spanish, Portuguese, Chinese
 
-Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, entièrement configurable.
+Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, fully configurable.
 
 <img width="436" height="229" alt="image" src="https://github.com/user-attachments/assets/f6add34f-9eb3-4272-88d6-565995ee1c80" />
 
-
 ## Installation (2 minutes)
 
-1. **Télécharge** ces fichiers :
-   - `leaderboard.html`
-   - `config.json`
-   - `get_game_id.ps1` (script pour configurer facilement avec interface multilingue)
+1. **Download** these files:
+   - leaderboard.html
+   - config.json
+   - get_game_id.ps1 (script for easy configuration with multilingual interface)
 
-2. **Mets-les dans le même dossier**
+2. **Place them in the same folder**
 
-3. **Double-clique** sur le .ps1 → trouve ton jeu et ta catégorie avec les flèches ↑↓
-   - **Choisir la langue** : Option 5 dans le menu principal
-   - Interface disponible en **5 langues**
+3. **Double-click** on the .ps1 file → find your game and category with arrow keys
+   - **Choose language**: Option 5 in the main menu
+   - Interface available in **5 languages**
 
-4. **Ajoute le fichier dans OBS** (Navigateur) avec ces valeurs: Width 400, Height 280
+4. **Add the file to OBS** (Browser Source) with these values: Width 400, Height 280
 
-## � Fonctionnalités v1.1.0
+## Features v1.1.0
 
-### Support multilingue
-- ✅ **5 langues disponibles** : FR, EN, ES, PT, ZH
-- ✅ **Interface complètement traduite**
-- ✅ **Changement de langue en temps réel** sans redémarrage
-- ✅ **Configuration persistante** - langue sauvegardée automatiquement
-- ✅ **Accessibilité mondiale** pour toute la communauté speedrun
+### Multilingual Support
+- **5 languages available**: FR, EN, ES, PT, ZH
+- **Fully translated interface**
+- **Real-time language switching** without restart
+- **Persistent configuration** - language automatically saved
+- **Global accessibility** for the entire speedrun community
 
 ### Interface
-- ✅ **Navigation par flèches** (↑↓) 
-- ✅ **Touche Backspace** pour retour
-- ✅ **Confirmations simplifiées** : dialogues oui/non
-- ✅ **Affichage persistant** des presets pendant la navigation
-- ✅ **Indicateurs visuels** : ✓ [ACTIF] et 📍 pour le preset actif
-- ✅ **Interface moderne**
-- ✅ **Menu de langue** intégré
+- **Arrow key navigation** (up/down arrows)
+- **Backspace key** for going back
+- **Simplified confirmations**: yes/no dialogs
+- **Persistent display** of presets during navigation
+- **Visual indicators**: checkmark [ACTIVE] and pin for active preset
+- **Modern interface**
+- **Integrated language menu**
 
 ### Leaderboard
-- Affichage du **top 3** + **carousel** animé des autres runs
-- Couleurs pour les places (or, argent, bronze)
-- **Drapeaux** des pays (chargés depuis flagcdn)
-- **Entièrement configurable** via `config.json`
-- **Paramètres d'URL** pour surcharger les settings
-- **Responsive** et transparent (parfait pour les streams Twitch)
+- Display of **top 3** + **animated carousel** of other runs
+- Colors for placements (gold, silver, bronze)
+- **Country flags** (loaded from flagcdn)
+- **Fully configurable** via config.json
+- **URL parameters** to override settings
+- **Responsive** and transparent (perfect for Twitch streams)
 
-## Comment ça marche ?
+## How it works
 
-Le fichier **`config.json`** contient des **presets** pour différents jeux/catégories :
+The **"config.json"** file contains **presets** for different games/categories:
 
-```json
+`json
 "presets": {
   "elden-any-glitchless": {
     "gameId": "nd28z0ed",
@@ -62,56 +61,56 @@ Le fichier **`config.json`** contient des **presets** pour différents jeux/cat�
     "subcategory": "Glitchless"
   }
 }
-```
+`
 
-Tu peux accéder à un preset ainsi :
-- **Par défaut** : `leaderboard.html` (utilise le premier preset)
-- **Avec un preset spécifique** : `leaderboard.html?preset=elden-100`
+You can access a preset like this:
+- **Default**: leaderboard.html (uses the first preset)
+- **With specific preset**: leaderboard.html?preset=elden-100
 
-## Ajouter un jeu
+## Adding a Game
 
-🎆 **Méthode recommandée** : Utilise le script `get_game_id.ps1` !
+**Recommended method**: Use the get_game_id.ps1 script!
 
-1. **Double-clique** sur `get_game_id.ps1`
-2. **Choisir la langue** (Option 5) si nécessaire
-3. **Sélectionner** "Ajouter un nouveau preset"
-4. **Suivre** l'assistant automatique
+1. **Double-click** on get_game_id.ps1
+2. **Choose language** (Option 5) if needed
+3. **Select** "Add new preset"
+4. **Follow** the automatic wizard
 
-Tout est géré automatiquement, y compris l'activation du preset !
+Everything is handled automatically, including preset activation!
 
-**📖 Documentation disponible dans votre langue :**
-- Chois votre guide QUICK_START selon votre langue préférée
-- L'interface du script s'adapte automatiquement à votre choix
+**Documentation available in your language:**
+- Choose your QUICK_START guide according to your preferred language
+- The script interface automatically adapts to your choice
 
-Vois **[QUICK_START_FR.md](QUICK_START_FR.md)** pour le tutoriel détaillé avec captures.
+See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screenshots.
 
-## Guides complets
+## Complete Guides
 
-### 📖 Documentation multilingue
-- **🇫🇷 Comment ajouter un jeu ?** → [QUICK_START_FR.md](QUICK_START_FR.md)
-- **🇺🇸 How to add a game?** → [QUICK_START_EN.md](QUICK_START_EN.md)
-- **🇪🇸 ¿Cómo añadir un juego?** → [QUICK_START_ES.md](QUICK_START_ES.md)
-- **🇧🇷 Como adicionar um jogo?** → [QUICK_START_PT.md](QUICK_START_PT.md)
-- **🇨🇳 如何添加游戏？** → [QUICK_START_ZH.md](QUICK_START_ZH.md)
+### Multilingual Documentation
+- **French: How to add a game?** → [QUICK_START_FR.md](QUICK_START_FR.md)
+- **English: How to add a game?** → [QUICK_START_EN.md](QUICK_START_EN.md)
+- **Spanish: How to add a game?** → [QUICK_START_ES.md](QUICK_START_ES.md)
+- **Portuguese: How to add a game?** → [QUICK_START_PT.md](QUICK_START_PT.md)
+- **Chinese: How to add a game?** → [QUICK_START_ZH.md](QUICK_START_ZH.md)
 
-### ⚙️ Configuration
-- **Configuration détaillée ?** → Vois les commentaires dans `config.json`
-- **Interface multilingue** → Option 5 dans le menu du script
+### Configuration
+- **Detailed configuration?** → See comments in config.json
+- **Multilingual interface** → Option 5 in the script menu
 
-## Personnaliser l'apparence
+## Customizing Appearance
 
-Les couleurs, polices, et layout sont définis dans la section `DRAW` du HTML. Édite-les directement pour matcher ton branding !
+Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them directly to match your branding!
 
-## Aide
+## Help
 
-**Le carousel ne défile pas ?** 
-→ Vérifie qu'il y a plus de runs que le `topCount`
+**The carousel doesn't scroll?**  
+→ Check that there are more runs than the 	opCount
 
-**Aucun run n'apparaît ?**
-→ Vérife le `gameId`, `category`, et `subcategory` (casse sensible!)
+**No runs appear?**  
+→ Verify the gameId, category, and subcategory (case sensitive!)
 
-**"Failed to fetch" en double-cliquant le HTML ?**
-→ Normal ! Problème de CORS. Utilise un serveur local : `python -m http.server 8000` puis `http://localhost:8000`
+**"Failed to fetch" when double-clicking the HTML?**  
+→ Normal! CORS issue. Use a local server: python -m http.server 8000 then http://localhost:8000
 
-**Je ne sais pas comment faire ?**
-→ Commence par [QUICK_START.md](QUICK_START.md)
+**Don't know how to proceed?**  
+→ Start with [QUICK_START_EN.md](QUICK_START_EN.md)
