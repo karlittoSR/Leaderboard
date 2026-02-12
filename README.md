@@ -77,11 +77,22 @@ Tu peux accéder à un preset ainsi :
 
 Tout est géré automatiquement, y compris l'activation du preset !
 
+**📖 Documentation disponible dans votre langue :**
+- Chois votre guide QUICK_START selon votre langue préférée
+- L'interface du script s'adapte automatiquement à votre choix
+
 Vois **[QUICK_START.md](QUICK_START.md)** pour le tutoriel détaillé avec captures.
 
 ## Guides complets
 
-- **Comment ajouter un jeu ?** → [QUICK_START.md](QUICK_START.md)
+### 📖 Documentation multilingue
+- **🇫🇷 Comment ajouter un jeu ?** → [QUICK_START.md](QUICK_START.md)
+- **🇺🇸 How to add a game?** → [QUICK_START_EN.md](QUICK_START_EN.md)
+- **🇪🇸 ¿Cómo añadir un juego?** → [QUICK_START_ES.md](QUICK_START_ES.md)
+- **🇧🇷 Como adicionar um jogo?** → [QUICK_START_PT.md](QUICK_START_PT.md)
+- **🇨🇳 如何添加游戏？** → [QUICK_START_ZH.md](QUICK_START_ZH.md)
+
+### ⚙️ Configuration
 - **Configuration détaillée ?** → Vois les commentaires dans `config.json`
 - **Interface multilingue** → Option 5 dans le menu du script
 
