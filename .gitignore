@@ -1,0 +1,17 @@
+# .gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local testing
+*.local.html
+
+# Notes
+notes/

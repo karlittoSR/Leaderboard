@@ -1,0 +1,86 @@
+# Speedrun Leaderboard Canvas
+
+Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, entièrement configurable.
+
+## 🚀 Installation (2 minutes)
+
+1. **Télécharge** ces fichiers :
+   - `leaderboard.html`
+   - `config.json`
+   - `get_game_id.ps1` (script pour configurer facilement un nouveau jeu)
+
+2. **Mets-les dans le même dossier**
+
+3. **Double-clique** sur le HTML → c'est prêt !
+
+## ✨ Features
+
+- 📊 Affichage du **top 3** + **carousel** animé des autres runs
+- 🎨 Couleurs pour les places (or, argent, bronze)
+- 🎌 **Drapeaux** des pays (chargés depuis flagcdn)
+- ⚙️ **Entièrement configurable** via `config.json`
+- 🔗 **Paramètres d'URL** pour surcharger les settings
+- 🌐 **Responsive** et transparent (parfait pour les streams Twitch)
+
+## 📝 Comment ça marche ?
+
+Le fichier **`config.json`** contient des **presets** pour différents jeux/catégories :
+
+```json
+"presets": {
+  "elden-any-glitchless": {
+    "gameId": "nd28z0ed",
+    "category": "Any%",
+    "subcategory": "Glitchless"
+  }
+}
+```
+
+Tu peux accéder à un preset ainsi :
+- **Par défaut** : `leaderboard.html` (utilise le premier preset)
+- **Avec un preset spécifique** : `leaderboard.html?preset=elden-100`
+
+## 🎯 Ajouter un jeu
+
+Vois **[QUICK_START.md](QUICK_START.md)** pour le tutoriel complet (5 minutes).
+
+Résumé rapide :
+1. Ouvre `config.json`
+2. Ajoute un preset avec `gameId`, `category`, `subcategory`
+3. Accède via `?preset=son-nom`
+
+## 🌐 Héberger en ligne
+
+### GitHub Pages (simple)
+1. Crée un compte https://github.com
+2. Crée un repo public `leaderboards`
+3. Upload les fichiers (renomme le HTML en `index.html`)
+4. Active GitHub Pages dans Settings
+5. Ton site : `https://tonusername.github.io/leaderboards/`
+
+### Ton propre serveur
+Copie simplement les fichiers sur ton serveur web ! 🚀
+
+## 📚 Guides complets
+
+- **Comment ajouter un jeu ?** → [QUICK_START.md](QUICK_START.md)
+- **Trouver un Game ID ?** → [FIND_GAME_ID.md](FIND_GAME_ID.md)
+- **Configuration détaillée ?** → Vois les commentaires dans `config.json`
+
+## 🎨 Personnaliser l'apparence
+
+Les couleurs, polices, et layout sont définis dans la section `DRAW` du HTML. Édite-les directement pour matcher ton branding !
+
+## 📞 Aide
+
+**Le carousel ne défile pas ?** 
+→ Vérifie qu'il y a plus de runs que le `topCount`
+
+**Aucun run n'apparaît ?**
+→ Vérife le `gameId`, `category`, et `subcategory` (casse sensible!)
+
+**"Failed to fetch" en double-cliquant le HTML ?**
+→ Normal ! Problème de CORS. Utilise un serveur local : `python -m http.server 8000` puis `http://localhost:8000`
+
+**Je ne sais pas comment faire ?**
+→ Commence par [QUICK_START.md](QUICK_START.md) 😊

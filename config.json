@@ -1,0 +1,26 @@
+{
+  "activePreset": "darksoulsiii-any",
+  "presets": {
+    "mon-preset": {
+      "name": "Elden Ring - Any% Glitchless",
+      "gameId": "nd28z0ed",
+      "category": "Any%",
+      "subcategory": "Glitchless"
+    },
+    "darksoulsiii-any": {
+      "subcategory": null,
+      "name": "Dark Souls III - Any%",
+      "category": "Any%",
+      "gameId": "k6qg0xdg"
+    }
+  },
+  "defaults": {
+    "carouselInterval": 5000,
+    "runsPerBatch": 3,
+    "topCount": 3,
+    "canvasWidth": 1200,
+    "canvasHeight": 400,
+    "displayWidth": "900px",
+    "displayHeight": "174px"
+  }
+}

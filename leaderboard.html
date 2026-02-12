@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Elden Ring – Any% Glitchless: Top 10 (Canvas)</title>
+  <style>
+    :root { --muted:#94a3b8; --text:#e2e8f0; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: transparent; /* twitch/karlitto__ */
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      display: grid; place-items: start; padding: 8px;
+    }
+    canvas { display:block; width:900px; height:174px; }
+  </style>
+</head>
+<body>
+  <canvas id="board" width="1200" height="400"></canvas>
+  <script>
+    // === Chargement Configuration ===
+    // Variables chargees depuis config.json
+    let GAME_ID;
+    let CATEGORY_NAME;
+    let SUBCATEGORY_LABEL;
+    let CAROUSEL_INTERVAL;
+    let RUNS_PER_BATCH;
+    let TOP_COUNT;
+
+    async function loadConfig() {
+      try {
+        // Charger config.json
+        const configRes = await fetch('config.json');
+        if (!configRes.ok) {
+          throw new Error(`Impossible de charger config.json (HTTP ${configRes.status})`);
+        }
+        const config = await configRes.json();
+        
+        // Obtenir le preset actif depuis config.json (plus besoin de parametre URL)
+        const presetName = config.activePreset;
+        if (!presetName) {
+          throw new Error('Aucun preset actif défini dans config.json. Utilisez le script PowerShell pour en définir un.');
+        }
+        
+        const preset = config.presets[presetName];
+        if (!preset) {
+          const availablePresets = Object.keys(config.presets);
+          throw new Error(`Preset actif "${presetName}" non trouvé. Options disponibles : ${availablePresets.join(', ')}`);
+        }
+
+        // Appliquer les parametres du preset
+        GAME_ID = preset.gameId;
+        CATEGORY_NAME = preset.category;
+        SUBCATEGORY_LABEL = preset.subcategory;
+
+        // Appliquer les valeurs par defaut depuis config.json
+        const defaults = config.defaults;
+        CAROUSEL_INTERVAL = defaults.carouselInterval;
+        CAROUSEL_DISPLAY_DURATION = CAROUSEL_INTERVAL - CAROUSEL_FADE_DURATION - CAROUSEL_FADE_DURATION;
+        RUNS_PER_BATCH = defaults.runsPerBatch;
+        TOP_COUNT = defaults.topCount;
+
+        // Mettre a jour le titre
+        document.title = preset.name + ': Top ' + TOP_COUNT + ' (Canvas)';
+
+        // Mettre a jour la taille du canvas depuis les defaults
+        canvas.width = defaults.canvasWidth;
+        canvas.height = defaults.canvasHeight;
+        canvas.style.width = defaults.displayWidth;
+        canvas.style.height = defaults.displayHeight;
+
+        // Demarrer le chargement des donnees
+        loadTop();
+      } catch (e) {
+        console.error('Erreur de configuration :', e);
+        document.body.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">❌ Erreur : ${e.message}</div>`;
+      }
+    }
+
+    // === Canvas Setup ===
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+
+    // Drawing constants
+    const DRAW = {
+      FLAG: { w: 20, h: 15, yOffset: 14, radius: 5 },
+      MEDAL: { w: 15, h: 15, yOffset: 14, spacing: 2 },
+      LAYOUT: { padX: 12, startY: 30, rowH: 24 },
+      FONT_BASE: '700 18px Arial, sans-serif',
+      FONT_MONO: '700 18px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono"',
+      SHADOW: { color: 'rgba(0,0,0,0.6)', blur: 6, offsetY: 2 },
+      COLORS: { top1: '#ffd700', top2: '#c0c0c0', top3: '#cd7f32', other: '#9fb4ca' }
+    };
+
+    // Image caches
+    const imageCache = {
+      flags: new Map()
+    };
+
+    // État du carousel
+    let carouselPage = 0;
+    let carouselRuns = [];
+    let carouselInterval = null;
+    let carouselStartTime = 0;
+    let carouselPhase = 'display'; // 'display', 'fadeOut', 'fadeIn'
+    let CAROUSEL_FADE_DURATION = 500; // Durée de transition fade (ms)
+    let CAROUSEL_DISPLAY_DURATION = 3000; // Durée d'affichage (calculée dans loadConfig)
+
+    let fixedMaxRankW = 0;
+    let fixedMaxNameBlock = 0;
+    let processedTopRuns = [];
+    async function loadImage(url, cache, timeout = 5000) {
+      if (!url) return null;
+      if (cache.has(url)) return cache.get(url);
+      
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        const timeoutId = setTimeout(() => {
+          resolve(null);
+        }, timeout);
+        
+        img.onload = () => {
+          clearTimeout(timeoutId);
+          cache.set(url, img);
+          resolve(img);
+        };
+        
+        img.onerror = () => {
+          clearTimeout(timeoutId);
+          resolve(null);
+        };
+        
+        img.src = url;
+      });
+    }
+
+    function loadFlagImage(code) {
+      if (!code) return Promise.resolve(null);
+      const url = `https://flagcdn.com/w40/${code.toLowerCase()}.png`;
+      return loadImage(url, imageCache.flags);
+    }
+
+    // === Utilities ===
+    function drawRoundedImage(img, x, y, w, h, r) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, x, y, w, h);
+      ctx.restore();
+    }
+
+    function formatTime(sec) {
+      const total = Math.round(sec * 1000) / 1000;
+      const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = Math.floor(total % 60);
+      const mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
+      return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+    }
+
+    function getRankColor(position) {
+      return [DRAW.COLORS.top1, DRAW.COLORS.top2, DRAW.COLORS.top3, DRAW.COLORS.other][Math.min(position, 3)];
+    }
+
+    function truncatePlayer(name, maxChars = 15) {
+      return name.length > maxChars ? name.substring(0, maxChars) + '.' : name;
+    }
+
+    function applyTextStyle(x, y, text, style) {
+      if (!style || style.style === 'solid') {
+        ctx.fillStyle = style?.color?.dark || style?.color?.light || '#e2e8f0';
+        return;
+      }
+      if (style.style === 'gradient') {
+        const from = style['color-from']?.dark || '#e2e8f0';
+        const to = style['color-to']?.dark || '#e2e8f0';
+        const width = ctx.measureText(text).width;
+        const grad = ctx.createLinearGradient(x, y, x + width, y);
+        grad.addColorStop(0, from);
+        grad.addColorStop(1, to);
+        ctx.fillStyle = grad;
+        return;
+      }
+      ctx.fillStyle = '#e2e8f0';
+    }
+
+    // === Draw ===
+    function draw(topRuns, carouselBatch, fadeProgress = 1) {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(canvas.clientWidth * dpr);
+      canvas.height = Math.floor(canvas.clientHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.shadowColor = DRAW.SHADOW.color;
+      ctx.shadowBlur = DRAW.SHADOW.blur;
+      ctx.shadowOffsetY = DRAW.SHADOW.offsetY;
+      ctx.font = DRAW.FONT_BASE;
+      ctx.textAlign = 'left';
+
+      const allDisplay = [...topRuns, ...carouselBatch];
+      const { padX, startY, rowH } = DRAW.LAYOUT;
+      const colRank = padX;
+      const timeX = 300; // Right aligned
+
+      for (let i = 0; i < allDisplay.length; i++) {
+        const r = allDisplay[i];
+        const y = startY + i * rowH;
+        const color = getRankColor(i);
+
+        // Apply fade only to carousel rows (rows 3-7, indices 3-7)
+        const isCarouselRow = i >= TOP_COUNT;
+        const globalAlpha = ctx.globalAlpha;
+        if (isCarouselRow && fadeProgress < 1) {
+          ctx.globalAlpha = fadeProgress;
+        }
+
+        // Draw rank number
+        ctx.fillStyle = color;
+        ctx.textAlign = 'left';
+        ctx.fillText(`#${r.rank}`, colRank, y);
+
+        // Draw flag + name
+        let x = colRank + fixedMaxRankW + 3;
+        if (r.flagImg) {
+          drawRoundedImage(r.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
+          x += DRAW.FLAG.w + 4;
+        }
+
+        const displayName = truncatePlayer(r.player);
+        ctx.fillStyle = color;
+        applyTextStyle(x, y, displayName, r.nameStyle);
+        ctx.textAlign = 'left';
+        ctx.fillText(displayName, x, y);
+
+        // Draw time (right-aligned)
+        ctx.font = DRAW.FONT_MONO;
+        ctx.fillStyle = color;
+        ctx.textAlign = 'right';
+        ctx.fillText(r.time, timeX, y);
+
+        ctx.globalAlpha = globalAlpha;
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+    }
+
+    // === Traitement des donnees ===
+    async function fetchJSON(url, timeout = 10000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      try {
+        const r = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!r.ok) throw new Error(`HTTP ${r.status} pour ${url}`);
+        return r.json();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error(`Delai d'attente depasse (${timeout}ms) pour ${url}`);
+        }
+        throw error;
+      }
+    }
+
+    async function resolveCategoryAndVariable() {
+      const url = `https://www.speedrun.com/api/v1/games/${GAME_ID}?embed=categories.variables`;
+      const data = await fetchJSON(url);
+      const cats = data.data.categories.data;
+      const cat = cats.find(c => c.type === 'per-game' && c.name === CATEGORY_NAME);
+      if (!cat) throw new Error(`Categorie "${CATEGORY_NAME}" non trouvee (options : ${cats.map(c => c.name).join(', ')})`);
+      
+      // Si pas de sous-categorie requis
+      if (!SUBCATEGORY_LABEL) {
+        return { categoryId: cat.id, variableId: null, valueId: null };
+      }
+
+      const vars = (cat.variables?.data) || [];
+      const sub = vars.find(v => v['is-subcategory'] && v.values?.values &&
+        Object.values(v.values.values).some(val => val.label.toLowerCase() === SUBCATEGORY_LABEL.toLowerCase()));
+      if (!sub) throw new Error(`Sous-categorie "${SUBCATEGORY_LABEL}" non trouvee pour "${CATEGORY_NAME}"`);
+      
+      for (const [variableId, value] of Object.entries(sub.values.values)) {
+        if (value.label.toLowerCase() === SUBCATEGORY_LABEL.toLowerCase()) {
+          return { categoryId: cat.id, variableId: sub.id, valueId: variableId };
+        }
+      }
+      throw new Error(`Valeur "${SUBCATEGORY_LABEL}" non trouvee`);
+    }
+
+    function calculateColumnWidths(allRuns) {
+      ctx.font = DRAW.FONT_BASE;
+      
+      let maxRankW = 0;
+      let maxNameBlock = 0;
+
+      for (const r of allRuns) {
+        // Largeur du numero de rang
+        const rankW = (r.rank >= 1 && r.rank <= 3) 
+          ? (DRAW.MEDAL.w + DRAW.MEDAL.spacing)
+          : ctx.measureText(`#${r.rank}`).width;
+        maxRankW = Math.max(maxRankW, rankW);
+
+        // Largeur du bloc nom (drapeau + nom tronque)
+        const flagW = r.flagImg ? DRAW.FLAG.w + 4 : 0;
+        const truncatedName = truncatePlayer(r.player);
+        const nameW = ctx.measureText(truncatedName).width;
+        maxNameBlock = Math.max(maxNameBlock, flagW + nameW);
+      }
+
+      fixedMaxRankW = maxRankW;
+      fixedMaxNameBlock = maxNameBlock;
+    }
+
+    async function loadTop() {
+      try {
+        const { categoryId, variableId, valueId } = await resolveCategoryAndVariable();
+        
+        // Build leaderboard URL
+        let lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=100&embed=players`;
+        if (variableId && valueId) {
+          lbUrl += `&var-${variableId}=${valueId}`;
+        }
+        
+        const lb = await fetchJSON(lbUrl);
+
+        // Construire la carte des joueurs
+        const playerMap = new Map();
+        if (lb.data.players?.data) {
+          for (const player of lb.data.players.data) {
+            const displayName = player.rel === 'guest' ? player.name : (player.names?.international || player.id);
+            playerMap.set(player.id, {
+              name: displayName,
+              style: player['name-style'] || null,
+              country: player.location?.country?.code || null
+            });
+          }
+        }
+
+        // Traiter les runs
+        const allRuns = (lb.data.runs || []).map((entry) => {
+          const run = entry.run;
+          const firstPlayer = run.players?.[0];
+          const playerInfo = firstPlayer ? playerMap.get(firstPlayer.id) : { name: 'Inconnu', style: null, country: null };
+          return {
+            rank: entry.place || 0,
+            player: playerInfo.name,
+            nameStyle: playerInfo.style,
+            country: playerInfo.country,
+            time: formatTime(run.times?.primary_t || 0)
+          };
+        });
+
+        // Diviser en TOP N et carousel
+        const topRuns = allRuns.slice(0, TOP_COUNT);
+        carouselRuns = allRuns.slice(TOP_COUNT, 100);
+        carouselPage = 0;
+
+        // Charger les images des drapeaux
+        const countryCodes = Array.from(new Set(allRuns.map(r => r.country).filter(Boolean)));
+        await Promise.allSettled(countryCodes.map(loadFlagImage));
+        
+        const flagMap = new Map();
+        for (const code of countryCodes) {
+          const key = code.toLowerCase();
+          const flagUrl = `https://flagcdn.com/w40/${key}.png`;
+          flagMap.set(code, imageCache.flags.get(flagUrl) || null);
+        }
+        console.log(`Drapeaux charges : ${countryCodes.length}`);
+
+        const processRuns = (runs) => runs.map(r => ({
+          ...r,
+          flagImg: flagMap.get(r.country) || null
+        }));
+
+        const processedTop = processRuns(topRuns);
+        carouselRuns = processRuns(carouselRuns);
+
+        // Stocker pour le carousel
+        processedTopRuns = processedTop;
+
+        // Calculate fixed widths
+        calculateColumnWidths(allRuns);
+
+        // Draw and start carousel
+        const firstBatch = carouselRuns.slice(0, RUNS_PER_BATCH);
+        draw(processedTop, firstBatch);
+
+        if (carouselRuns.length > 0) {
+          if (carouselInterval) clearInterval(carouselInterval);
+          carouselPage = 0;
+          carouselStartTime = Date.now();
+          carouselPhase = 'fadeIn'; // Start with fade in
+          
+          carouselInterval = setInterval(() => {
+            const elapsed = Date.now() - carouselStartTime;
+            const batchStart = carouselPage * RUNS_PER_BATCH;
+            const batch = carouselRuns.slice(batchStart, batchStart + RUNS_PER_BATCH);
+            
+            if (carouselPhase === 'fadeIn') {
+              // Phase de transition d'arrivee (0 vers 1)
+              if (elapsed < CAROUSEL_FADE_DURATION) {
+                const fadeProgress = elapsed / CAROUSEL_FADE_DURATION;
+                draw(processedTop, batch, fadeProgress);
+              } else {
+                carouselPhase = 'display';
+                carouselStartTime = Date.now();
+              }
+            } else if (carouselPhase === 'display') {
+              // Phase d'affichage stable (opacity = 1)
+              if (elapsed < CAROUSEL_DISPLAY_DURATION) {
+                draw(processedTop, batch, 1);
+              } else {
+                carouselPhase = 'fadeOut';
+                carouselStartTime = Date.now();
+              }
+            } else if (carouselPhase === 'fadeOut') {
+              // Phase de transition de depart (1 vers 0)
+              if (elapsed < CAROUSEL_FADE_DURATION) {
+                const fadeProgress = 1 - (elapsed / CAROUSEL_FADE_DURATION);
+                draw(processedTop, batch, fadeProgress);
+              } else {
+                // Passage a la page suivante
+                carouselPage = (carouselPage + 1) % Math.ceil(carouselRuns.length / RUNS_PER_BATCH);
+                carouselPhase = 'fadeIn';
+                carouselStartTime = Date.now();
+              }
+            }
+          }, 16); // ~60 FPS
+        }
+      } catch (e) {
+        console.error(e);
+        draw([], []);
+      }
+    }
+
+    loadConfig();
+    window.addEventListener('resize', loadTop);
+  </script>
+</body>
+</html>
