@@ -451,7 +451,7 @@ $Global:Languages = @{
     }
     zh = @{
         # Menu principal
-        menu_title = "SRC 预设管理器 by karlitto__"
+        menu_title = "SRC 预设管理器 by karlitto__ 卡里托"
         menu_add_preset = "添加新预设"
         menu_view_details = "查看现有预设详情"
         menu_change_active = "更改活动预设"
