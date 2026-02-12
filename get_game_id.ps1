@@ -91,7 +91,7 @@ $Global:Languages = @{
         remove_impossible_last = "Impossible de supprimer le dernier preset !"
         remove_impossible_rule = "Vous devez avoir au moins un preset configuré."
         remove_warning = "ATTENTION : Vous allez supprimer définitivement :"
-        remove_confirm = "Êtes-vous sûr ? Tapez 'SUPPRIMER' pour confirmer"
+        remove_confirm = "Êtes-vous sûr de vouloir supprimer ce preset ? (o/N)"
         remove_cancelled = "Suppression annulée."
         remove_active_deleted = "Le preset actif a été supprimé. Choisissez le nouveau preset actif :"
         remove_success = "✓ Preset '%s' supprimé avec succès !"
@@ -202,7 +202,7 @@ $Global:Languages = @{
         remove_impossible_last = "Cannot delete the last preset!"
         remove_impossible_rule = "You must have at least one configured preset."
         remove_warning = "WARNING: You are going to permanently delete:"
-        remove_confirm = "Are you sure? Type 'DELETE' to confirm"
+        remove_confirm = "Are you sure you want to delete this preset? (y/N)"
         remove_cancelled = "Deletion cancelled."
         remove_active_deleted = "The active preset was deleted. Choose the new active preset:"
         remove_success = "✓ Preset '%s' deleted successfully!"
@@ -313,7 +313,7 @@ $Global:Languages = @{
         remove_impossible_last = "¡No se puede eliminar el último preset!"
         remove_impossible_rule = "Debes tener al menos un preset configurado."
         remove_warning = "ATENCIÓN: Vas a eliminar permanentemente:"
-        remove_confirm = "¿Estás seguro? Escribe 'ELIMINAR' para confirmar"
+        remove_confirm = "¿Estás seguro de que quieres eliminar este preset? (s/N)"
         remove_cancelled = "Eliminación cancelada."
         remove_active_deleted = "El preset activo fue eliminado. Elige el nuevo preset activo:"
         remove_success = "¡✓ Preset '%s' eliminado con éxito!"
@@ -424,7 +424,7 @@ $Global:Languages = @{
         remove_impossible_last = "Não é possível remover o último preset!"
         remove_impossible_rule = "Você deve ter pelo menos um preset configurado."
         remove_warning = "ATENÇÃO: Você vai remover permanentemente:"
-        remove_confirm = "Tem certeza? Digite 'REMOVER' para confirmar"
+        remove_confirm = "Tem certeza de que quer remover este preset? (s/N)"
         remove_cancelled = "Remoção cancelada."
         remove_active_deleted = "O preset ativo foi removido. Escolha o novo preset ativo:"
         remove_success = "✓ Preset '%s' removido com sucesso!"
@@ -535,7 +535,7 @@ $Global:Languages = @{
         remove_impossible_last = "无法删除最后一个预设！"
         remove_impossible_rule = "您必须至少配置一个预设。"
         remove_warning = "警告：您将永久删除："
-        remove_confirm = "您确定吗？输入'删除'确认"
+        remove_confirm = "您确定要删除此预设吗？(y/N)"
         remove_cancelled = "删除已取消。"
         remove_active_deleted = "活动预设已删除。选择新的活动预设："
         remove_success = "✓ 预设 '%s' 删除成功！"
@@ -854,17 +854,18 @@ function Remove-Preset($presetList, $currentConfig) {
   Write-Host "$($presetToDelete.Value.name)" -ForegroundColor Cyan
   Write-Host ""
   
-  # Utiliser des confirmations différentes selon la langue
-  $confirmText = switch ($Global:CurrentLanguage) {
-    "en" { "DELETE" }
-    "es" { "ELIMINAR" }
-    "pt" { "REMOVER" }
-    "zh" { "删除" }
-    default { "SUPPRIMER" }
-  }
+  # Confirmation simple selon la langue
   $confirm = Read-Host (Get-LocalizedString "remove_confirm")
   
-  if ($confirm -ne $confirmText) {
+  $expectedAnswer = switch ($Global:CurrentLanguage) {
+    "en" { "y" }
+    "es" { "s" }
+    "pt" { "s" }
+    "zh" { "y" }
+    default { "o" }
+  }
+  
+  if ($confirm.ToLower() -ne $expectedAnswer) {
     Write-Host (Get-LocalizedString "remove_cancelled") -ForegroundColor Cyan
     Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
