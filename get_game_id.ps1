@@ -1279,8 +1279,3 @@ try {
   Write-Host (Get-LocalizedString "close_key") -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
-
-# Keep console open on exit
-Write-Host ""
-Write-Host (Get-LocalizedString "close_key") -ForegroundColor Gray
-$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
