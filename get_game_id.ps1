@@ -18,7 +18,7 @@ $Global:Languages = @{
         
         # Navigation
         nav_instructions = "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner"
-        nav_instructions_cancel = "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner, Échap pour annuler"
+        nav_instructions_cancel = "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner, ⌫ pour annuler"
         
         # Presets existants
         existing_presets = "Presets existants :"
@@ -129,7 +129,7 @@ $Global:Languages = @{
         
         # Navigation
         nav_instructions = "Use ↑↓ to navigate, Enter to select"
-        nav_instructions_cancel = "Use ↑↓ to navigate, Enter to select, Esc to cancel"
+        nav_instructions_cancel = "Use ↑↓ to navigate, Enter to select, ⌫ to cancel"
         
         # Presets existants
         existing_presets = "Existing presets:"
@@ -240,7 +240,7 @@ $Global:Languages = @{
         
         # Navegación
         nav_instructions = "Usa ↑↓ para navegar, Enter para seleccionar"
-        nav_instructions_cancel = "Usa ↑↓ para navegar, Enter para seleccionar, Esc para cancelar"
+        nav_instructions_cancel = "Usa ↑↓ para navegar, Enter para seleccionar, ⌫ para cancelar"
         
         # Presets existentes
         existing_presets = "Presets existentes:"
@@ -351,7 +351,7 @@ $Global:Languages = @{
         
         # Navegação
         nav_instructions = "Use ↑↓ para navegar, Enter para selecionar"
-        nav_instructions_cancel = "Use ↑↓ para navegar, Enter para selecionar, Esc para cancelar"
+        nav_instructions_cancel = "Use ↑↓ para navegar, Enter para selecionar, ⌫ para cancelar"
         
         # Presets existentes
         existing_presets = "Presets existentes:"
@@ -462,7 +462,7 @@ $Global:Languages = @{
         
         # 导航
         nav_instructions = "使用↑↓导航，回车选择"
-        nav_instructions_cancel = "使用↑↓导航，回车选择，Esc取消"
+        nav_instructions_cancel = "使用↑↓导航，回车选择，⌫取消"
         
         # 现有预设
         existing_presets = "现有预设："
@@ -717,7 +717,10 @@ function Show-ArrowMenu {
       13 { # Entrée
         return $currentIndex
       }
-      27 { # Échap
+      27 { # Échap -> changé vers Backspace (code 8)
+        # Code inactif - voir ligne suivante
+      }
+      8 { # Backspace (Retour arrière)
         if ($AllowCancel) {
           return -1
         }
