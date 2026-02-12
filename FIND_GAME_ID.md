@@ -1,6 +1,6 @@
 # Trouver les Game IDs Speedrun.com
 
-## Méthode recommandée (script PowerShell menu)
+## Méthode recommandée (script PowerShell menu v1.0.1+)
 
 Double-clique sur **`get_game_id.ps1`** pour le menu complet !
 
@@ -15,21 +15,41 @@ Aucun preset trouvé. Création du premier preset...
 Nom du jeu : Elden Ring
 
 Jeux trouvés :
-[1] Elden Ring (2022)
-     ID: nd28z0ed
+► Elden Ring (2022)
+  Dark Souls III (2016)
+  Dark Souls (2011)
 
+Utilisez ↑↓ pour naviguer, Entrée pour sélectionner, Échap pour annuler
+```
+
+**Navigation** : ↑↓  
+**Sélection** : Entrée  
+**Annulation** : Échap
+
+### Sélection de la catégorie
+```
 Catégories disponibles :
-[1] Any%
-[2] 100%
+► Any%
+  100%
+  All Bosses
+  Glitchless Any%
 
-Sélectionnez le numéro de la catégorie : 1
+Utilisez ↑↓ pour naviguer, Entrée pour sélectionner
+```
 
+### Sélection de la sous-catégorie
+```
 Sous-catégories disponibles :
-0. Aucune sous-catégorie (null)
-1. Glitchless
+► Aucune sous-catégorie (null)
+  Glitchless
+  No Major Glitches
+  Any% Unrestricted
 
-Sélectionnez le numéro de la sous-catégorie : 1
+Utilisez ↑↓ pour naviguer, Entrée pour sélectionner
+```
 
+### Configuration finale et sauvegarde
+```
 ========================================
            CONFIGURATION FINALE
 ========================================
@@ -43,41 +63,56 @@ Entrez un ID unique pour ce preset :
 Suggestion : eldenring-any
 ID du preset (ou Entrée pour suggestion) : 
 
-Preset 'eldenring-any' sauvegardé avec succès !
+✓ Preset 'eldenring-any' sauvegardé avec succès !
 Status : Actif automatiquement (premier preset)
 
 URL OBS copiée dans le presse-papiers :
 leaderboard.html
 
-OBS affichera automatiquement ce preset !
+✓ OBS affichera automatiquement ce preset !
 ```
 
-### Launches suivants (avec presets existants)
+### Lancements suivants (avec presets existants)
 ```
 ================================================
   Gestionnaire de presets SRC by karlitto__
 ================================================
 
 Presets existants :
+• Elden Ring - Any% Glitchless ✓ [ACTIF]
+  ID: eldenring-any
+• Dark Souls III - All Bosses
+  ID: darksouls3-allbosses
 
-[1] Elden Ring - Any% Glitchless
-     Preset: 'eldenring-any'
-[2] Dark Souls III - All Bosses
-     Preset: 'darksouls3-allbosses'
-
-Preset actuellement actif : Elden Ring - Any% Glitchless
-(ID: eldenring-any)
+📍 Preset actuellement actif : Elden Ring - Any% Glitchless
 
 Que voulez-vous faire ?
-A. Ajouter un nouveau preset
-B. Voir les détails d'un preset existant
-C. Changer le preset actif
-D. Supprimer un preset
-E. Retour au menu principal
-F. Quitter le programme
+► Ajouter un nouveau preset
+  Voir les détails d'un preset existant
+  Changer le preset actif
+  Supprimer un preset
+  Quitter le programme
+
+Utilisez ↑↓ pour naviguer, Entrée pour sélectionner
 ```
 
 Le script te guide **étape par étape** avec un **menu complet** : création → gestion → activation → suppression !
+
+## Navigation intuitive (v1.0.1)
+
+### Touches disponibles
+- **↑ Flèche haut** : Naviguer vers le haut dans la liste
+- **↓ Flèche bas** : Naviguer vers le bas dans la liste
+- **Entrée** : Confirmer la sélection
+- **Échap** : Annuler et revenir en arrière (quand disponible)
+
+### Avantages par rapport aux versions antérieures
+
+✅ **Plus intuitif** : Navigation naturelle avec les flèches  
+✅ **Moins d'erreurs** : Plus de risque de taper un mauvais numéro  
+✅ **Contexte persistant** : Les presets restent visibles pendant la navigation  
+✅ **Indicateur visuel** : ✓ [ACTIF] montre le preset actuellement sélectionné  
+✅ **Interface moderne** : Utilisation standard pour les menus CLI
 
 ---
 

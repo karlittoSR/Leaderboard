@@ -4,23 +4,24 @@ Configuration **automatique** en 5 minutes pour streamers !
 
 ---
 
-## Méthode automatique
+## Méthode automatique (v1.0.1+)
 
 ### Première utilisation
 1. **Double-clic** sur `get_game_id.ps1`
 2. **Menu principal** s'affiche automatiquement
-3. **Choix A** : Ajouter un nouveau preset
-4. **Entrer** le nom du jeu (ex: "Elden Ring")  
-5. **Sélectionner** dans la liste proposée
-6. **Choisir** la catégorie (Any%, 100%, etc.)
-7. **Optionnel** : sous-catégorie si disponible
-8. **Donner un ID** au preset (suggestion auto fournie)
-9. **Activer automatiquement** le preset (si c'est le premier)
+3. **Naviguer** avec ↑↓ pour sélectionner "Ajouter un nouveau preset"
+4. **Appuyer sur Entrée** pour confirmer
+5. **Entrer** le nom du jeu (ex: "Elden Ring")  
+6. **Naviguer** ↑↓ et **Entrée** pour sélectionner le jeu dans la liste
+7. **Naviguer** ↑↓ et **Entrée** pour choisir la catégorie (Any%, 100%, etc.)
+8. **Optionnel** : sous-catégorie si disponible
+9. **Donner un ID** au preset (suggestion auto fournie)
+10. **Activer automatiquement** le preset (si c'est le premier)
 
 **Résultat** : preset sauvé + activé automatiquement + URL copiée !
 
-### Menu système complet
-Le script affiche un menu avec toutes les options :
+### Interface du menu principal (v1.0.1)
+Le script affiche un menu avec navigation intuitive :
 
 ```
 ================================================
@@ -28,26 +29,34 @@ Le script affiche un menu avec toutes les options :
 ================================================
 
 Presets existants :
-[1] Elden Ring - Any% Glitchless
-[2] Dark Souls III - All Bosses
+• Elden Ring - Any% Glitchless ✓ [ACTIF]
+  ID: eldenring-any
+• Dark Souls III - All Bosses
+  ID: darksouls3-all
 
-Preset actuellement actif : Elden Ring - Any% Glitchless
-(ID: eldenring-any)
+📍 Preset actuellement actif : Elden Ring - Any% Glitchless
 
 Que voulez-vous faire ?
-A. Ajouter un nouveau preset
-B. Voir les détails d'un preset existant  
-C. Changer le preset actif
-D. Supprimer un preset
-E. Retour au menu principal
-F. Quitter le programme
+► Ajouter un nouveau preset
+  Voir les détails d'un preset existant  
+  Changer le preset actif
+  Supprimer un preset
+  Quitter le programme
+
+Utilisez ↑↓ pour naviguer, Entrée pour sélectionner
 ```
 
-**Choix A** : Créer un nouveau jeu (même workflow que première fois)  
-**Choix B** : Consulter détails complets d'un preset  
-**Choix C** : Changer quel preset est actif dans OBS  
-**Choix D** : Supprimer un preset (avec confirmation)  
-**Choix F** : Quitter le programme
+**Navigation** : Utilisez **↑↓** pour vous déplacer entre les options  
+**Sélection** : Appuyez sur **Entrée** pour confirmer  
+**Annulation** : Appuez sur **Échap** quand disponible (indiqué à l'écran)
+
+### Options disponibles
+
+**1. Ajouter un nouveau preset** : Créer un nouveau preset (même workflow que première fois)  
+**2. Voir les détails** : Consulter détails complets d'un preset  
+**3. Changer le preset actif** : Sélectionner quel preset est actif dans OBS  
+**4. Supprimer un preset** : Supprimer un preset (avec confirmation)  
+**5. Quitter** : Fermer le programme
 
 ### Utilisation dans OBS
 - **URL simple** : `leaderboard.html` (toujours la même !)

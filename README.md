@@ -1,5 +1,8 @@
 # Speedrun Leaderboard Canvas
 
+**Version** : 1.0.1  
+**Gestionnaire de presets avec interface par flèches**
+
 Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, entièrement configurable.
 
 ## Installation (2 minutes)
@@ -11,12 +14,19 @@ Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, enti�
 
 2. **Mets-les dans le même dossier**
 
-3. **Double-clique** sur le .ps1 → trouve ton jeu et ta caté !
+3. **Double-clique** sur le .ps1 → trouve ton jeu et ta catégorie avec les flèches ↑↓
 
 4. **Ajoute le fichier dans OBS** (Navigateur) avec ces valeurs: Width 400, Height 280
 
-## Features
+## 🎯 Fonctionnalités v1.0.1
 
+### Interface
+- ✅ **Navigation par flèches** (↑↓) au lieu de saisie numérique
+- ✅ **Affichage persistant** des presets pendant la navigation
+- ✅ **Indicateurs visuels** : ✓ [ACTIF] et 📍 pour le preset actif
+- ✅ **Interface moderne** sans erreurs de saisie
+
+### Leaderboard
 - Affichage du **top 3** + **carousel** animé des autres runs
 - Couleurs pour les places (or, argent, bronze)
 - **Drapeaux** des pays (chargés depuis flagcdn)
