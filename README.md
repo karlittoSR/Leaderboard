@@ -13,15 +13,26 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 1. **Download** these files:
    - leaderboard.html
    - config.json
-   - get_game_id.ps1 (script for easy configuration with multilingual interface)
+   - `get_game_id.ps1` (configuration script with multilingual interface)
+   - `run_leaderboard_setup.bat` (easy launcher - no setup required)
 
 2. **Place them in the same folder**
 
-3. **Double-click** on the .ps1 file → find your game and category with arrow keys
+3. **Run the setup** - Choose the easiest method for you:
+   - **EASIEST:** Double-click `run_leaderboard_setup.bat` ✅ *(No PowerShell setup needed)*
+   - **Alternative:** Double-click `get_game_id.ps1` *(May require PowerShell permissions)*
+   
+   Then navigate with arrow keys to find your game and category.
    - **Choose language**: Option 5 in the main menu
    - Interface available in **5 languages**
 
 4. **Add the file to OBS** (Browser Source) with these values: Width 400, Height 280
+
+### Troubleshooting
+**If you get "execution policy" errors when running the .ps1 file:**
+- ✅ **Use `run_leaderboard_setup.bat` instead** (bypasses the issue)
+- Or run this command first: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+- PowerShell 7 is NOT required - works with built-in Windows PowerShell
 
 ## Features v1.1.0
 

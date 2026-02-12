@@ -3,6 +3,27 @@
 # Version 1.1.0 - Support multilingue (FR/EN) + Navigation par flèches et affichage persistant des presets
 # Par karlitto__
 
+# Check execution policy and provide helpful guidance
+try {
+    $execPolicy = Get-ExecutionPolicy -Scope CurrentUser
+    if ($execPolicy -eq "Restricted") {
+        Write-Host "`n" -ForegroundColor Red
+        Write-Host "⚠️  EXECUTION POLICY ISSUE DETECTED" -ForegroundColor Yellow
+        Write-Host "Windows is blocking PowerShell scripts for security." -ForegroundColor White
+        Write-Host "`nEASIEST SOLUTION:" -ForegroundColor Green
+        Write-Host "1. Close this window" -ForegroundColor White
+        Write-Host "2. Double-click 'run_leaderboard_setup.bat' instead" -ForegroundColor Cyan
+        Write-Host "   (This file bypasses the security restriction safely)" -ForegroundColor Gray
+        Write-Host "`nALTERNATIVE:" -ForegroundColor Green
+        Write-Host "Run this command first:" -ForegroundColor White
+        Write-Host "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser" -ForegroundColor Yellow
+        Write-Host "`nPress any key to continue anyway..." -ForegroundColor Gray
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    }
+} catch {
+    # Ignore errors and continue - probably means scripts are allowed
+}
+
 # === DICTIONNAIRE DE LANGUES ===
 $Global:Languages = @{
     fr = @{
