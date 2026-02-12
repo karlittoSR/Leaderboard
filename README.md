@@ -5,6 +5,8 @@
 
 Affichage dynamique d'un classement Speedrun.com sur canvas avec carousel, entièrement configurable.
 
+![Aperçu du leaderboard](images/leaderboard-preview.png)
+
 ## Installation (2 minutes)
 
 1. **Télécharge** ces fichiers :
