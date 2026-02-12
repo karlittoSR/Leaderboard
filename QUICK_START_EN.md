@@ -64,14 +64,15 @@ The interface is available in **5 languages**:
 
 **Navigation**: Use **↑↓** to move between options  
 **Selection**: Press **Enter** to confirm  
-**Cancellation**: Press **Esc** when available (indicated on screen)
+**Go back**: Press **⌫ Backspace** when available (indicated on screen)  
+**Confirmations**: Simple **yes/no** dialog (y/N) - no complex typing!
 
 ### Available options
 
 **1. Add new preset**: Create new preset (same workflow as first time)  
 **2. View details**: View complete details of a preset  
 **3. Change active preset**: Select which preset is active in OBS  
-**4. Delete preset**: Delete a preset (with confirmation)  
+**4. Delete preset**: Delete a preset (simple y/N confirmation)  
 **5. Language settings**: Change interface language (5 languages available)  
 **6. Quit**: Close the program
 

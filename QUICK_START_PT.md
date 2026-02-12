@@ -62,6 +62,20 @@ A interface está disponível em **5 idiomas**:
 3. Pressionar **Enter** → Mudança imediata!
 4. O idioma é **salvo automaticamente**
 
+### Opções disponíveis
+
+**1. Adicionar novo preset**: Criar novo preset (mesmo fluxo da primeira vez)  
+**2. Ver detalhes**: Ver detalhes completos de um preset  
+**3. Alterar preset ativo**: Selecionar qual preset está ativo no OBS  
+**4. Remover preset**: Remover um preset (confirmação simples s/N)  
+**5. Configurações de idioma**: Alterar idioma da interface (5 idiomas disponíveis)  
+**6. Sair**: Fechar o programa
+
+**Navegação**: Use **↑↓** para mover entre opções  
+**Seleção**: Pressione **Enter** para confirmar  
+**Voltar**: Pressione **⌫ Backspace** quando disponível  
+**Confirmações**: Diálogo simples **sim/não** (s/N) - sem digitação complexa!
+
 ### Usar no OBS
 - **URL simples**: `leaderboard.html` (sempre a mesma!)
 - **Fonte do navegador**: Largura 400, Altura 280

@@ -64,14 +64,15 @@ L'interface est disponible dans **5 langues** :
 
 **Navigation** : Utilisez **↑↓** pour vous déplacer entre les options  
 **Sélection** : Appuyez sur **Entrée** pour confirmer  
-**Annulation** : Appuez sur **Échap** quand disponible (indiqué à l'écran)
+**Retour** : Appuez sur **⌫ Backspace** quand disponible (indiqué à l'écran)  
+**Confirmations** : Simple dialogue **oui/non** (o/N) - plus de saisie complexe !
 
 ### Options disponibles
 
 **1. Ajouter un nouveau preset** : Créer un nouveau preset (même workflow que première fois)  
 **2. Voir les détails** : Consulter détails complets d'un preset  
 **3. Changer le preset actif** : Sélectionner quel preset est actif dans OBS  
-**4. Supprimer un preset** : Supprimer un preset (avec confirmation)  
+**4. Supprimer un preset** : Supprimer un preset (confirmation simple o/N)  
 **5. Paramètres de langue** : Changer la langue de l'interface (5 langues disponibles)  
 **6. Quitter** : Fermer le programme
 
