@@ -12,13 +12,14 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 1. **Download** these files:
    - `leaderboard.html`
    - `config.json`
-   - `get_game_id.ps1` (script for configuration)
+   - `run_leaderboard.bat` ⭐ (Easy launcher - use this to run the setup!)
+   - `get_game_id.ps1` (PowerShell script for configuration)
 
 2. **Place them in the same folder**
 
 3. **Run the setup** - Double-click one of these:
-   - **EASIEST:** Double-click `get_game_id.ps1` directly ✅ *(Best compatibility)*
-   - **Alternative:** Right-click `get_game_id.ps1` → "Run with PowerShell"
+   - **EASIEST:** Double-click `run_leaderboard.bat` ✅ *(Best compatibility - no PowerShell errors)*
+   - **Alternative:** Double-click `get_game_id.ps1` (if PowerShell execution enabled)
    
    Then navigate with arrow keys to find your game and category.
    - **Choose language**: Option 5 in the main menu
@@ -107,10 +108,11 @@ Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them
 ## Help
 
 **PowerShell won't run the script?**  
-→ **Right-click on `get_game_id.ps1` → "Run with PowerShell"** - This is the most reliable method
+→ **Double-click `run_leaderboard.bat`** - This bypasses PowerShell restrictions automatically ✅
 
-**If that doesn't work:**
-- Try: Double-click the .ps1 file directly
+**If you still want to run the script directly:**
+- Try: Right-click `get_game_id.ps1` → "Run with PowerShell"  
+- Or: Double-click the .ps1 file directly  
 - Or: Enable execution policy: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 
 **Command line alternative (advanced):**
