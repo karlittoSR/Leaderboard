@@ -16,7 +16,7 @@ Configuration **automatique** en 5 minutes pour streamers !
    - Ou télécharger depuis : https://github.com/PowerShell/PowerShell/releases
 
 2. **Associer les fichiers .ps1 avec PowerShell 7**:
-   - Clic droit sur `get_game_id.ps1`
+   - Clic droit sur `main.ps1`
    - Sélectionner "Ouvrir avec" → "Choisir une autre application"
    - Cocher "Toujours utiliser cette app pour ouvrir les fichiers .ps1"
    - Sélectionner "PowerShell 7" dans la liste
@@ -27,7 +27,7 @@ Configuration **automatique** en 5 minutes pour streamers !
 ## Méthode automatique (v1.1.0+)
 
 ### Première utilisation
-1. **Double-clic** sur `get_game_id.ps1`
+1. **Double-clic** sur `main.ps1`
 2. **Menu principal** s'affiche automatiquement
 3. **Naviguer** avec ↑↓ pour sélectionner "Ajouter un nouveau preset"
 4. **Appuyer sur Entrée** pour confirmer
@@ -114,14 +114,14 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 **Normal** : limitations CORS. **Fonctionne parfaitement dans OBS !**
 
 ### Preset non affiché
-1. Utilise [get_game_id.ps1](get_game_id.ps1) → **Option 3** pour changer le preset actif
+1. Utilise [main.ps1](main.ps1) → **Option 3** pour changer le preset actif
 2. Tous les paramètres sont gérés automatiquement par le script
 
 ---
 
 ## Liens utiles
 
-- **Configuration auto** : [get_game_id.ps1](get_game_id.ps1) (interface multilingue)
+- **Configuration auto** : [main.ps1](main.ps1) (interface multilingue)
 - **Affichage** : [leaderboard.html](leaderboard.html)
 - **Doc complète** : [README.md](README.md)
 
@@ -135,7 +135,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## Besoin d'aide ?
 
-- **Je ne trouve pas le Game ID** → Lance `get_game_id.ps1` - tout est automatique !
+- **Je ne trouve pas le Game ID** → Lance `main.ps1` - tout est automatique !
 - **Aucun run n'apparaît** → Utilise le script pour reconfigurer le preset
 - **Le carousel ne défile pas** → Il y a moins de runs que configuré
 - **"Failed to fetch" en double-cliquant** → Lance un serveur local : `python -m http.server 8000`

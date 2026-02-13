@@ -16,7 +16,7 @@
    - Or download from: https://github.com/PowerShell/PowerShell/releases
 
 2. **Associate .ps1 files with PowerShell 7**:
-   - Right-click `get_game_id.ps1`
+   - Right-click `main.ps1`
    - Select "Open with" → "Choose another app"
    - Check "Always use this app to open .ps1 files"
    - Select "PowerShell 7" from the list
@@ -27,7 +27,7 @@
 ## Automatic method (v1.1.0+)
 
 ### First use
-1. **Double-click** on `get_game_id.ps1`
+1. **Double-click** on `main.ps1`
 2. **Main menu** displays automatically
 3. **Navigate** with ↑↓ to select "Add a new preset"
 4. **Press Enter** to confirm
@@ -114,14 +114,14 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 **Normal**: CORS limitations. **Works perfectly in OBS!**
 
 ### Preset not displayed
-1. Use [get_game_id.ps1](get_game_id.ps1) → **Option 3** to change the active preset
+1. Use [main.ps1](main.ps1) → **Option 3** to change the active preset
 2. All settings are automatically managed by the script
 
 ---
 
 ## Useful links
 
-- **Auto configuration**: [get_game_id.ps1](get_game_id.ps1) (multilingual interface)
+- **Auto configuration**: [main.ps1](main.ps1) (multilingual interface)
 - **Display**: [leaderboard.html](leaderboard.html)
 - **Full documentation**: [README.md](README.md)
 
@@ -135,7 +135,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## Need help?
 
-- **Can't find Game ID** → Run `get_game_id.ps1` - fully automated!
+- **Can't find Game ID** → Run `main.ps1` - fully automated!
 - **No runs showing** → Use the script to reconfigure the preset
 - **Carousel doesn't scroll** → Fewer runs than configured amount
 - **"Failed to fetch" when double-clicking** → Run local server: `python -m http.server 8000`

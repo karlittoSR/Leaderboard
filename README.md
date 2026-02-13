@@ -20,13 +20,29 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
    - Or download from: https://github.com/PowerShell/PowerShell/releases
 
 2. **Associate .ps1 files with PowerShell 7**:
-   - Right-click `get_game_id.ps1`
+   - Right-click `main.ps1`
    - Select "Open with" → "Choose another app"
    - Check "Always use this app to open .ps1 files"
    - Select "PowerShell 7" from the list
    - If not visible: click "More apps" and scroll to find it
 
-3. **For Chinese language support** (if experiencing Chinese character display issues):
+3. **Fix Execution Policy (if script won't run)**:
+   
+   **🚀 EASY WAY**: Double-click `LAUNCH_ME_FIRST.bat` - it fixes everything automatically!
+   
+   **Manual way** (if the .bat doesn't work):
+   Open PowerShell 7 and run:
+   ```powershell
+   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+   Unblock-File -Path .\main.ps1
+   ```
+   
+   💡 The `.bat` file will:
+   - Fix the execution policy
+   - Unblock the downloaded script
+   - Launch the script automatically
+
+4. **For Chinese language support** (if experiencing Chinese character display issues):
    - Right-click the PowerShell window title bar
    - Select "Properties" → "Font" tab
    - Change font to a Chinese-compatible font (e.g., SimSun, SimHei, or Microsoft YaHei)
@@ -39,11 +55,11 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 1. **Download** these files:
    - `leaderboard.html`
    - `config.json`
-   - `get_game_id.ps1` (PowerShell script for configuration)
+   - `main.ps1` (PowerShell script for configuration)
 
 2. **Place them in the same folder**
 
-3. **Run the setup** - Double-click `get_game_id.ps1`:
+3. **Run the setup** - Double-click `main.ps1`:
    
    Then navigate with arrow keys to find your game and category.
    - **Choose language**: Option 5 in the main menu
@@ -97,9 +113,9 @@ You can access a preset like this:
 
 ## Adding a Game
 
-**Recommended method**: Use the get_game_id.ps1 script!
+**Recommended method**: Use the main.ps1 script!
 
-1. **Double-click** on get_game_id.ps1
+1. **Double-click** on main.ps1
 2. **Choose language** (Option 5) if needed
 3. **Select** "Add new preset"
 4. **Follow** the automatic wizard
@@ -132,11 +148,16 @@ Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them
 ## Help
 
 **Script won't run when double-clicking?**  
-→ Make sure you installed **PowerShell 7** and associated `.ps1` files with it (see Prerequisites above)
+→ **Use `LAUNCH_ME_FIRST.bat`** - it fixes security policies automatically!  
+→ Or make sure you installed **PowerShell 7** and associated `.ps1` files with it (see Prerequisites above)
+
+**Get "running scripts is disabled" error?**  
+→ **Double-click `LAUNCH_ME_FIRST.bat`** to fix execution policy  
+→ Or manually run: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
 
 **If it still doesn't work:**
-- Try: Right-click `get_game_id.ps1` → "Run with PowerShell 7"
-- Or: Open PowerShell 7 directly and run: `cd <folder>; .\get_game_id.ps1`
+- Try: Right-click `main.ps1` → "Run with PowerShell 7"
+- Or: Open PowerShell 7 directly and run: `cd <folder>; .\main.ps1`
 
 **The carousel doesn't scroll?**  
 → Check that there are more runs than the topCount

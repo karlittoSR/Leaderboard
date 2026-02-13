@@ -16,7 +16,7 @@
    - Ou baixe de: https://github.com/PowerShell/PowerShell/releases
 
 2. **Associar arquivos .ps1 com PowerShell 7**:
-   - Clique direito em `get_game_id.ps1`
+   - Clique direito em `main.ps1`
    - Selecione "Abrir com" → "Escolher outro aplicativo"
    - Marque "Sempre usar este aplicativo para abrir arquivos .ps1"
    - Selecione "PowerShell 7" da lista
@@ -27,7 +27,7 @@
 ## Método automático (v1.1.0+)
 
 ### Primeiro uso
-1. **Clique duplo** em `get_game_id.ps1`
+1. **Clique duplo** em `main.ps1`
 2. **Menu principal** aparece automaticamente
 3. **Navegar** com ↑↓ para selecionar "Adicionar um novo preset"
 4. **Pressionar Enter** para confirmar

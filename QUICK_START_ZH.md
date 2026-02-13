@@ -16,7 +16,7 @@
    - 或从以下网址下载：https://github.com/PowerShell/PowerShell/releases
 
 2. **将 .ps1 文件与 PowerShell 7 关联**:
-   - 右键点击 `get_game_id.ps1`
+   - 右键点击 `main.ps1`
    - 选择 "打开方式" → "选择其他应用"
    - 勾选 "总是用此应用打开 .ps1 文件"
    - 从列表中选择 "PowerShell 7"
@@ -33,7 +33,7 @@
 ## 自动方法 (v1.1.0+)
 
 ### 首次使用
-1. **双击** `get_game_id.ps1`
+1. **双击** `main.ps1`
 2. **主菜单** 自动显示
 3. **导航** 使用↑↓选择"添加新预设"
 4. **按Enter确认**
@@ -120,14 +120,14 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 **正常现象**：CORS限制。**在OBS中工作正常！**
 
 ### 预设未显示
-1. 使用 [get_game_id.ps1](get_game_id.ps1) → **选项3** 更改活动预设
+1. 使用 [main.ps1](main.ps1) → **选项3** 更改活动预设
 2. 所有设置由脚本自动管理
 
 ---
 
 ## 有用链接
 
-- **自动配置**：[get_game_id.ps1](get_game_id.ps1)（多语言界面）
+- **自动配置**：[main.ps1](main.ps1)（多语言界面）
 - **显示**：[leaderboard.html](leaderboard.html)
 - **完整文档**：[README.md](README.md)
 
@@ -141,7 +141,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## 需要帮助？
 
-- **找不到游戏ID** → 运行 `get_game_id.ps1` - 完全自动化！
+- **找不到游戏ID** → 运行 `main.ps1` - 完全自动化！
 - **没有跑步显示** → 使用脚本重新配置预设
 - **轮播不滚动** → 跑步数量少于配置的数量
 - **双击时"Failed to fetch"** → 运行本地服务器：`python -m http.server 8000`

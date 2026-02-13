@@ -1,4 +1,4 @@
-# Encoding: UTF-8
+﻿# Encoding: UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Script PowerShell pour gérer les presets speedrun.com facilement
@@ -9,6 +9,32 @@
 # Ensure we're in the correct directory (where the script is located)
 $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
 Set-Location $scriptDir
+
+# === SECURITY CHECK (if script can run) ===
+# Note: If execution policy is Restricted, this code won't run. Use LAUNCH_ME_FIRST.bat instead!
+# This check is for cases where the script can execute but files are blocked
+
+# Check execution policy and warn if restrictive
+$currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
+if ($currentPolicy -in @("Restricted", "AllSigned")) {
+    Write-Host "⚠️  WARNING: Execution policy is restrictive ($currentPolicy)" -ForegroundColor Yellow
+    Write-Host "   Run LAUNCH_ME_FIRST.bat to fix this automatically!" -ForegroundColor Cyan
+    Write-Host ""
+}
+
+# Unblock this script file if it's marked as downloaded from the internet
+$scriptPath = $MyInvocation.MyCommand.Path
+if ($scriptPath) {
+    $fileStream = Get-Item -Path $scriptPath -Stream Zone.Identifier -ErrorAction SilentlyContinue
+    if ($fileStream) {
+        try {
+            Unblock-File -Path $scriptPath -ErrorAction Stop
+            Write-Host "✓ Script file auto-unblocked" -ForegroundColor Green
+        } catch {
+            Write-Host "⚠️  Run: Unblock-File -Path '$scriptPath'" -ForegroundColor Yellow
+        }
+    }
+}
 
 # === DICTIONNAIRE DE LANGUES ===
 $Global:Languages = @{
