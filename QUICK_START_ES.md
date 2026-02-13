@@ -10,10 +10,10 @@
 **PowerShell 7 es requerido** (Solo Windows 10/11)
 
 1. **Instalar PowerShell 7**:
-   - Abrir Microsoft Store (Windows 10/11)
-   - Buscar "PowerShell" (aplicación oficial de Microsoft)
-   - Hacer clic en "Instalar"
-   - O descargar desde: https://github.com/PowerShell/PowerShell/releases
+  - Ir a: https://github.com/PowerShell/PowerShell/releases/
+  - Elegir el **ultimo release** (etiqueta verde), **no** preview
+  - Descargar el instalador adecuado a tu sistema
+  - **Windows**: usar el `.msi` (x64 o x86)
 
 2. **Asociar archivos .ps1 con PowerShell 7**:
    - Clic derecho en `main.ps1`

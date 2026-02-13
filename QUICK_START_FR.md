@@ -10,10 +10,10 @@ Configuration **automatique** en 5 minutes pour streamers !
 **PowerShell 7 est requis** (Windows 10/11 uniquement)
 
 1. **Installer PowerShell 7**:
-   - Ouvrir le Microsoft Store (Windows 10/11)
-   - Rechercher "PowerShell" (application officielle Microsoft)
-   - Cliquer sur "Installer"
-   - Ou télécharger depuis : https://github.com/PowerShell/PowerShell/releases
+  - Aller sur : https://github.com/PowerShell/PowerShell/releases/
+  - Choisir la **derniere release** (label vert), **pas** une preview
+  - Telecharger l'installeur adapte a ton systeme
+  - **Windows** : prendre le `.msi` (x64 ou x86)
 
 2. **Associer les fichiers .ps1 avec PowerShell 7**:
    - Clic droit sur `main.ps1`

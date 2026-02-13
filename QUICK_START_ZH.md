@@ -10,10 +10,10 @@
 **需要 PowerShell 7**（仅限 Windows 10/11）
 
 1. **安装 PowerShell 7**:
-   - 打开 Microsoft Store（Windows 10/11）
-   - 搜索 "PowerShell"（微软官方应用）
-   - 点击 "安装"
-   - 或从以下网址下载：https://github.com/PowerShell/PowerShell/releases
+  - 访问：https://github.com/PowerShell/PowerShell/releases/
+  - 选择**最新 Release**（绿色标签），**不要**预览版
+  - 下载适合你系统的安装包
+  - **Windows**：使用 `.msi`（x64 或 x86）
 
 2. **将 .ps1 文件与 PowerShell 7 关联**:
    - 右键点击 `main.ps1`
