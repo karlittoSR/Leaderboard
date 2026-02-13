@@ -308,6 +308,18 @@
         const y = Math.min(desiredY, canvasH - rowH);
         const phase = (Date.now() / 30) % 360;
 
+        // Separator line instead of an empty gap
+        const lineY = startY + allDisplay.length * rowH + Math.floor(rowH / 2);
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = '#6b7c93';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padX, lineY);
+        ctx.lineTo(canvas.clientWidth - padX, lineY);
+        ctx.stroke();
+        ctx.restore();
+
         ctx.textAlign = 'left';
         const rankText = (typeof playerRow.rank === 'number' && playerRow.rank > 0) ? `#${playerRow.rank}` : `${playerRow.rank}`;
         applyRainbowText(colRank, y, rankText, phase);
