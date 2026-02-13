@@ -31,6 +31,7 @@
     let CAROUSEL_INTERVAL;
     let RUNS_PER_BATCH;
     let TOP_COUNT;
+    let MAX_RUNS;
 
     async function loadConfig() {
       try {
@@ -72,6 +73,7 @@
         CAROUSEL_DISPLAY_DURATION = CAROUSEL_INTERVAL - CAROUSEL_FADE_DURATION - CAROUSEL_FADE_DURATION;
         RUNS_PER_BATCH = defaults.runsPerBatch;
         TOP_COUNT = defaults.topCount;
+        MAX_RUNS = Number.isFinite(defaults.maxRuns) ? defaults.maxRuns : 200;
 
         // Mettre a jour le titre
         document.title = preset.name + ': Top ' + TOP_COUNT + ' (Canvas)';
@@ -361,12 +363,47 @@
       const cat = cats.find(c => c.type === targetType && c.name === CATEGORY_NAME);
       if (!cat) throw new Error(`Categorie "${CATEGORY_NAME}" non trouvee (options : ${cats.map(c => c.name).join(', ')})`);
       
+      const vars = (cat.variables?.data) || [];
+
       // Nouvelle structure: liste d'IDs des sous-categories
       if (Array.isArray(SUBCATEGORIES) && SUBCATEGORIES.length > 0) {
-        const variablePairs = SUBCATEGORIES
-          .filter(s => s && s.variableId && s.valueId)
-          .map(s => ({ variableId: s.variableId, valueId: s.valueId }));
-        return { categoryId: cat.id, variablePairs };
+        const usedVars = new Set();
+        const variablePairs = [];
+
+        for (const entry of SUBCATEGORIES) {
+          if (!entry) continue;
+          let matched = null;
+
+          if (entry.variableId && entry.valueId) {
+            const variable = vars.find(v => v.id === entry.variableId);
+            if (variable && variable.values?.values && variable.values.values[entry.valueId]) {
+              matched = { variableId: entry.variableId, valueId: entry.valueId };
+              usedVars.add(entry.variableId);
+            }
+          }
+
+          if (!matched && entry.label) {
+            const targetLabel = String(entry.label).toLowerCase();
+            const variable = vars.find(v => v['is-subcategory'] && !usedVars.has(v.id) && v.values?.values &&
+              Object.values(v.values.values).some(val => (val.label || '').toLowerCase() === targetLabel));
+            if (variable) {
+              const valueEntry = Object.entries(variable.values.values)
+                .find(([, value]) => (value.label || '').toLowerCase() === targetLabel);
+              if (valueEntry) {
+                matched = { variableId: variable.id, valueId: valueEntry[0] };
+                usedVars.add(variable.id);
+              }
+            }
+          }
+
+          if (matched) {
+            variablePairs.push(matched);
+          }
+        }
+
+        if (variablePairs.length > 0) {
+          return { categoryId: cat.id, variablePairs };
+        }
       }
 
       // Si pas de sous-categorie requis
@@ -374,7 +411,6 @@
         return { categoryId: cat.id, variablePairs: [] };
       }
 
-      const vars = (cat.variables?.data) || [];
       const labels = SUBCATEGORY_LABEL.split(' - ').map(s => s.trim()).filter(Boolean);
       const usedVars = new Set();
       const variablePairs = [];
@@ -429,10 +465,11 @@
         
         // Build leaderboard URL
         let lbUrl;
+        const limit = Math.max(TOP_COUNT, MAX_RUNS || 0);
         if (LEVEL_ID) {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?top=100&embed=players`;
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?top=${limit}&embed=players`;
         } else {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=100&embed=players`;
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=${limit}&embed=players`;
         }
         if (Array.isArray(variablePairs) && variablePairs.length > 0) {
           for (const pair of variablePairs) {
@@ -487,13 +524,16 @@
           const target = PLAYER_NAME.toLowerCase();
           const match = allRuns.find(r => (r.players || []).some(n => n.toLowerCase() === target));
           if (match) {
-            playerRow = { ...match, player: PLAYER_NAME };
+            const isInTop = typeof match.rank === 'number' && match.rank >= 1 && match.rank <= TOP_COUNT;
+            if (!isInTop) {
+              playerRow = { ...match, player: PLAYER_NAME };
+            }
           }
         }
 
         // Diviser en TOP N et carousel
         const topRuns = allRuns.slice(0, TOP_COUNT);
-        carouselRuns = allRuns.slice(TOP_COUNT, 100);
+        carouselRuns = allRuns.slice(TOP_COUNT, Math.max(TOP_COUNT, MAX_RUNS || 0));
         carouselPage = 0;
 
         // Charger les images des drapeaux

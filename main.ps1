@@ -86,13 +86,14 @@ $Global:Languages = @{
         add_no_game_found = "Aucun jeu trouvé pour :"
         add_games_found = "Jeux trouvés :"
         add_loading_categories = "Chargement des catégories..."
+        add_loading_levels = "Chargement des niveaux..."
         add_no_categories = "Aucune catégorie trouvée pour ce jeu!"
         add_categories_available = "Catégories disponibles :"
         add_subcategories_available = "Sous-catégories disponibles :"
         add_no_subcategory = "Aucune sous-catégorie (null)"
         
         # Configuration finale
-        final_config = "========================================\n           CONFIGURATION FINALE\n========================================"
+        final_config = "========[ CONFIGURATION FINALE ]========"
         final_game = "Jeu      :"
         final_game_id = "Game ID  :"
         final_category = "Category :"
@@ -144,7 +145,7 @@ $Global:Languages = @{
         # Nom du joueur
         player_name_title = "=== NOM DU JOUEUR ==="
         player_name_current = "Nom actuel :"
-        player_name_prompt = "Entrez le nom du joueur (laisser vide pour désactiver, /retour pour annuler)"
+        player_name_prompt = "Entrez le nom du joueur (laisser vide pour désactiver, Echap pour annuler)"
         player_name_saved = "[OK] Nom du joueur enregistré :"
         player_name_cleared = "Nom du joueur désactivé."
         player_name_cancelled = "Opération annulée."
@@ -206,13 +207,14 @@ $Global:Languages = @{
         add_no_game_found = "No game found for:"
         add_games_found = "Games found:"
         add_loading_categories = "Loading categories..."
+        add_loading_levels = "Loading levels..."
         add_no_categories = "No categories found for this game!"
         add_categories_available = "Available categories:"
         add_subcategories_available = "Available subcategories:"
         add_no_subcategory = "No subcategory (null)"
         
         # Configuration finale
-        final_config = "========================================\n           FINAL CONFIGURATION\n========================================"
+        final_config = "========[ FINAL CONFIGURATION ]========"
         final_game = "Game     :"
         final_game_id = "Game ID  :"
         final_category = "Category :"
@@ -264,7 +266,7 @@ $Global:Languages = @{
         # Player name
         player_name_title = "=== PLAYER NAME ==="
         player_name_current = "Current name:"
-        player_name_prompt = "Enter player name (leave empty to disable, /back to cancel)"
+        player_name_prompt = "Enter player name (leave empty to disable, Esc to cancel)"
         player_name_saved = "[OK] Player name saved:"
         player_name_cleared = "Player name disabled."
         player_name_cancelled = "Operation cancelled."
@@ -326,13 +328,14 @@ $Global:Languages = @{
         add_no_game_found = "No se encontró ningún juego para:"
         add_games_found = "Juegos encontrados:"
         add_loading_categories = "Cargando categorías..."
+        add_loading_levels = "Cargando niveles..."
         add_no_categories = "¡No se encontraron categorías para este juego!"
         add_categories_available = "Categorías disponibles:"
         add_subcategories_available = "Subcategorías disponibles:"
         add_no_subcategory = "Sin subcategoria (null)"
         
         # Configuracion final
-        final_config = "========================================\n         CONFIGURACION FINAL\n========================================"
+        final_config = "========[ CONFIGURACION FINAL ]========"
         final_game = "Juego    :"
         final_game_id = "ID Juego :"
         final_category = "Categoria :"
@@ -384,7 +387,7 @@ $Global:Languages = @{
         # Nombre del jugador
         player_name_title = "=== NOMBRE DEL JUGADOR ==="
         player_name_current = "Nombre actual:"
-        player_name_prompt = "Introduce el nombre del jugador (vacío para desactivar, /atras para cancelar)"
+        player_name_prompt = "Introduce el nombre del jugador (vacio para desactivar, Esc para cancelar)"
         player_name_saved = "[OK] Nombre del jugador guardado:"
         player_name_cleared = "Nombre del jugador desactivado."
         player_name_cancelled = "Operacion cancelada."
@@ -446,13 +449,14 @@ $Global:Languages = @{
         add_no_game_found = "Nenhum jogo encontrado para:"
         add_games_found = "Jogos encontrados:"
         add_loading_categories = "Carregando categorias..."
+        add_loading_levels = "Carregando niveis..."
         add_no_categories = "Nenhuma categoria encontrada para este jogo!"
         add_categories_available = "Categorias disponíveis:"
         add_subcategories_available = "Subcategorias disponíveis:"
         add_no_subcategory = "Sem subcategoria (null)"
         
         # Configuração final
-        final_config = "========================================\n        CONFIGURAÇÃO FINAL\n========================================"
+        final_config = "========[ CONFIGURACAO FINAL ]========"
         final_game = "Jogo     :"
         final_game_id = "ID Jogo  :"
         final_category = "Categoria :"
@@ -504,7 +508,7 @@ $Global:Languages = @{
         # Nome do jogador
         player_name_title = "=== NOME DO JOGADOR ==="
         player_name_current = "Nome atual:"
-        player_name_prompt = "Digite o nome do jogador (vazio para desativar, /voltar para cancelar)"
+        player_name_prompt = "Digite o nome do jogador (vazio para desativar, Esc para cancelar)"
         player_name_saved = "[OK] Nome do jogador salvo:"
         player_name_cleared = "Nome do jogador desativado."
         player_name_cancelled = "Operacao cancelada."
@@ -566,13 +570,14 @@ $Global:Languages = @{
         add_no_game_found = "未找到游戏："
         add_games_found = "找到的游戏："
         add_loading_categories = "加载类别中..."
+        add_loading_levels = "加载关卡中..."
         add_no_categories = "未找到此游戏的类别！"
         add_categories_available = "可用类别："
         add_subcategories_available = "可用子类别："
         add_no_subcategory = "无子类别（空）"
         
         # 最终配置
-        final_config = "========================================\n            最终配置\n========================================"
+        final_config = "========[ ZUI ZHONG PEI ZHI ]========"
         final_game = "游戏     ："
         final_game_id = "游戏ID   ："
         final_category = "类别     ："
@@ -624,7 +629,7 @@ $Global:Languages = @{
         # 玩家名称
         player_name_title = "=== 玩家名称 ==="
         player_name_current = "当前名称："
-        player_name_prompt = "输入玩家名称（留空禁用，/back 取消）"
+        player_name_prompt = "输入玩家名称（留空禁用，Esc 取消）"
         player_name_saved = "[OK] 玩家名称已保存："
         player_name_cleared = "玩家名称已禁用。"
         player_name_cancelled = "操作已取消。"
@@ -804,6 +809,56 @@ function Ensure-Config {
   return $config
 }
 
+function Show-ProgressStep {
+  param(
+    [string]$Activity,
+    [string]$Status,
+    [int]$PercentComplete
+  )
+
+  Write-Progress -Id 1 -Activity $Activity -Status $Status -PercentComplete $PercentComplete
+}
+
+function Clear-Progress {
+  Write-Progress -Id 1 -Activity " " -Completed
+}
+
+function Read-InputWithEscape {
+  param(
+    [string]$Prompt
+  )
+
+  Write-Host $Prompt -NoNewline
+  $text = ""
+
+  while ($true) {
+    $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+
+    switch ($key.VirtualKeyCode) {
+      13 { # Enter
+        Write-Host ""
+        return @{ Text = $text; Cancelled = $false }
+      }
+      27 { # Esc
+        Write-Host ""
+        return @{ Text = $null; Cancelled = $true }
+      }
+      8 { # Backspace
+        if ($text.Length -gt 0) {
+          $text = $text.Substring(0, $text.Length - 1)
+          Write-Host "`b `b" -NoNewline
+        }
+      }
+      default {
+        if ($key.Character -ne [char]0) {
+          $text += $key.Character
+          Write-Host $key.Character -NoNewline
+        }
+      }
+    }
+  }
+}
+
 # === FONCTION NOM DU JOUEUR ===
 function Set-PlayerName {
   param($currentConfig)
@@ -818,17 +873,33 @@ function Set-PlayerName {
   Write-Host "$(Get-LocalizedString 'player_name_current') $currentName" -ForegroundColor White
   Write-Host ""
 
-  $newName = Read-Host (Get-LocalizedString "player_name_prompt")
-  $trimmedName = $newName.Trim()
-  $cancelKeywords = switch ($Global:CurrentLanguage) {
-    "en" { @("/back", "back", "cancel") }
-    "es" { @("/atras", "atras", "cancelar") }
-    "pt" { @("/voltar", "voltar", "cancelar") }
-    "zh" { @("/back", "back") }
-    default { @("/retour", "retour", "annuler", "back") }
+  $inputResult = Read-InputWithEscape (Get-LocalizedString "player_name_prompt")
+  if ($inputResult.Cancelled) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "player_name_cancelled") -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
   }
 
-  if ($cancelKeywords -contains $trimmedName.ToLower()) {
+  $newName = $inputResult.Text
+  $trimmedName = $newName.Trim()
+  $baseCancelKeywords = @("back", "retour", "annuler", "cancel", "cancelar", "voltar", "atras")
+  $languageCancelKeywords = switch ($Global:CurrentLanguage) {
+    "en" { @("back", "cancel") }
+    "es" { @("atras", "cancelar") }
+    "pt" { @("voltar", "cancelar") }
+    "zh" { @("back") }
+    default { @("retour", "annuler", "back") }
+  }
+  $cancelKeywords = ($baseCancelKeywords + $languageCancelKeywords) | Select-Object -Unique
+  $cancelKeywordsWithSlash = $cancelKeywords | ForEach-Object { "/$_" }
+  $allCancelKeywords = ($cancelKeywords + $cancelKeywordsWithSlash) | Select-Object -Unique
+  $normalizedInput = $trimmedName.ToLowerInvariant()
+  $normalizedNoSlash = $normalizedInput.TrimStart("/", "\")
+
+  if ($allCancelKeywords -contains $normalizedInput -or $allCancelKeywords -contains $normalizedNoSlash) {
     Clear-Host
     Write-Host (Get-LocalizedString "player_name_cancelled") -ForegroundColor Yellow
     Write-Host ""
@@ -1123,7 +1194,7 @@ function New-Preset($currentConfig) {
     return
   }
 
-  Write-Host "$(Get-LocalizedString 'add_searching') $gameName" -ForegroundColor Yellow
+  Show-ProgressStep -Activity (Get-LocalizedString "add_searching") -Status $gameName -PercentComplete 10
 
   try {
     # === ETAPE 1: Chercher le jeu ===
@@ -1133,12 +1204,15 @@ function New-Preset($currentConfig) {
     $games = $data.data
     
     if ($games.Count -eq 0) {
+      Clear-Progress
       Write-Host "$(Get-LocalizedString 'add_no_game_found') $gameName" -ForegroundColor Red
       Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
       $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
       return
     }
     
+    Clear-Progress
+
     # Selection du jeu
     if ($games.Count -gt 1) {
       $gameOptions = @()
@@ -1150,6 +1224,7 @@ function New-Preset($currentConfig) {
       $selectedGameIndex = Show-ArrowMenu -Title (Get-LocalizedString "add_games_found") -Options $gameOptions -AllowCancel
       
       if ($selectedGameIndex -eq -1) {
+        Clear-Progress
         Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
         return
       }
@@ -1158,17 +1233,22 @@ function New-Preset($currentConfig) {
     } else {
       $selectedGame = $games[0]
     }
+
+    Clear-Progress
     
     # === ETAPE 2: Full Game ou Levels ===
     $selectedLevel = $null
     $levels = @()
     try {
+      Show-ProgressStep -Activity (Get-LocalizedString "add_loading_levels") -Status $selectedGame.names.international -PercentComplete 40
       $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
       $levelsData = $levelsResponse.Content | ConvertFrom-Json
       $levels = $levelsData.data
     } catch {
       $levels = @()
     }
+
+    Clear-Progress
 
     if ($levels.Count -gt 0) {
       $modeTitle = switch ($Global:CurrentLanguage) {
@@ -1188,6 +1268,7 @@ function New-Preset($currentConfig) {
 
       $selectedMode = Show-ArrowMenu -Title $modeTitle -Options $modeOptions -AllowCancel
       if ($selectedMode -eq -1) {
+        Clear-Progress
         Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
         return
       }
@@ -1206,6 +1287,7 @@ function New-Preset($currentConfig) {
         }
         $selectedLevelIndex = Show-ArrowMenu -Title $levelTitle -Options $levelOptions -AllowCancel
         if ($selectedLevelIndex -eq -1) {
+          Clear-Progress
           Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
           return
         }
@@ -1214,8 +1296,7 @@ function New-Preset($currentConfig) {
     }
 
     # === ETAPE 3: Recuperer les categories ===
-    Write-Host ""
-    Write-Host (Get-LocalizedString "add_loading_categories") -ForegroundColor Yellow
+    Show-ProgressStep -Activity (Get-LocalizedString "add_loading_categories") -Status $selectedGame.names.international -PercentComplete 70
     
     $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
     $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
@@ -1223,6 +1304,8 @@ function New-Preset($currentConfig) {
     $categoryType = if ($selectedLevel) { "per-level" } else { "per-game" }
     $categories = $categoriesData.data.categories.data | Where-Object { $_.type -eq $categoryType }
     
+    Clear-Progress
+
     if ($categories.Count -eq 0) {
       Write-Host (Get-LocalizedString "add_no_categories") -ForegroundColor Red
       Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
@@ -1259,6 +1342,29 @@ function New-Preset($currentConfig) {
       }
       return $_.scope.type -in @("full-game", "all-levels", "global")
     }
+
+    # De-dup par nom (preferer la variable liee a la categorie si doublon)
+    $byName = @{}
+    $dedupedByName = @()
+    foreach ($var in $subcategoryVariables) {
+      $nameKey = ($var.name | ForEach-Object { $_ })
+      $nameKey = if ($nameKey) { $nameKey.Trim().ToLowerInvariant() } else { "" }
+      if (-not $nameKey) {
+        $dedupedByName += $var
+        continue
+      }
+      $score = 0
+      if ($var.category -and $var.category -eq $selectedCategory.id) {
+        $score = 2
+      } elseif (-not $var.category) {
+        $score = 1
+      }
+      if (-not $byName.ContainsKey($nameKey) -or $score -gt $byName[$nameKey].score) {
+        $byName[$nameKey] = @{ score = $score; item = $var }
+      }
+    }
+    $dedupedByName += $byName.Values | ForEach-Object { $_.item }
+    $subcategoryVariables = $dedupedByName
 
     # De-dup pour eviter de reposer la meme variable plusieurs fois
     $seenVarIds = @{}
@@ -1499,6 +1605,7 @@ function New-Preset($currentConfig) {
     }
     Write-Host ""
   } catch {
+    Clear-Progress
     Write-Host ""
     Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
   }
@@ -1539,19 +1646,9 @@ function Start-MainLoop {
         $contextLines += ""
         
         foreach ($preset in $presetList) {
-          $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " [OK] [ACTIF]" } else { "" }
-          $contextLines += "• $($preset.Value.name)$isActive"
-          $contextLines += "  ID: $($preset.Name)"
+          $marker = if ($preset.Name -eq $currentConfig.activePreset) { "🟢" } else { "•" }
+          $contextLines += "$marker $($preset.Value.name)"
         }
-        $contextLines += ""
-        
-        # Affichage du preset actif en évidence
-        $activePresetName = if ($currentConfig.activePreset -and $currentConfig.presets.($currentConfig.activePreset)) { 
-          $currentConfig.presets.($currentConfig.activePreset).name 
-        } else { 
-          (Get-LocalizedString "not_defined")
-        }
-        $contextLines += "📍 $(Get-LocalizedString 'active_preset') $activePresetName"
         $contextLines += ""
         
         $contextText = $contextLines -join "`n"

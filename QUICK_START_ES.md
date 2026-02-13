@@ -51,12 +51,8 @@ El script muestra un menú con navegación intuitiva en tu idioma:
 ================================================
 
 Presets existentes:
-• Elden Ring - Any% Glitchless ✓ [ACTIVO]
-  ID: eldenring-any
+🟢 Elden Ring - Any% Glitchless
 • Dark Souls III - All Bosses
-  ID: darksouls3-all
-
-📍 Preset actualmente activo: Elden Ring - Any% Glitchless
 
 ¿Qué te gustaría hacer?
 ► Añadir un nuevo preset
@@ -97,6 +93,7 @@ La interfaz está disponible en **5 idiomas**:
 **Navegación**: Usa **↑↓** para moverte entre opciones  
 **Selección**: Presiona **Enter** para confirmar  
 **Volver**: Presiona **⌫ Backspace** cuando esté disponible  
+**Cancelar entrada**: Presiona **Esc** al escribir texto  
 **Confirmaciones**: Diálogo simple **sí/no** (s/N) - ¡sin escritura compleja!
 
 ### Usar en OBS

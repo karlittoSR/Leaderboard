@@ -1,26 +1,80 @@
 {
   "presets": {
-    "eranyglitchless": {
+    "elde-any-restricted": {
+      "subcategories": {
+        "variableId": "7891zr5n",
+        "valueId": "5le7rzm1",
+        "label": "Restricted"
+      },
+      "subcategory": "Restricted",
+      "name": "Elden Ring - Any% Restricted",
       "gameId": "nd28z0ed",
-      "subcategory": "Glitchless",
-      "name": "Elden Ring - Any% Glitchless",
-      "category": "Any%",
+      "category": "Any%"
+    },
+    "cele-100": {
+      "gameId": "o1y9j9v6",
+      "subcategory": null,
+      "name": "Celeste - 100%",
+      "category": "100%"
+    },
+    "seki-allmemoriesprayerbeads-pcrestricted": {
+      "subcategory": "PC - Restricted",
+      "category": "All Memories & Prayer Beads",
+      "subcategories": [
+        {
+          "variableId": "gnxrw1jn",
+          "valueId": "21g48jm1",
+          "label": "PC"
+        },
+        {
+          "variableId": "2lgg107l",
+          "valueId": "81p0z6kq",
+          "label": "Restricted"
+        }
+      ],
+      "gameId": "o1y9zk26",
+      "name": "Sekiro: Shadows Die Twice - All Memories & Prayer Beads PC - Restricted"
+    },
+    "cele-trueending-nofarewellskip": {
+      "subcategories": {
+        "variableId": "e8mgeqq8",
+        "valueId": "1pypokv1",
+        "label": "No Farewell Skip"
+      },
+      "category": "True Ending",
+      "subcategory": "No Farewell Skip",
+      "name": "Celeste - True Ending No Farewell Skip",
+      "gameId": "o1y9j9v6"
+    },
+    "cele-collectibles-core-allredberries": {
+      "category": "Collectibles",
+      "subcategories": {
+        "variableId": "ylq9e7w8",
+        "valueId": "jqz03zg1",
+        "label": "All Red Berries"
+      },
+      "name": "Celeste - Core - Collectibles All Red Berries",
+      "gameId": "o1y9j9v6",
+      "subcategory": "All Red Berries",
+      "levelName": "Core",
+      "levelId": "kwjzo679"
+    },
+    "elde-any-glitchless": {
       "subcategories": {
         "variableId": "7891zr5n",
         "valueId": "qj740p3q",
         "label": "Glitchless"
-      }
-    },
-    "elde-twogods-glitchless": {
-      "gameId": "nd28z0ed",
+      },
+      "category": "Any%",
       "subcategory": "Glitchless",
-      "name": "Elden Ring - Two Gods Glitchless",
-      "category": "Two Gods",
-      "subcategories": {
-        "variableId": "p85yxj5l",
-        "valueId": "1gnon28l",
-        "label": "Glitchless"
-      }
+      "name": "Elden Ring - Any% Glitchless",
+      "gameId": "nd28z0ed"
+    },
+    "cele-any": {
+      "subcategory": null,
+      "category": "Any%",
+      "gameId": "o1y9j9v6",
+      "name": "Celeste - Any%"
     }
   },
   "defaults": {
@@ -29,6 +83,7 @@
     "displayWidth": "900px",
     "canvasWidth": 1200,
     "carouselInterval": 5000,
+    "maxRuns": 200,
     "topCount": 3,
     "CAROUSEL_DISPLAY_DURATION": 10000,
     "FLAGS_API_ENABLED": true,
@@ -36,7 +91,7 @@
     "runsPerBatch": 3,
     "DISPLAY_COUNTRY_FLAGS": true
   },
-  "activePreset": "eranyglitchless",
-  "language": "fr",
-  "playerName": "Xeill"
+  "activePreset": "cele-any",
+  "language": "en",
+  "playerName": "poleuky"
 }

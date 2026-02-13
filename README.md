@@ -80,9 +80,10 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 ### Interface
 - **Arrow key navigation** (up/down arrows)
 - **Backspace key** for going back
+- **Esc key** to cancel text input
 - **Simplified confirmations**: yes/no dialogs
 - **Persistent display** of presets during navigation
-- **Visual indicators**: checkmark [ACTIVE] and pin for active preset
+- **Visual indicators**: green dot for active preset, bullet for others
 - **Modern interface**
 - **Integrated language menu**
 - **Player name option** (optional rank line on leaderboard)
@@ -97,6 +98,7 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 - Colors for placements (gold, silver, bronze)
 - **Country flags** (loaded from flagcdn)
 - **Fully configurable** via config.json
+- **Configurable fetch limit** via defaults.maxRuns (default: 200)
 - **URL parameters** to override settings
 - **Responsive** and transparent (perfect for Twitch streams)
 - **Optional player line** at the bottom (your position)
@@ -159,6 +161,7 @@ See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screen
 ### Configuration
 - **Detailed configuration?** → See comments in config.json
 - **Multilingual interface** → Option 6 in the script menu
+- **Runs fetched** → defaults.maxRuns (default: 200)
 
 ## Customizing Appearance
 
