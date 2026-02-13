@@ -1,33 +1,42 @@
 {
-  "language": "fr",
-  "activePreset": "hkssanynmg",
   "presets": {
-    "mon-preset": {
-      "name": "Elden Ring - Any% Glitchless",
+    "eranyglitchless": {
       "gameId": "nd28z0ed",
+      "subcategory": "Glitchless",
+      "name": "Elden Ring - Any% Glitchless",
       "category": "Any%",
-      "subcategory": "Glitchless"
+      "subcategories": {
+        "variableId": "7891zr5n",
+        "valueId": "qj740p3q",
+        "label": "Glitchless"
+      }
     },
-    "darksoulsiii-any": {
-      "subcategory": null,
-      "name": "Dark Souls III - Any%",
-      "category": "Any%",
-      "gameId": "k6qg0xdg"
-    },
-    "hkssanynmg": {
-      "subcategory": "No Major Glitches",
-      "gameId": "y65r7g81",
-      "category": "Any%",
-      "name": "Hollow Knight: Silksong - Any% No Major Glitches"
+    "elde-twogods-glitchless": {
+      "gameId": "nd28z0ed",
+      "subcategory": "Glitchless",
+      "name": "Elden Ring - Two Gods Glitchless",
+      "category": "Two Gods",
+      "subcategories": {
+        "variableId": "p85yxj5l",
+        "valueId": "1gnon28l",
+        "label": "Glitchless"
+      }
     }
   },
   "defaults": {
-    "carouselInterval": 5000,
-    "runsPerBatch": 3,
-    "topCount": 3,
-    "canvasWidth": 1200,
-    "canvasHeight": 400,
+    "canvasHeight": 800,
+    "displayHeight": "274px",
     "displayWidth": "900px",
-    "displayHeight": "174px"
-  }
+    "canvasWidth": 1200,
+    "carouselInterval": 5000,
+    "topCount": 3,
+    "CAROUSEL_DISPLAY_DURATION": 10000,
+    "FLAGS_API_ENABLED": true,
+    "API_CALL_INTERVAL": 30000,
+    "runsPerBatch": 3,
+    "DISPLAY_COUNTRY_FLAGS": true
+  },
+  "activePreset": "eranyglitchless",
+  "language": "fr",
+  "playerName": "Xeill"
 }
