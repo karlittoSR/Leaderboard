@@ -6,7 +6,7 @@
 
 Dynamic and animated display of Speedrun.com leaderboards with advanced features for streamers and speedrunners.
 
-![Leaderboard Preview](https://github.com/user-attachments/assets/f407cec4-25d8-4434-9ede-b3f17c1daa3d)
+![Leaderboard Preview](images/leaderboard-preview.png)
 
 ---
 
