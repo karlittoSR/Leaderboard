@@ -32,6 +32,9 @@
     "runsPerBatch": 3,
     "DISPLAY_COUNTRY_FLAGS": true
   },
+  "flagOverrides": {
+    "TW": "CN"
+  },
   "activePreset": "elde-any-glitchless",
   "language": "en",
   "playerName": "233Token"
