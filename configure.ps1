@@ -3,7 +3,7 @@
 
 # Script PowerShell pour gérer les presets speedrun.com facilement
 # Gère plusieurs jeux et categories pour streamers
-# Version 1.20 - Levels/Full game + sous-categories multiples + ligne joueur
+# Version 1.30 - Multiple presets + temporary PB + flag overrides + 5-language support
 # Par karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
@@ -11,14 +11,14 @@ $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
 Set-Location $scriptDir
 
 # === SECURITY CHECK (if script can run) ===
-# Note: If execution policy is Restricted, this code won't run. Use LAUNCH_ME_FIRST.bat instead!
+# Note: If execution policy is Restricted, this code won't run. Use FIX_ACCESS.bat instead!
 # This check is for cases where the script can execute but files are blocked
 
 # Check execution policy and warn if restrictive
 $currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
 if ($currentPolicy -in @("Restricted", "AllSigned")) {
     Write-Host "⚠️  WARNING: Execution policy is restrictive ($currentPolicy)" -ForegroundColor Yellow
-    Write-Host "   Run LAUNCH_ME_FIRST.bat to fix this automatically!" -ForegroundColor Cyan
+    Write-Host "   Run FIX_ACCESS.bat to fix this automatically!" -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -45,8 +45,9 @@ $Global:Languages = @{
         menu_view_details = "Voir les détails d'un preset existant"
         menu_change_active = "Changer le preset actif"
         menu_remove_preset = "Supprimer un preset"
-        menu_language_settings = "Paramètres de langue"
-        menu_player_name = "Définir le nom du joueur"
+        menu_language_settings = "Paramètres de langue / 语言设置"
+        menu_player_name = "Définir mon nom"
+        menu_temp_time = "Mon PB temporaire"
         menu_quit = "Quitter le programme"
         menu_what_to_do = "Que voulez-vous faire ?"
         
@@ -68,7 +69,14 @@ $Global:Languages = @{
         details_category = "Category :"
         details_subcategory = "Subcategory :"
         details_active_obs = "Actif dans OBS :"
-        details_url_obs = "URL OBS (toujours la même) :"
+        details_actions = "Actions :"
+        details_edit_name = "Editer le nom du preset"
+        details_delete_preset = "Supprimer ce preset"
+        details_edit_prompt = "Nouveau nom du preset (Echap pour annuler) :"
+        details_edit_empty = "Erreur : le nom ne peut pas etre vide."
+        details_edit_saved = "Nom du preset mis a jour :"
+        details_edit_cancelled = "Modification annulee."
+        details_back = "Retour"
         
         # Messages communs
         continue_key = "Appuyez sur une touche pour continuer..."
@@ -80,7 +88,8 @@ $Global:Languages = @{
         
         # Nouveau preset
         add_title = "=== AJOUT D'UN NOUVEAU PRESET ==="
-        add_game_name = "Nom du jeu"
+        add_game_name = "Nom du jeu :"
+        add_game_name_hint = "Appuyez sur ESC pour annuler et revenir au menu principal"
         add_error_empty_name = "Erreur : Vous devez entrer un nom de jeu!"
         add_searching = "Recherche en cours pour :"
         add_no_game_found = "Aucun jeu trouvé pour :"
@@ -100,7 +109,7 @@ $Global:Languages = @{
         final_subcategory = "Subcategory :"
         final_preset_id = "Entrez un ID unique pour ce preset :"
         final_suggestion = "Suggestion :"
-        final_preset_id_prompt = "ID du preset (ou Entrée pour suggestion)"
+        final_preset_id_prompt = "ID du preset (ou Entrée pour suggestion) "
         final_id_exists = "ATTENTION : Un preset avec l'ID '%s' existe déjà !"
         final_overwrite = "Voulez-vous l'écraser ? (o/N)"
         final_operation_cancelled = "Opération annulée."
@@ -110,7 +119,6 @@ $Global:Languages = @{
         final_auto_active = "Activé automatiquement (premier preset)"
         final_active_now = "Activé comme preset principal"
         final_saved_inactive = "Sauvegardé sans activation"
-        final_url_copied = "URL OBS copiée dans le presse-papiers :"
         final_obs_will_show = "[OK] OBS affichera automatiquement ce preset !"
         final_activate_later = "Pour activer ce preset plus tard, utilisez l'option de changement de preset actif."
         
@@ -145,10 +153,26 @@ $Global:Languages = @{
         # Nom du joueur
         player_name_title = "=== NOM DU JOUEUR ==="
         player_name_current = "Nom actuel :"
-        player_name_prompt = "Entrez le nom du joueur (laisser vide pour désactiver, Echap pour annuler)"
+        player_name_prompt = "Entrez le nom du joueur (laisser vide pour désactiver, Echap pour annuler) :"
         player_name_saved = "[OK] Nom du joueur enregistré :"
         player_name_cleared = "Nom du joueur désactivé."
         player_name_cancelled = "Opération annulée."
+
+        # Temps temporaire
+        temp_time_title = "=== TEMPS TEMPORAIRE ==="
+        temp_time_current = "Temps temporaire actuel :"
+        temp_time_action_set = "Definir/modifier le temps temporaire"
+        temp_time_action_clear = "Supprimer le temps temporaire"
+        temp_time_action_back = "Retour"
+        temp_time_prompt = "Entrez le temps temporaire (Echap pour annuler) :"
+        temp_time_invalid = "Format invalide. Exemples : 1:23, 12:34, 1:02:03, 1:18.268"
+        temp_time_saved = "[OK] Temps temporaire enregistre :"
+        temp_time_cleared = "Temps temporaire supprime."
+        temp_time_cancelled = "Operation annulee."
+        temp_time_no_player = "Impossible sans nom du joueur."
+        temp_time_check_title = "Verification du joueur..."
+        temp_time_check_status = "Recherche dans le preset selectionne"
+        temp_time_disabled = "PB temporaire desactive (joueur introuvable dans ce preset)."
         
         # Erreurs
         config_load_error = "Erreur lors du chargement de la config :"
@@ -166,8 +190,9 @@ $Global:Languages = @{
         menu_view_details = "View details of an existing preset"
         menu_change_active = "Change active preset"
         menu_remove_preset = "Delete a preset"
-        menu_language_settings = "Language settings"
-        menu_player_name = "Set player name"
+        menu_language_settings = "Language settings / 语言设置"
+        menu_player_name = "Set my name"
+        menu_temp_time = "My temporary PB"
         menu_quit = "Quit program"
         menu_what_to_do = "What would you like to do?"
         
@@ -189,7 +214,14 @@ $Global:Languages = @{
         details_category = "Category:"
         details_subcategory = "Subcategory:"
         details_active_obs = "Active in OBS:"
-        details_url_obs = "OBS URL (always the same):"
+        details_actions = "Actions:"
+        details_edit_name = "Edit preset name"
+        details_delete_preset = "Delete this preset"
+        details_edit_prompt = "New preset name (Esc to cancel):"
+        details_edit_empty = "Error: name cannot be empty."
+        details_edit_saved = "Preset name updated:"
+        details_edit_cancelled = "Edit cancelled."
+        details_back = "Back"
         
         # Messages communs
         continue_key = "Press any key to continue..."
@@ -201,7 +233,8 @@ $Global:Languages = @{
         
         # Nouveau preset
         add_title = "=== ADD NEW PRESET ==="
-        add_game_name = "Game name"
+        add_game_name = "Game name:"
+        add_game_name_hint = "Press ESC to cancel and return to the main menu"
         add_error_empty_name = "Error: You must enter a game name!"
         add_searching = "Searching for:"
         add_no_game_found = "No game found for:"
@@ -231,7 +264,6 @@ $Global:Languages = @{
         final_auto_active = "Automatically activated (first preset)"
         final_active_now = "Activated as main preset"
         final_saved_inactive = "Saved without activation"
-        final_url_copied = "OBS URL copied to clipboard:"
         final_obs_will_show = "[OK] OBS will automatically display this preset!"
         final_activate_later = "To activate this preset later, use the active preset change option."
         
@@ -266,10 +298,26 @@ $Global:Languages = @{
         # Player name
         player_name_title = "=== PLAYER NAME ==="
         player_name_current = "Current name:"
-        player_name_prompt = "Enter player name (leave empty to disable, Esc to cancel)"
+        player_name_prompt = "Enter player name (leave empty to disable, Esc to cancel):"
         player_name_saved = "[OK] Player name saved:"
         player_name_cleared = "Player name disabled."
         player_name_cancelled = "Operation cancelled."
+
+        # Temporary time
+        temp_time_title = "=== TEMPORARY TIME ==="
+        temp_time_current = "Current temporary time:"
+        temp_time_action_set = "Set/change temporary time"
+        temp_time_action_clear = "Clear temporary time"
+        temp_time_action_back = "Back"
+        temp_time_prompt = "Enter temporary time (Esc to cancel):"
+        temp_time_invalid = "Invalid format. Examples: 1:23, 12:34, 1:02:03, 1:18.268"
+        temp_time_saved = "[OK] Temporary time saved:"
+        temp_time_cleared = "Temporary time cleared."
+        temp_time_cancelled = "Operation cancelled."
+        temp_time_no_player = "Unavailable without player name."
+        temp_time_check_title = "Checking player..."
+        temp_time_check_status = "Searching in selected preset"
+        temp_time_disabled = "Temporary PB disabled (player not found in this preset)."
         
         # Erreurs
         config_load_error = "Error loading config:"
@@ -287,8 +335,9 @@ $Global:Languages = @{
         menu_view_details = "Ver detalles de un preset existente"
         menu_change_active = "Cambiar preset activo"
         menu_remove_preset = "Eliminar un preset"
-        menu_language_settings = "Configuración de idioma"
-        menu_player_name = "Definir nombre del jugador"
+        menu_language_settings = "Configuración de idioma / 语言设置"
+        menu_player_name = "Definir mi nombre"
+        menu_temp_time = "Mi PB temporal"
         menu_quit = "Salir del programa"
         menu_what_to_do = "¿Qué te gustaría hacer?"
         
@@ -310,7 +359,14 @@ $Global:Languages = @{
         details_category = "Categoría:"
         details_subcategory = "Subcategoría:"
         details_active_obs = "Activo en OBS:"
-        details_url_obs = "URL de OBS (siempre la misma):"
+        details_actions = "Acciones:"
+        details_edit_name = "Editar nombre del preset"
+        details_delete_preset = "Eliminar este preset"
+        details_edit_prompt = "Nuevo nombre del preset (Esc para cancelar):"
+        details_edit_empty = "Error: el nombre no puede estar vacio."
+        details_edit_saved = "Nombre del preset actualizado:"
+        details_edit_cancelled = "Edicion cancelada."
+        details_back = "Volver"
         
         # Mensajes comunes
         continue_key = "Presiona cualquier tecla para continuar..."
@@ -322,7 +378,8 @@ $Global:Languages = @{
         
         # Nuevo preset
         add_title = "=== AÑADIR NUEVO PRESET ==="
-        add_game_name = "Nombre del juego"
+        add_game_name = "Nombre del juego:"
+        add_game_name_hint = "Presiona ESC para cancelar y volver al menu principal"
         add_error_empty_name = "Error: ¡Debes introducir un nombre de juego!"
         add_searching = "Buscando:"
         add_no_game_found = "No se encontró ningún juego para:"
@@ -352,7 +409,6 @@ $Global:Languages = @{
         final_auto_active = "Activado automáticamente (primer preset)"
         final_active_now = "Activado como preset principal"
         final_saved_inactive = "Guardado sin activar"
-        final_url_copied = "URL de OBS copiada al portapapeles:"
         final_obs_will_show = "¡[OK] OBS mostrará automáticamente este preset!"
         final_activate_later = "Para activar este preset más tarde, usa la opción de cambio de preset activo."
         
@@ -387,10 +443,26 @@ $Global:Languages = @{
         # Nombre del jugador
         player_name_title = "=== NOMBRE DEL JUGADOR ==="
         player_name_current = "Nombre actual:"
-        player_name_prompt = "Introduce el nombre del jugador (vacio para desactivar, Esc para cancelar)"
+        player_name_prompt = "Introduce el nombre del jugador (vacio para desactivar, Esc para cancelar):"
         player_name_saved = "[OK] Nombre del jugador guardado:"
         player_name_cleared = "Nombre del jugador desactivado."
         player_name_cancelled = "Operacion cancelada."
+
+        # Tiempo temporal
+        temp_time_title = "=== TIEMPO TEMPORAL ==="
+        temp_time_current = "Tiempo temporal actual:"
+        temp_time_action_set = "Definir/cambiar tiempo temporal"
+        temp_time_action_clear = "Eliminar tiempo temporal"
+        temp_time_action_back = "Volver"
+        temp_time_prompt = "Introduce el tiempo temporal (Esc para cancelar):"
+        temp_time_invalid = "Formato invalido. Ejemplos: 1:23, 12:34, 1:02:03, 1:18.268"
+        temp_time_saved = "[OK] Tiempo temporal guardado:"
+        temp_time_cleared = "Tiempo temporal eliminado."
+        temp_time_cancelled = "Operacion cancelada."
+        temp_time_no_player = "No disponible sin nombre del jugador."
+        temp_time_check_title = "Verificando jugador..."
+        temp_time_check_status = "Buscando en el preset seleccionado"
+        temp_time_disabled = "PB temporal desactivado (jugador no encontrado en este preset)."
         
         # Errores
         config_load_error = "Error al cargar la configuración:"
@@ -408,8 +480,9 @@ $Global:Languages = @{
         menu_view_details = "Ver detalhes de um preset existente"
         menu_change_active = "Alterar preset ativo"
         menu_remove_preset = "Remover um preset"
-        menu_language_settings = "Configurações de idioma"
-        menu_player_name = "Definir nome do jogador"
+        menu_language_settings = "Configurações de idioma / 语言设置"
+        menu_player_name = "Definir meu nome"
+        menu_temp_time = "Meu PB temporario"
         menu_quit = "Sair do programa"
         menu_what_to_do = "O que você gostaria de fazer?"
         
@@ -431,7 +504,14 @@ $Global:Languages = @{
         details_category = "Categoria:"
         details_subcategory = "Subcategoria:"
         details_active_obs = "Ativo no OBS:"
-        details_url_obs = "URL do OBS (sempre a mesma):"
+        details_actions = "Acoes:"
+        details_edit_name = "Editar nome do preset"
+        details_delete_preset = "Remover este preset"
+        details_edit_prompt = "Novo nome do preset (Esc para cancelar):"
+        details_edit_empty = "Erro: o nome nao pode ficar vazio."
+        details_edit_saved = "Nome do preset atualizado:"
+        details_edit_cancelled = "Edicao cancelada."
+        details_back = "Voltar"
         
         # Mensagens comuns
         continue_key = "Pressione qualquer tecla para continuar..."
@@ -443,7 +523,8 @@ $Global:Languages = @{
         
         # Novo preset
         add_title = "=== ADICIONAR NOVO PRESET ==="
-        add_game_name = "Nome do jogo"
+        add_game_name = "Nome do jogo:"
+        add_game_name_hint = "Pressione ESC para cancelar e voltar ao menu principal"
         add_error_empty_name = "Erro: Você deve inserir um nome de jogo!"
         add_searching = "Pesquisando por:"
         add_no_game_found = "Nenhum jogo encontrado para:"
@@ -473,7 +554,6 @@ $Global:Languages = @{
         final_auto_active = "Ativado automaticamente (primeiro preset)"
         final_active_now = "Ativado como preset principal"
         final_saved_inactive = "Salvo sem ativar"
-        final_url_copied = "URL do OBS copiada para área de transferência:"
         final_obs_will_show = "[OK] O OBS mostrará automaticamente este preset!"
         final_activate_later = "Para ativar este preset mais tarde, use a opção de mudança de preset ativo."
         
@@ -508,10 +588,26 @@ $Global:Languages = @{
         # Nome do jogador
         player_name_title = "=== NOME DO JOGADOR ==="
         player_name_current = "Nome atual:"
-        player_name_prompt = "Digite o nome do jogador (vazio para desativar, Esc para cancelar)"
+        player_name_prompt = "Digite o nome do jogador (vazio para desativar, Esc para cancelar):"
         player_name_saved = "[OK] Nome do jogador salvo:"
         player_name_cleared = "Nome do jogador desativado."
         player_name_cancelled = "Operacao cancelada."
+
+        # Tempo temporario
+        temp_time_title = "=== TEMPO TEMPORARIO ==="
+        temp_time_current = "Tempo temporario atual:"
+        temp_time_action_set = "Definir/alterar tempo temporario"
+        temp_time_action_clear = "Remover tempo temporario"
+        temp_time_action_back = "Voltar"
+        temp_time_prompt = "Digite o tempo temporario (Esc para cancelar):"
+        temp_time_invalid = "Formato invalido. Exemplos: 1:23, 12:34, 1:02:03, 1:18.268"
+        temp_time_saved = "[OK] Tempo temporario salvo:"
+        temp_time_cleared = "Tempo temporario removido."
+        temp_time_cancelled = "Operacao cancelada."
+        temp_time_no_player = "Indisponivel sem nome do jogador."
+        temp_time_check_title = "Verificando jogador..."
+        temp_time_check_status = "Buscando no preset selecionado"
+        temp_time_disabled = "PB temporario desativado (jogador nao encontrado neste preset)."
         
         # Erros
         config_load_error = "Erro ao carregar configuração:"
@@ -530,7 +626,8 @@ $Global:Languages = @{
         menu_change_active = "更改活动预设"
         menu_remove_preset = "删除预设"
         menu_language_settings = "语言设置 / Language settings"
-        menu_player_name = "设置玩家名称"
+        menu_player_name = "设置我的名字"
+        menu_temp_time = "我的临时PB"
         menu_quit = "退出程序"
         menu_what_to_do = "您想要做什么？"
         
@@ -552,7 +649,14 @@ $Global:Languages = @{
         details_category = "类别："
         details_subcategory = "子类别："
         details_active_obs = "在OBS中活动："
-        details_url_obs = "OBS URL（始终相同）："
+        details_actions = "操作："
+        details_edit_name = "编辑预设名称"
+        details_delete_preset = "删除此预设"
+        details_edit_prompt = "新的预设名称（Esc 取消）："
+        details_edit_empty = "错误：名称不能为空。"
+        details_edit_saved = "预设名称已更新："
+        details_edit_cancelled = "已取消编辑。"
+        details_back = "返回"
         
         # 通用消息
         continue_key = "按任意键继续..."
@@ -565,6 +669,7 @@ $Global:Languages = @{
         # 新预设
         add_title = "=== 添加新预设 ==="
         add_game_name = "游戏名称"
+        add_game_name_hint = "按 ESC 取消并返回主菜单"
         add_error_empty_name = "错误：您必须输入游戏名称！"
         add_searching = "搜索中："
         add_no_game_found = "未找到游戏："
@@ -594,7 +699,6 @@ $Global:Languages = @{
         final_auto_active = "自动激活（第一个预设）"
         final_active_now = "激活为主要预设"
         final_saved_inactive = "保存而不激活"
-        final_url_copied = "OBS URL已复制到剪贴板："
         final_obs_will_show = "[OK] OBS将自动显示此预设！"
         final_activate_later = "要稍后激活此预设，请使用活动预设更改选项。"
         
@@ -629,10 +733,26 @@ $Global:Languages = @{
         # 玩家名称
         player_name_title = "=== 玩家名称 ==="
         player_name_current = "当前名称："
-        player_name_prompt = "输入玩家名称（留空禁用，Esc 取消）"
+        player_name_prompt = "输入玩家名称（留空禁用，Esc 取消）："
         player_name_saved = "[OK] 玩家名称已保存："
         player_name_cleared = "玩家名称已禁用。"
         player_name_cancelled = "操作已取消。"
+
+        # 临时成绩
+        temp_time_title = "=== 临时成绩 ==="
+        temp_time_current = "当前临时成绩："
+        temp_time_action_set = "设置/修改临时成绩"
+        temp_time_action_clear = "清除临时成绩"
+        temp_time_action_back = "返回"
+        temp_time_prompt = "输入临时成绩（Esc 取消）："
+        temp_time_invalid = "格式无效。示例：1:23, 12:34, 1:02:03, 1:18.268"
+        temp_time_saved = "[OK] 临时成绩已保存："
+        temp_time_cleared = "临时成绩已清除。"
+        temp_time_cancelled = "操作已取消。"
+        temp_time_no_player = "未设置玩家名称，无法使用。"
+        temp_time_check_title = "正在检查玩家..."
+        temp_time_check_status = "在所选预设中查找"
+        temp_time_disabled = "临时PB已禁用（该预设中未找到玩家）。"
         
         # 错误
         config_load_error = "加载配置时出错："
@@ -748,7 +868,7 @@ function Set-Language {
 }
 
 # === FONCTION CONFIG ===
-function Ensure-Config {
+function Initialize-Config {
   param($config)
 
   if (-not $config) { $config = @{} }
@@ -786,6 +906,7 @@ function Ensure-Config {
         canvasHeight = 400
         displayWidth = "900px"
         displayHeight = "274px"
+        maxPlayerNameChars = 14
       CAROUSEL_DISPLAY_DURATION = 10000
       API_CALL_INTERVAL = 30000
       FLAGS_API_ENABLED = $true
@@ -803,6 +924,23 @@ function Ensure-Config {
       $config | Add-Member -MemberType NoteProperty -Name "playerName" -Value $null -Force
     } else {
       $config.playerName = $null
+    }
+  }
+
+  if (-not ($config.PSObject.Properties.Name -contains "temporaryRun")) {
+    $tempRun = @{ active = $false; time = $null }
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "temporaryRun" -Value $tempRun -Force
+    } else {
+      $config.temporaryRun = $tempRun
+    }
+  }
+
+  if (-not ($config.PSObject.Properties.Name -contains "flagOverrides")) {
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "flagOverrides" -Value @{} -Force
+    } else {
+      $config.flagOverrides = @{}
     }
   }
 
@@ -828,7 +966,7 @@ function Read-InputWithEscape {
     [string]$Prompt
   )
 
-  Write-Host $Prompt -NoNewline
+  Write-Host "$Prompt " -NoNewline
   $text = ""
 
   while ($true) {
@@ -859,11 +997,171 @@ function Read-InputWithEscape {
   }
 }
 
+function Convert-TimeStringToSeconds {
+  param([string]$Text)
+
+  if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
+
+  $clean = $Text.Trim().Replace(",", ".")
+
+  # Test pour un nombre simple (secondes directes)
+  if ($clean -match '^\d+(\.\d+)?$') {
+    $val = 0.0
+    if ([double]::TryParse($clean, [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$val)) { 
+      return $val 
+    }
+    return $null
+  }
+
+  $parts = $clean.Split(':')
+  if ($parts.Count -lt 2 -or $parts.Count -gt 3) { return $null }
+
+  $hours = 0
+  $minutes = 0
+  $seconds = 0.0
+
+  if ($parts.Count -eq 2) {
+    if (-not [int]::TryParse($parts[0], [ref]$minutes)) { return $null }
+    if (-not [double]::TryParse($parts[1], [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$seconds)) { return $null }
+  } else {
+    if (-not [int]::TryParse($parts[0], [ref]$hours)) { return $null }
+    if (-not [int]::TryParse($parts[1], [ref]$minutes)) { return $null }
+    if (-not [double]::TryParse($parts[2], [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$seconds)) { return $null }
+  }
+
+  if ($minutes -lt 0 -or $seconds -lt 0 -or $seconds -ge 60) { return $null }
+  if ($parts.Count -eq 3 -and ($minutes -ge 60)) { return $null }
+
+  return ($hours * 3600) + ($minutes * 60) + $seconds
+}
+
+function Resolve-PresetCategoryAndVariables {
+  param($preset)
+
+  $gameId = $preset.gameId
+  $categoryName = $preset.category
+  $levelId = $preset.levelId
+
+  $response = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$gameId?embed=categories.variables" -TimeoutSec 10
+  $data = $response.Content | ConvertFrom-Json
+  $cats = $data.data.categories.data
+  $targetType = if ($levelId) { "per-level" } else { "per-game" }
+  $cat = $cats | Where-Object { $_.type -eq $targetType -and $_.name -eq $categoryName } | Select-Object -First 1
+  if (-not $cat) {
+    throw "Categorie non trouvee: $categoryName"
+  }
+
+  $vars = @()
+  if ($cat.variables -and $cat.variables.data) {
+    $vars = $cat.variables.data
+  }
+
+  $variablePairs = @()
+  $subcats = $preset.subcategories
+  if ($subcats) {
+    $subcatList = @()
+    if ($subcats -is [System.Collections.IEnumerable] -and -not ($subcats -is [string])) {
+      $subcatList = @($subcats)
+    } else {
+      $subcatList = @($subcats)
+    }
+
+    foreach ($entry in $subcatList) {
+      if ($entry -and $entry.variableId -and $entry.valueId) {
+        $variablePairs += @{ variableId = $entry.variableId; valueId = $entry.valueId }
+      }
+    }
+
+    return @{ CategoryId = $cat.id; VariablePairs = $variablePairs }
+  }
+
+  $label = $preset.subcategory
+  if (-not $label) {
+    return @{ CategoryId = $cat.id; VariablePairs = @() }
+  }
+
+  $labels = $label -split " - " | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+  $usedVars = @{}
+
+  foreach ($item in $labels) {
+    $targetLabel = $item.ToLowerInvariant()
+    $sub = $vars | Where-Object {
+      $_.'is-subcategory' -eq $true -and $_.values.values -and -not $usedVars.ContainsKey($_.id) -and
+      ($_.values.values.PSObject.Properties | Where-Object { $_.Value.label -and $_.Value.label.ToLowerInvariant() -eq $targetLabel })
+    } | Select-Object -First 1
+
+    if (-not $sub) { continue }
+
+    $entry = $sub.values.values.PSObject.Properties | Where-Object { $_.Value.label -and $_.Value.label.ToLowerInvariant() -eq $targetLabel } | Select-Object -First 1
+    if ($entry) {
+      $variablePairs += @{ variableId = $sub.id; valueId = $entry.Name }
+      $usedVars[$sub.id] = $true
+    }
+  }
+
+  return @{ CategoryId = $cat.id; VariablePairs = $variablePairs }
+}
+
+function Test-PlayerInPreset {
+  param($config, $preset)
+
+  $playerName = if ($config.playerName) { $config.playerName.Trim() } else { "" }
+  if ([string]::IsNullOrWhiteSpace($playerName)) {
+    return $false
+  }
+
+  $resolved = Resolve-PresetCategoryAndVariables $preset
+  $categoryId = $resolved.CategoryId
+  $variablePairs = $resolved.VariablePairs
+
+  $limit = 200
+  if ($config.defaults -and $config.defaults.maxRuns) {
+    $limit = [int]$config.defaults.maxRuns
+  }
+
+  if ($preset.levelId) {
+    $lbUrl = "https://www.speedrun.com/api/v1/leaderboards/$($preset.gameId)/level/$($preset.levelId)/$categoryId?top=$limit&embed=players"
+  } else {
+    $lbUrl = "https://www.speedrun.com/api/v1/leaderboards/$($preset.gameId)/category/$categoryId?top=$limit&embed=players"
+  }
+
+  if ($variablePairs -and $variablePairs.Count -gt 0) {
+    foreach ($pair in $variablePairs) {
+      if ($pair.variableId -and $pair.valueId) {
+        $lbUrl += "&var-$($pair.variableId)=$($pair.valueId)"
+      }
+    }
+  }
+
+  $lbResponse = Invoke-WebRequest -Uri $lbUrl -TimeoutSec 10
+  $lb = $lbResponse.Content | ConvertFrom-Json
+
+  $playerMap = @{}
+  if ($lb.data.players -and $lb.data.players.data) {
+    foreach ($p in $lb.data.players.data) {
+      $displayName = if ($p.rel -eq "guest") { $p.name } else { $p.names.international }
+      $playerMap[$p.id] = $displayName
+    }
+  }
+
+  $target = $playerName.ToLowerInvariant()
+  foreach ($entry in $lb.data.runs) {
+    foreach ($p in $entry.run.players) {
+      $name = if ($p.rel -eq "guest") { $p.name } else { $playerMap[$p.id] }
+      if ($name -and $name.ToLowerInvariant() -eq $target) {
+        return $true
+      }
+    }
+  }
+
+  return $false
+}
+
 # === FONCTION NOM DU JOUEUR ===
 function Set-PlayerName {
   param($currentConfig)
 
-  $config = Ensure-Config $currentConfig
+  $config = Initialize-Config $currentConfig
 
   Clear-Host
   Write-Host (Get-LocalizedString "player_name_title") -ForegroundColor Cyan
@@ -934,6 +1232,101 @@ function Set-PlayerName {
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
+function Set-TemporaryRun {
+  param($currentConfig)
+
+  $config = Initialize-Config $currentConfig
+  $playerName = if ($config.playerName) { $config.playerName.Trim() } else { "" }
+  if ([string]::IsNullOrWhiteSpace($playerName)) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "temp_time_no_player") -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  $currentTemp = $config.temporaryRun
+  $hasTempTime = ($currentTemp -and $currentTemp.active -and $currentTemp.time)
+  $currentTime = if ($hasTempTime) { $currentTemp.time } else { (Get-LocalizedString "not_defined") }
+
+  # Prepare context text with current time
+  $contextText = "$(Get-LocalizedString 'temp_time_current') $currentTime"
+
+  $actionItems = @()
+  $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_set"); Key = "set" }
+  if ($hasTempTime) {
+    $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_clear"); Key = "clear" }
+  }
+  $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_back"); Key = "back" }
+  $actionOptions = $actionItems | ForEach-Object { $_.Label }
+  $actionIndex = Show-ArrowMenu -Title (Get-LocalizedString "temp_time_title") -Options $actionOptions -AllowCancel -ContextText $contextText
+  if ($actionIndex -eq -1) {
+    return
+  }
+
+  $actionKey = $actionItems[$actionIndex].Key
+  if ($actionKey -eq "back") {
+    return
+  }
+
+  if ($actionKey -eq "clear") {
+    $newTemp = @{ active = $false; time = $null }
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "temporaryRun" -Value $newTemp -Force
+    } else {
+      $config.temporaryRun = $newTemp
+    }
+
+    $jsonOutput = $config | ConvertTo-Json -Depth 10
+    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+
+    Clear-Host
+    Write-Host (Get-LocalizedString "temp_time_cleared") -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  $inputResult = Read-InputWithEscape (Get-LocalizedString "temp_time_prompt")
+  if ($inputResult.Cancelled) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "temp_time_cancelled") -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  $newTime = $inputResult.Text.Trim()
+  $seconds = Convert-TimeStringToSeconds $newTime
+  if ($null -eq $seconds) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "temp_time_invalid") -ForegroundColor Red
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  $newTemp = @{ active = $true; time = $newTime }
+  if ($config.GetType().Name -eq "PSCustomObject") {
+    $config | Add-Member -MemberType NoteProperty -Name "temporaryRun" -Value $newTemp -Force
+  } else {
+    $config.temporaryRun = $newTemp
+  }
+
+  $jsonOutput = $config | ConvertTo-Json -Depth 10
+  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+
+  Clear-Host
+  Write-Host "$(Get-LocalizedString 'temp_time_saved') $newTime" -ForegroundColor Green
+  Write-Host ""
+  Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+  $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+}
+
 # === FONCTION NAVIGATION PAR FLÈCHES ===
 function Show-ArrowMenu {
   param(
@@ -941,7 +1334,8 @@ function Show-ArrowMenu {
     [array]$Options,
     [int]$SelectedIndex = 0,
     [switch]$AllowCancel = $false,
-    [string]$ContextText = ""
+    [string]$ContextText = "",
+    [array]$ColoredOptions = @()
   )
   
   $currentIndex = $SelectedIndex
@@ -960,11 +1354,16 @@ function Show-ArrowMenu {
       Write-Host ""
     }
     
+    $removeLabel = Get-LocalizedString "menu_remove_preset"
+    $deleteLabel = Get-LocalizedString "details_delete_preset"
     for ($i = 0; $i -lt $Options.Count; $i++) {
+      $isRemove = $Options[$i] -eq $removeLabel -or $Options[$i] -eq $deleteLabel -or $i -in $ColoredOptions
       if ($i -eq $currentIndex) {
-        Write-Host "► $($Options[$i])" -ForegroundColor Yellow
+        $color = if ($isRemove) { "Red" } else { "Yellow" }
+        Write-Host "► $($Options[$i])" -ForegroundColor $color
       } else {
-        Write-Host "  $($Options[$i])" -ForegroundColor White
+        $color = if ($isRemove) { "Red" } else { "White" }
+        Write-Host "  $($Options[$i])" -ForegroundColor $color
       }
     }
     
@@ -1045,16 +1444,74 @@ function Write-PresetDetails($presetList, $currentConfig) {
   Write-Host "$(Get-LocalizedString 'details_subcategory') $subcat" -ForegroundColor Cyan
   $isActive = if ($currentConfig.activePreset -eq $selectedPreset.Name) { (Get-LocalizedString "yes") } else { (Get-LocalizedString "no") }
   Write-Host "$(Get-LocalizedString 'details_active_obs') $isActive" -ForegroundColor $(if ($isActive -eq (Get-LocalizedString "yes")) { "Green" } else { "Yellow" })
-  Write-Host ""
-  Write-Host "$(Get-LocalizedString 'details_url_obs')" -ForegroundColor Cyan
-  Write-Host "leaderboard.html" -ForegroundColor Gray
-  Write-Host ""
-  Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-  $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+  $actionOptions = @(
+    (Get-LocalizedString "details_edit_name"),
+    (Get-LocalizedString "details_delete_preset"),
+    (Get-LocalizedString "details_back")
+  )
+  $actionContext = "$(Get-LocalizedString 'details_name') $($selectedPreset.Value.name)"
+  $actionIndex = Show-ArrowMenu -Title (Get-LocalizedString "details_actions") -Options $actionOptions -AllowCancel -ContextText $actionContext -ColoredOptions @(1)
+  if ($actionIndex -eq -1 -or $actionIndex -eq 2) {
+    return
+  }
+
+  if ($actionIndex -eq 0) {
+    # Edit name
+    $inputResult = Read-InputWithEscape (Get-LocalizedString "details_edit_prompt")
+    if ($inputResult.Cancelled) {
+      Clear-Host
+      Write-Host (Get-LocalizedString "details_edit_cancelled") -ForegroundColor Yellow
+      Write-Host ""
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      return
+    }
+
+    $newName = $inputResult.Text
+    if ([string]::IsNullOrWhiteSpace($newName)) {
+      Clear-Host
+      Write-Host (Get-LocalizedString "details_edit_empty") -ForegroundColor Red
+      Write-Host ""
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      return
+    }
+
+    $trimmedName = $newName.Trim()
+    $presetId = $selectedPreset.Name
+    if ($currentConfig.presets.GetType().Name -eq "PSCustomObject") {
+      if ($currentConfig.presets.$presetId.PSObject.Properties.Name -contains "name") {
+        $currentConfig.presets.$presetId.name = $trimmedName
+      } else {
+        $currentConfig.presets.$presetId | Add-Member -MemberType NoteProperty -Name "name" -Value $trimmedName -Force
+      }
+    } else {
+      $currentConfig.presets[$presetId].name = $trimmedName
+    }
+
+    $selectedPreset.Value.name = $trimmedName
+    $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
+    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+
+    Clear-Host
+    Write-Host "$(Get-LocalizedString 'details_edit_saved') $trimmedName" -ForegroundColor Green
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  if ($actionIndex -eq 1) {
+    # Delete preset
+    Remove-PresetSingle $selectedPreset $currentConfig
+    return
+  }
 }
 
 # === FONCTION CHANGE ACTIVE PRESET ===
 function Update-ActivePreset($presetList, $currentConfig) {
+  $currentConfig = Initialize-Config $currentConfig
+
   Clear-Host
   Write-Host (Get-LocalizedString "change_active_title") -ForegroundColor Cyan
   Write-Host ""
@@ -1071,6 +1528,24 @@ function Update-ActivePreset($presetList, $currentConfig) {
   
   $newActivePreset = $presetList[$selectedIndex]
   $currentConfig.activePreset = $newActivePreset.Name
+
+  $tempDisabled = $false
+  $playerNameValue = if ($currentConfig.playerName) { $currentConfig.playerName.Trim() } else { "" }
+  $tempRun = $currentConfig.temporaryRun
+  if (-not [string]::IsNullOrWhiteSpace($playerNameValue) -and $tempRun -and $tempRun.active -and $tempRun.time) {
+    try {
+      Show-ProgressStep -Activity (Get-LocalizedString "temp_time_check_title") -Status (Get-LocalizedString "temp_time_check_status") -PercentComplete 60
+      $exists = Test-PlayerInPreset $currentConfig $newActivePreset.Value
+      Clear-Progress
+      if (-not $exists) {
+        $currentConfig.temporaryRun.active = $false
+        $currentConfig.temporaryRun.time = $null
+        $tempDisabled = $true
+      }
+    } catch {
+      Clear-Progress
+    }
+  }
   
   # Sauvegarder
   $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
@@ -1079,6 +1554,95 @@ function Update-ActivePreset($presetList, $currentConfig) {
   Clear-Host
   Write-Host "$(Get-LocalizedString 'change_active_changed') $($newActivePreset.Value.name)" -ForegroundColor Green
   Write-Host (Get-LocalizedString "change_active_obs_info") -ForegroundColor Green
+  if ($tempDisabled) {
+    Write-Host (Get-LocalizedString "temp_time_disabled") -ForegroundColor Yellow
+  }
+  Write-Host ""
+  Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+  $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+}
+
+# === FONCTION REMOVE SINGLE PRESET (from details) ===
+function Remove-PresetSingle($selectedPreset, $currentConfig) {
+  # Check if there's only one preset left
+  $presetCount = 0
+  foreach ($preset in $currentConfig.presets.PSObject.Properties) {
+    $presetCount++
+  }
+  
+  if ($presetCount -eq 1) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "remove_impossible_title") -ForegroundColor Red
+    Write-Host ""
+    Write-Host (Get-LocalizedString "remove_impossible_last") -ForegroundColor Red
+    Write-Host (Get-LocalizedString "remove_impossible_rule") -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  Clear-Host
+  Write-Host (Get-LocalizedString "remove_warning") -ForegroundColor Red
+  Write-Host "$($selectedPreset.Value.name)" -ForegroundColor Cyan
+  Write-Host ""
+  
+  # Confirmation simple selon la langue
+  $confirm = Read-Host (Get-LocalizedString "remove_confirm")
+  
+  $expectedAnswer = switch ($Global:CurrentLanguage) {
+    "en" { "y" }
+    "es" { "s" }
+    "pt" { "s" }
+    "zh" { "y" }
+    default { "o" }
+  }
+  
+  if ($confirm.ToLower() -ne $expectedAnswer) {
+    Write-Host (Get-LocalizedString "remove_cancelled") -ForegroundColor Cyan
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+  
+  # Supprimer le preset
+  $deletedPresetId = $selectedPreset.Name
+  $currentConfig.presets.PSObject.Properties.Remove($deletedPresetId)
+  
+  # Gérer le cas où le preset supprimé était actif
+  if ($currentConfig.activePreset -eq $deletedPresetId) {
+    $remainingPresets = $currentConfig.presets.PSObject.Properties
+    if ($remainingPresets.Count -gt 1) {
+      # Plusieurs presets restants : demander à l'utilisateur de choisir
+      $newOptions = @()
+      $newPresetList = @()
+      foreach ($preset in $remainingPresets) {
+        $newOptions += "$($preset.Value.name)"
+        $newPresetList += $preset
+      }
+      
+      $newActiveIndex = Show-ArrowMenu -Title (Get-LocalizedString "remove_active_deleted") -Options $newOptions
+      $currentConfig.activePreset = $newPresetList[$newActiveIndex].Name
+    } elseif ($remainingPresets.Count -eq 1) {
+      # Un seul preset restant : l'activer automatiquement  
+      $firstPreset = $remainingPresets | Select-Object -First 1
+      $newActiveId = $firstPreset.Name
+      $currentConfig.activePreset = $newActiveId
+    } else {
+      $currentConfig.activePreset = $null
+    }
+  }
+  
+  # Sauvegarder
+  $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
+  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+  
+  Clear-Host
+  Write-Host (Get-LocalizedString "remove_success" -f $selectedPreset.Value.name) -ForegroundColor Green
+  if ($currentConfig.activePreset) {
+    $newActiveName = $currentConfig.presets.($currentConfig.activePreset).name
+    Write-Host "$(Get-LocalizedString 'remove_new_active') $newActiveName" -ForegroundColor Cyan
+  }
   Write-Host ""
   Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
@@ -1149,7 +1713,8 @@ function Remove-Preset($presetList, $currentConfig) {
   # Gérer le cas où le preset supprimé était actif
   if ($currentConfig.activePreset -eq $deletedPresetId) {
     $remainingPresets = $currentConfig.presets.PSObject.Properties
-    if ($remainingPresets.Count -gt 0) {
+    if ($remainingPresets.Count -gt 1) {
+      # Plusieurs presets restants : demander à l'utilisateur de choisir
       $newOptions = @()
       $newPresetList = @()
       foreach ($preset in $remainingPresets) {
@@ -1159,6 +1724,9 @@ function Remove-Preset($presetList, $currentConfig) {
       
       $newActiveIndex = Show-ArrowMenu -Title (Get-LocalizedString "remove_active_deleted") -Options $newOptions
       $currentConfig.activePreset = $newPresetList[$newActiveIndex].Name
+    } elseif ($remainingPresets.Count -eq 1) {
+      # Un seul preset restant : l'activer automatiquement
+      $currentConfig.activePreset = $remainingPresets[0].Name
     } else {
       $currentConfig.activePreset = $null
     }
@@ -1184,8 +1752,18 @@ function New-Preset($currentConfig) {
   Clear-Host
   Write-Host (Get-LocalizedString "add_title") -ForegroundColor Green
   Write-Host ""
+  Write-Host (Get-LocalizedString "add_game_name_hint") -ForegroundColor Gray
+  Write-Host ""
 
-  $gameName = Read-Host (Get-LocalizedString "add_game_name")
+  $gameInput = Read-InputWithEscape (Get-LocalizedString "add_game_name")
+  if ($gameInput.Cancelled) {
+    Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  $gameName = $gameInput.Text
 
   if ([string]::IsNullOrWhiteSpace($gameName)) {
     Write-Host (Get-LocalizedString "add_error_empty_name") -ForegroundColor Red
@@ -1195,6 +1773,7 @@ function New-Preset($currentConfig) {
   }
 
   Show-ProgressStep -Activity (Get-LocalizedString "add_searching") -Status $gameName -PercentComplete 10
+  Start-Sleep -Milliseconds 50
 
   try {
     # === ETAPE 1: Chercher le jeu ===
@@ -1234,13 +1813,14 @@ function New-Preset($currentConfig) {
       $selectedGame = $games[0]
     }
 
+    Show-ProgressStep -Activity (Get-LocalizedString "add_loading_levels") -Status $selectedGame.names.international -PercentComplete 40
+    Start-Sleep -Milliseconds 50
     Clear-Progress
     
     # === ETAPE 2: Full Game ou Levels ===
     $selectedLevel = $null
     $levels = @()
     try {
-      Show-ProgressStep -Activity (Get-LocalizedString "add_loading_levels") -Status $selectedGame.names.international -PercentComplete 40
       $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
       $levelsData = $levelsResponse.Content | ConvertFrom-Json
       $levels = $levelsData.data
@@ -1297,6 +1877,7 @@ function New-Preset($currentConfig) {
 
     # === ETAPE 3: Recuperer les categories ===
     Show-ProgressStep -Activity (Get-LocalizedString "add_loading_categories") -Status $selectedGame.names.international -PercentComplete 70
+    Start-Sleep -Milliseconds 50
     
     $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
     $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
@@ -1540,7 +2121,25 @@ function New-Preset($currentConfig) {
     }
     
     # Charger ou creer la config
-    $config = Ensure-Config $currentConfig
+    $config = Initialize-Config $currentConfig
+
+    $tempDisabled = $false
+    $playerNameValue = if ($config.playerName) { $config.playerName.Trim() } else { "" }
+    $tempRun = $config.temporaryRun
+    if (-not [string]::IsNullOrWhiteSpace($playerNameValue) -and $tempRun -and $tempRun.active -and $tempRun.time) {
+      try {
+        Show-ProgressStep -Activity (Get-LocalizedString "temp_time_check_title") -Status (Get-LocalizedString "temp_time_check_status") -PercentComplete 60
+        $exists = Test-PlayerInPreset $config $newPreset
+        Clear-Progress
+        if (-not $exists) {
+          $config.temporaryRun.active = $false
+          $config.temporaryRun.time = $null
+          $tempDisabled = $true
+        }
+      } catch {
+        Clear-Progress
+      }
+    }
     
     # Ajouter le nouveau preset
     # Si c'est un PSCustomObject (chargé depuis JSON), utiliser Add-Member
@@ -1589,15 +2188,10 @@ function New-Preset($currentConfig) {
     Write-Host ""
     Write-Host (Get-LocalizedString "final_saved" -f $presetId) -ForegroundColor Green
     Write-Host "$(Get-LocalizedString 'final_status') $activationMessage" -ForegroundColor Cyan
+    if ($tempDisabled) {
+      Write-Host (Get-LocalizedString "temp_time_disabled") -ForegroundColor Yellow
+    }
     
-    # Copier l'URL simplifiee dans le presse-papiers
-    $simpleUrl = "leaderboard.html"
-    $simpleUrl | Set-Clipboard
-    
-    Write-Host ""
-    Write-Host (Get-LocalizedString "final_url_copied") -ForegroundColor Green
-    Write-Host "$simpleUrl" -ForegroundColor White
-    Write-Host ""
     if ($config.activePreset -eq $presetId) {
       Write-Host (Get-LocalizedString "final_obs_will_show") -ForegroundColor Green
     } else {
@@ -1627,6 +2221,9 @@ function Start-MainLoop {
         $currentConfig = $configContent
       }
       
+      # === INITIALISER LA CONFIG (ajoute les propriétés manquantes) ===
+      $currentConfig = Initialize-Config $currentConfig
+      
       # === INITIALISER LA LANGUE ===
       $Global:CurrentLanguage = "fr" # Défaut
       if ($currentConfig -and $currentConfig.language) {
@@ -1646,37 +2243,35 @@ function Start-MainLoop {
         $contextLines += ""
         
         foreach ($preset in $presetList) {
-          $marker = if ($preset.Name -eq $currentConfig.activePreset) { "🟢" } else { "•" }
-          $contextLines += "$marker $($preset.Value.name)"
+          $marker = if ($preset.Name -eq $currentConfig.activePreset) { "🟢 " } else { "   " }
+          $contextLines += "$marker$($preset.Value.name)"
         }
         $contextLines += ""
         
         $contextText = $contextLines -join "`n"
         
-        $menuOptions = @(
-          (Get-LocalizedString "menu_add_preset"),
-          (Get-LocalizedString "menu_view_details"), 
-          (Get-LocalizedString "menu_change_active"),
-          (Get-LocalizedString "menu_remove_preset"),
-          (Get-LocalizedString "menu_player_name"),
-          (Get-LocalizedString "menu_language_settings"),
-          (Get-LocalizedString "menu_quit")
-        )
-        
+        $menuItems = @()
+        $menuItems += @{ Label = (Get-LocalizedString "menu_add_preset"); Action = { param($cfg) New-Preset $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_view_details"); Action = { param($cfg) Write-PresetDetails $presetList $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_change_active"); Action = { param($cfg) Update-ActivePreset $presetList $cfg } }
+
+        $playerNameValue = if ($currentConfig -and $currentConfig.playerName) { $currentConfig.playerName.Trim() } else { "" }
+        if (-not [string]::IsNullOrWhiteSpace($playerNameValue)) {
+          $menuItems += @{ Label = (Get-LocalizedString "menu_temp_time"); Action = { param($cfg) Set-TemporaryRun $cfg } }
+        }
+
+        $menuItems += @{ Label = (Get-LocalizedString "menu_player_name"); Action = { param($cfg) Set-PlayerName $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_language_settings"); Action = { param($cfg) Set-Language $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_quit"); Action = { param($cfg) "__QUIT__" } }
+
+        $menuOptions = $menuItems | ForEach-Object { $_.Label }
         $selectedOption = Show-ArrowMenu -Title (Get-LocalizedString "menu_what_to_do") -Options $menuOptions -ContextText $contextText
-        
-        switch ($selectedOption) {
-          6 { # Quitter le programme
-            Clear-Host
-            Write-Host (Get-LocalizedString "goodbye") -ForegroundColor Green 
-            return 
-          }
-          0 { New-Preset $currentConfig }
-          1 { Write-PresetDetails $presetList $currentConfig }
-          2 { Update-ActivePreset $presetList $currentConfig }
-          3 { Remove-Preset $presetList $currentConfig }
-          4 { Set-PlayerName $currentConfig }
-          5 { Set-Language $currentConfig }
+
+        $actionResult = & $menuItems[$selectedOption].Action $currentConfig
+        if ($actionResult -eq "__QUIT__") {
+          Clear-Host
+          Write-Host (Get-LocalizedString "goodbye") -ForegroundColor Green
+          return
         }
       } else {
         # Premier preset - affichage direct

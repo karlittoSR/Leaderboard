@@ -1,121 +1,47 @@
-# QUICK START: Leaderboard Speedrun
+# Guía de Inicio Rápido
 
-**Configuración automática en 5 minutos** para streamers!  
-🌐 **Nuevo**: ¡Interfaz disponible en 5 idiomas!
-
----
-
-## ⚠️ Prerequisitos
-
-**PowerShell 7 es requerido** (Solo Windows 10/11)
-
-1. **Instalar PowerShell 7**:
-  - Ir a: https://github.com/PowerShell/PowerShell/releases/
-  - Elegir el **ultimo release** (etiqueta verde), **no** preview
-  - Descargar el instalador adecuado a tu sistema
-  - **Windows**: usar el `.msi` (x64 o x86)
-
-2. **Asociar archivos .ps1 con PowerShell 7**:
-   - Clic derecho en `main.ps1`
-   - Seleccionar "Abrir con" → "Elegir otra aplicación"
-   - Marcar "Siempre usar esta aplicación para abrir archivos .ps1"
-   - Seleccionar "PowerShell 7" de la lista
-   - Si no es visible: hacer clic "Más aplicaciones" y desplazarse
+**Obtén tu clasificación speedrun en OBS en 5 minutos**
 
 ---
 
-## Método automático (v1.20+)
+## Paso 1: Instalar PowerShell 7
 
-### Primer uso
-1. **Doble clic** en `main.ps1`
-2. **Menú principal** se muestra automáticamente
-3. **Navegar** con ↑↓ para seleccionar "Añadir un nuevo preset"
-4. **Presionar Enter** para confirmar
-5. **Introducir** el nombre del juego (ej: "Elden Ring")
-6. **Navegar** ↑↓ y **Enter** para seleccionar el juego de la lista
-7. **Elegir** Juego completo o Niveles (si está disponible)
-8. **Si Niveles**: seleccionar el nivel
-9. **Navegar** ↑↓ y **Enter** para elegir la categoría (Any%, 100%, etc.)
-10. **Opcional**: subcategorías (se pueden elegir varias)
-11. **Dar un ID** al preset (sugerencia automática proporcionada)
-12. **Activar automáticamente** el preset (si es el primero)
+1. Descarga desde: https://github.com/PowerShell/PowerShell/releases/
+2. Elige la **última versión estable** (etiqueta verde)
+3. Descarga e instala el archivo `.msi` para tu sistema
 
-**Resultado**: ¡preset guardado + activado automáticamente + URL copiada!
+## Paso 2: Corregir Acceso
 
-### Interfaz del menú principal (v1.20)
-El script muestra un menú con navegación intuitiva en tu idioma:
+1. Descarga todos los archivos: `configure.ps1`, `leaderboard.html`, `config.json`, `FIX_ACCESS.bat`
+2. Colócalos en la misma carpeta
+3. **Haz doble clic en `FIX_ACCESS.bat`** - corrige todo automáticamente
 
-```
-================================================
-  Gestor de Presets SRC by karlitto__
-================================================
+## Paso 3: Añadir Tu Juego
 
-Presets existentes:
-🟢 Elden Ring - Any% Glitchless
-• Dark Souls III - All Bosses
+1. Haz doble clic en `configure.ps1` o continúa con la última opción de `FIX_ACCESS.bat`.
+2. Selecciona **"Añadir un nuevo preset"**
+3. Escribe el nombre de tu juego (ej: "Elden Ring")
+4. Elige tu juego de la lista
+5. Selecciona la categoría (Any%, 100%, etc.)
+6. Dale un nombre y actívalo
+7. Puedes cerrar el programa.
 
-¿Qué te gustaría hacer?
-► Añadir un nuevo preset
-  Ver detalles de un preset existente
-  Cambiar preset activo
-  Eliminar un preset
-  Definir nombre del jugador
-  Configuración de idioma
-  Salir del programa
+## Paso 4: Establecer Tu Nombre (Opcional)
 
-Usa ↑↓ para navegar, Enter para seleccionar
-```
+1. Selecciona **"Definir mi nombre"**
+2. Introduce exactamente tu nombre de usuario de speedrun.com
+3. Esto habilita la función de PB temporal - omite si no es necesario
 
-### 🌐 Soporte multiidioma (v1.20)
-La interfaz está disponible en **5 idiomas**:
-- **🇫🇷 Français** (predeterminado)
-- **🇺🇸 English**
-- **🇪🇸 Español**
-- **🇧🇷 Português**
-- **🇨🇳 中文**
+## Paso 5: Añadir a OBS
 
-**Cambiar idioma**:
-1. Menú principal → **Opción 6** "Configuración de idioma"
-2. Navega con ↑↓ para elegir tu idioma
-3. Presiona **Enter** → ¡Cambio inmediato!
-4. El idioma se **guarda automáticamente**
+1. Añade una **Fuente del Navegador**
+2. **Archivo Local** → busca `leaderboard.html`
+3. **Ancho**: 400px
+4. **Alto**: 250px
+5. **¡Listo!**
 
-### Opciones disponibles
-
-**1. Añadir nuevo preset**: Crear nuevo preset (mismo flujo que la primera vez)  
-**2. Ver detalles**: Ver detalles completos de un preset  
-**3. Cambiar preset activo**: Seleccionar qué preset está activo en OBS  
-**4. Eliminar preset**: Eliminar un preset (confirmación simple s/N)  
-**5. Definir nombre del jugador**: Mostrar tu posicion en el leaderboard  
-**6. Configuración de idioma**: Cambiar idioma de la interfaz (5 idiomas disponibles)  
-**7. Salir**: Cerrar el programa
-
-**Navegación**: Usa **↑↓** para moverte entre opciones  
-**Selección**: Presiona **Enter** para confirmar  
-**Volver**: Presiona **⌫ Backspace** cuando esté disponible  
-**Cancelar entrada**: Presiona **Esc** al escribir texto  
-**Confirmaciones**: Diálogo simple **sí/no** (s/N) - ¡sin escritura compleja!
-
-### Usar en OBS
-- **URL simple**: `leaderboard.html` (¡siempre la misma!)
-- **Fuente del navegador**: Ancho 400, Alto 280
-- **Actualización automática**: cada 30 segundos
-- **Sin parámetros**: lee automáticamente el preset activo
+Tu clasificación se actualizará automáticamente y mostrará tu posición en la parte inferior en una fila separada cuando estés fuera del top 3.
 
 ---
 
-## Problemas comunes
-
-### Script PowerShell bloqueado
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-### "Failed to fetch" al probar en navegador
-**Normal**: limitaciones CORS. **¡Funciona perfectamente en OBS!**
-
----
-
-**Consejo para streamers**: ¡Solo una URL en OBS (`leaderboard.html`)! ¡Cambia juegos con el script → **Opción 3** durante el stream!
-
-**Consejo multiidioma**: ¡Configura una vez en tu idioma, todo se guarda automáticamente!
+**¿Necesitas más funciones?** Consulta el README.md completo para el sistema de PB temporal, múltiples presets y configuración avanzada.

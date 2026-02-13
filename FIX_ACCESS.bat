@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title Fix PowerShell Security Policy
+title Fix Access (PowerShell Policy)
 echo.
 echo ================================================
 echo   PowerShell Security Policy Fix
@@ -24,17 +24,23 @@ if %errorlevel% equ 0 (
 
 echo.
 echo [2/2] Unblocking script file...
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Path '%~dp0main.ps1' -ErrorAction SilentlyContinue"
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -Command "Unblock-File -Path '%~dp0configure.ps1' -ErrorAction SilentlyContinue"
 echo [OK] Script unblocked!
 
 echo.
 echo ================================================
-echo   Setup complete! Now launching the script...
+echo   Setup complete!
 echo ================================================
 echo.
-timeout /t 2 >nul
+echo Next step: add the file to OBS (leaderboard.html)
+echo.
+set /p launch=Launch setup now? (Y/N): 
+if /I "%launch%"=="Y" goto launch
+echo Exiting.
+exit /b 0
 
-pwsh.exe -NoProfile -File "%~dp0main.ps1"
+:launch
+pwsh.exe -NoProfile -File "%~dp0configure.ps1"
 
 if %errorlevel% neq 0 (
     echo.

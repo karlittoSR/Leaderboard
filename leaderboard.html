@@ -28,6 +28,7 @@
     let LEVEL_ID;
     let LEVEL_NAME;
     let PLAYER_NAME;
+    let TEMPORARY_RUN;
     let CAROUSEL_INTERVAL;
     let RUNS_PER_BATCH;
     let TOP_COUNT;
@@ -67,6 +68,12 @@
         LEVEL_NAME = preset.levelName || null;
         PLAYER_NAME = (config.playerName || '').trim();
         if (PLAYER_NAME === '') PLAYER_NAME = null;
+        const tempRun = config.temporaryRun || null;
+        if (tempRun && tempRun.active && tempRun.time) {
+          TEMPORARY_RUN = { time: String(tempRun.time).trim() };
+        } else {
+          TEMPORARY_RUN = null;
+        }
         FLAG_OVERRIDES = config.flagOverrides || {};
 
         // Appliquer les valeurs par defaut depuis config.json
@@ -76,6 +83,7 @@
         RUNS_PER_BATCH = defaults.runsPerBatch;
         TOP_COUNT = defaults.topCount;
         MAX_RUNS = Number.isFinite(defaults.maxRuns) ? defaults.maxRuns : 200;
+        MAX_PLAYER_NAME_CHARS = defaults.maxPlayerNameChars || 14;
 
         // Mettre a jour le titre
         document.title = preset.name + ': Top ' + TOP_COUNT + ' (Canvas)';
@@ -190,17 +198,65 @@
     }
 
     function formatTime(sec) {
-      const total = Math.round(sec * 1000) / 1000;
-      const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = Math.floor(total % 60);
-      const mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
-      return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+      const total = Number(sec);
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      
+      // Check if we have milliseconds (non-integer seconds)
+      const hasMilliseconds = s !== Math.floor(s);
+      
+      if (hasMilliseconds) {
+        // Format with milliseconds (up to 3 decimal places)
+        const sFormatted = s.toFixed(3).replace(/\.?0+$/, '');
+        const mm = String(m).padStart(2, '0');
+        return h > 0 ? `${h}:${mm}:${sFormatted.padStart(6, '0')}` : `${m}:${sFormatted.padStart(6, '0')}`;
+      } else {
+        // Format without milliseconds
+        const sInt = Math.floor(s);
+        const mm = String(m).padStart(2, '0');
+        const ss = String(sInt).padStart(2, '0');
+        return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+      }
+    }
+
+    function parseTimeString(text) {
+      if (!text) return null;
+      const clean = String(text).trim().replace(',', '.');
+      if (!clean) return null;
+      if (/^\d+(\.\d+)?$/.test(clean)) {
+        const val = Number(clean);
+        return Number.isFinite(val) ? val : null;
+      }
+      const parts = clean.split(':');
+      if (parts.length < 2 || parts.length > 3) return null;
+      const nums = parts.map(p => Number(p));
+      if (nums.some(n => !Number.isFinite(n) || n < 0)) return null;
+      let hours = 0;
+      let minutes = 0;
+      let seconds = 0;
+      if (nums.length === 2) {
+        [minutes, seconds] = nums;
+      } else {
+        [hours, minutes, seconds] = nums;
+        if (minutes >= 60) return null;
+      }
+      if (seconds >= 60) return null;
+      return (hours * 3600) + (minutes * 60) + seconds;
     }
 
     function getRankColor(position) {
       return [DRAW.COLORS.top1, DRAW.COLORS.top2, DRAW.COLORS.top3, DRAW.COLORS.other][Math.min(position, 3)];
     }
 
-    function truncatePlayer(name, maxChars = 15) {
+    function getTemporaryColor() {
+      return '#00e5ff';
+    }
+
+    function truncatePlayer(name, maxChars = null) {
+      if (maxChars === null) {
+        maxChars = MAX_PLAYER_NAME_CHARS || 14;
+      }
       return name.length > maxChars ? name.substring(0, maxChars) + '.' : name;
     }
 
@@ -242,16 +298,9 @@
     }
 
     function applyRainbowText(x, y, text, phase, alpha = 1) {
-      const width = ctx.measureText(text).width || 1;
-      const grad = ctx.createLinearGradient(x, y, x + width, y);
-      const stops = 6;
-      for (let i = 0; i <= stops; i++) {
-        const t = i / stops;
-        const hue = (phase + t * 360) % 360;
-        grad.addColorStop(t, hslToRgb(hue, 0.5, 0.7));
-      }
+      const hue = phase % 360;
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = grad;
+      ctx.fillStyle = hslToRgb(hue, 0.5, 0.7);
     }
 
     // === Draw ===
@@ -268,13 +317,15 @@
       ctx.textAlign = 'left';
 
       const allDisplay = [...topRuns, ...carouselBatch];
+      const phaseBase = (Date.now() / 30) % 360;
       const { padX, startY, rowH } = DRAW.LAYOUT;
       const colRank = padX;
-      const timeX = 300; // Right aligned
+      const timeX = 350; // Right aligned
 
       for (let i = 0; i < allDisplay.length; i++) {
         const r = allDisplay[i];
         const y = startY + i * rowH;
+        const isTemporary = !!r.isTemporary;
         const color = getRankColor(i);
 
         // Apply fade only to carousel rows (rows 3-7, indices 3-7)
@@ -287,8 +338,13 @@
         // Draw rank number
         ctx.fillStyle = color;
         ctx.textAlign = 'left';
-        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `#${r.rank}` : `${r.rank}`;
-        ctx.fillText(rankText, colRank, y);
+        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
+        if (isTemporary) {
+          applyRainbowText(colRank, y, rankText, phaseBase + i * 12);
+          ctx.fillText(rankText, colRank, y);
+        } else {
+          ctx.fillText(rankText, colRank, y);
+        }
 
         // Draw flag + name
         let x = colRank + fixedMaxRankW + 3;
@@ -297,19 +353,30 @@
           x += DRAW.FLAG.w + 4;
         }
 
-        const displayName = truncatePlayer(r.player);
+        const displayName = truncatePlayer(isTemporary ? `PB - ${r.player}` : r.player);
         ctx.fillStyle = color;
         
-        applyTextStyle(x, y, displayName, r.nameStyle);
-        ctx.textAlign = 'left';
-        ctx.fillText(displayName, x, y);
+        if (isTemporary) {
+          applyRainbowText(x, y, displayName, phaseBase + 40 + i * 12);
+          ctx.textAlign = 'left';
+          ctx.fillText(displayName, x, y);
+        } else {
+          applyTextStyle(x, y, displayName, r.nameStyle);
+          ctx.textAlign = 'left';
+          ctx.fillText(displayName, x, y);
+        }
 
         // Draw time (right-aligned)
         ctx.font = DRAW.FONT_MONO;
         ctx.fillStyle = color;
         
         ctx.textAlign = 'right';
-        ctx.fillText(r.time, timeX, y);
+        if (isTemporary) {
+          applyRainbowText(timeX - ctx.measureText(r.time).width, y, r.time, phaseBase + 80 + i * 12);
+          ctx.fillText(r.time, timeX, y);
+        } else {
+          ctx.fillText(r.time, timeX, y);
+        }
 
         ctx.globalAlpha = globalAlpha;
       }
@@ -320,6 +387,7 @@
         const desiredY = startY + allDisplay.length * rowH + gap;
         const y = Math.min(desiredY, canvasH - rowH);
         const phase = (Date.now() / 30) % 360;
+        const isTemporary = !!playerRow.isTemporary;
 
         // Separator line instead of an empty gap
         const lineY = startY + allDisplay.length * rowH - 4;
@@ -336,9 +404,14 @@
         ctx.restore();
 
         ctx.textAlign = 'left';
-        const rankText = (typeof playerRow.rank === 'number' && playerRow.rank > 0) ? `#${playerRow.rank}` : `${playerRow.rank}`;
-        applyRainbowText(colRank, y, rankText, phase);
-        ctx.fillText(rankText, colRank, y);
+        const rankText = (typeof playerRow.rank === 'number' && playerRow.rank > 0) ? `${playerRow.rank}.` : `${playerRow.rank}`;
+        if (isTemporary) {
+          applyRainbowText(colRank, y, rankText, phase);
+          ctx.fillText(rankText, colRank, y);
+        } else {
+          ctx.fillStyle = DRAW.COLORS.other;
+          ctx.fillText(rankText, colRank, y);
+        }
 
         let x = colRank + fixedMaxRankW + 3;
         if (playerRow.flagImg) {
@@ -346,15 +419,27 @@
           x += DRAW.FLAG.w + 4;
         }
 
-        const displayName = truncatePlayer(playerRow.player);
-        applyRainbowText(x, y, displayName, phase + 40);
-        ctx.textAlign = 'left';
-        ctx.fillText(displayName, x, y);
+        const displayName = truncatePlayer(isTemporary ? `PB - ${playerRow.player}` : playerRow.player);
+        if (isTemporary) {
+          applyRainbowText(x, y, displayName, phase + 40);
+          ctx.textAlign = 'left';
+          ctx.fillText(displayName, x, y);
+        } else {
+          ctx.fillStyle = DRAW.COLORS.other;
+          applyTextStyle(x, y, displayName, playerRow.nameStyle);
+          ctx.textAlign = 'left';
+          ctx.fillText(displayName, x, y);
+        }
 
         ctx.font = DRAW.FONT_MONO;
-        applyRainbowText(timeX - ctx.measureText(playerRow.time).width, y, playerRow.time, phase + 80);
         ctx.textAlign = 'right';
-        ctx.fillText(playerRow.time, timeX, y);
+        if (isTemporary) {
+          applyRainbowText(timeX - ctx.measureText(playerRow.time).width, y, playerRow.time, phase + 80);
+          ctx.fillText(playerRow.time, timeX, y);
+        } else {
+          ctx.fillStyle = DRAW.COLORS.other;
+          ctx.fillText(playerRow.time, timeX, y);
+        }
         ctx.globalAlpha = 1;
       }
 
@@ -469,7 +554,7 @@
       for (const r of widthRuns) {
         // Largeur du numero de rang
         const isNumericRank = typeof r.rank === 'number' && r.rank >= 1 && r.rank <= 3;
-        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `#${r.rank}` : `${r.rank}`;
+        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
         const rankW = isNumericRank
           ? (DRAW.MEDAL.w + DRAW.MEDAL.spacing)
           : ctx.measureText(rankText).width;
@@ -535,21 +620,58 @@
             ? (playerMap.get(firstPlayer.id) || { name: players[0] || 'Inconnu', style: null, country: null })
             : { name: players[0] || 'Inconnu', style: null, country: null };
 
+          const timeSeconds = Number.isFinite(run.times?.primary_t) ? run.times.primary_t : 0;
           return {
             rank: entry.place || 0,
             player: playerInfo.name,
             players,
             nameStyle: playerInfo.style,
             country: normalizeCountry(playerInfo.country),
-            time: formatTime(run.times?.primary_t || 0),
+            time: formatTime(timeSeconds),
+            timeSeconds,
             submitted: run.submitted
           };
         });
 
+        if (PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time) {
+          const target = PLAYER_NAME.toLowerCase();
+          const matchIndex = allRuns.findIndex(r => (r.players || []).some(n => n.toLowerCase() === target));
+          if (matchIndex >= 0) {
+            const tempSeconds = parseTimeString(TEMPORARY_RUN.time);
+            if (Number.isFinite(tempSeconds)) {
+              allRuns[matchIndex] = {
+                ...allRuns[matchIndex],
+                player: PLAYER_NAME,
+                players: [PLAYER_NAME],
+                timeSeconds: tempSeconds,
+                time: formatTime(tempSeconds),
+                isTemporary: true
+              };
+            }
+          } else {
+            // Player not present in this category: ignore temporary PB for this load.
+            TEMPORARY_RUN = null;
+          }
+        }
+
+        const sortedRuns = allRuns
+          .map((r, idx) => ({ ...r, _idx: idx }))
+          .sort((a, b) => {
+            const aTime = Number.isFinite(a.timeSeconds) ? a.timeSeconds : Number.POSITIVE_INFINITY;
+            const bTime = Number.isFinite(b.timeSeconds) ? b.timeSeconds : Number.POSITIVE_INFINITY;
+            if (aTime !== bTime) return aTime - bTime;
+            return a._idx - b._idx;
+          })
+          .map((r, idx) => {
+            const copy = { ...r, rank: idx + 1 };
+            delete copy._idx;
+            return copy;
+          });
+
         let playerRow = null;
         if (PLAYER_NAME) {
           const target = PLAYER_NAME.toLowerCase();
-          const match = allRuns.find(r => (r.players || []).some(n => n.toLowerCase() === target));
+          const match = sortedRuns.find(r => (r.players || []).some(n => n.toLowerCase() === target));
           if (match) {
             const isInTop = typeof match.rank === 'number' && match.rank >= 1 && match.rank <= TOP_COUNT;
             if (!isInTop) {
@@ -559,12 +681,12 @@
         }
 
         // Diviser en TOP N et carousel
-        const topRuns = allRuns.slice(0, TOP_COUNT);
-        carouselRuns = allRuns.slice(TOP_COUNT, Math.max(TOP_COUNT, MAX_RUNS || 0));
+        const topRuns = sortedRuns.slice(0, TOP_COUNT);
+        carouselRuns = sortedRuns.slice(TOP_COUNT, Math.max(TOP_COUNT, MAX_RUNS || 0));
         carouselPage = 0;
 
         // Charger les images des drapeaux
-        const countryCodes = Array.from(new Set(allRuns.map(r => r.country).filter(Boolean)));
+        const countryCodes = Array.from(new Set(sortedRuns.map(r => r.country).filter(Boolean)));
         await Promise.allSettled(countryCodes.map(loadFlagImage));
         
         const flagMap = new Map();
@@ -591,7 +713,7 @@
         processedTopRuns = processedTop;
 
         // Calculate fixed widths
-        calculateColumnWidths(allRuns, processedPlayerRow);
+        calculateColumnWidths(sortedRuns, processedPlayerRow);
 
         // Draw and start carousel
         const availableRows = Math.floor((canvas.clientHeight - DRAW.LAYOUT.startY) / DRAW.LAYOUT.rowH);

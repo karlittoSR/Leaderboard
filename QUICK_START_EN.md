@@ -1,144 +1,47 @@
-# QUICK START: Speedrun Leaderboard
+# Quick Start Guide
 
-**Automatic 5-minute setup** for streamers!  
-🌐 **New**: Interface available in 5 languages!
-
----
-
-## ⚠️ Prerequisites
-
-**PowerShell 7 is required** (Windows 10/11 only)
-
-1. **Install PowerShell 7**:
-  - Go to: https://github.com/PowerShell/PowerShell/releases/
-  - Choose the **latest release** (green label), **not** a preview
-  - Download the installer that matches your system
-  - **Windows**: use the `.msi` (x64 or x86)
-
-2. **Associate .ps1 files with PowerShell 7**:
-   - Right-click `main.ps1`
-   - Select "Open with" → "Choose another app"
-   - Check "Always use this app to open .ps1 files"
-   - Select "PowerShell 7" from the list
-   - If not visible: click "More apps" and scroll to find it
+**Get your speedrun leaderboard in OBS in 5 minutes**
 
 ---
 
-## Automatic method (v1.20+)
+## Step 1: Install PowerShell 7
 
-### First use
-1. **Double-click** on `main.ps1`
-2. **Main menu** displays automatically
-3. **Navigate** with ↑↓ to select "Add a new preset"
-4. **Press Enter** to confirm
-5. **Enter** the game name (e.g., "Elden Ring")
-6. **Navigate** ↑↓ and **Enter** to select the game from the list
-7. **Choose** Full game or Levels (if available)
-8. **If Levels**: select the level
-9. **Navigate** ↑↓ and **Enter** to choose the category (Any%, 100%, etc.)
-10. **Optional**: subcategories (multiple choices possible)
-11. **Give an ID** to the preset (auto suggestion provided)
-12. **Automatically activate** the preset (if it's the first one)
+1. Download from: https://github.com/PowerShell/PowerShell/releases/
+2. Choose **latest stable release** (green label)
+3. Download and install the `.msi` file for your system
 
-**Result**: preset saved + activated automatically + URL copied!
+## Step 2: Fix Access
 
-### Main menu interface (v1.20)
-The script displays a menu with intuitive navigation in your language:
+1. Download all files: `configure.ps1`, `leaderboard.html`, `config.json`, `FIX_ACCESS.bat`
+2. Place them in the same folder
+3. **Double-click `FIX_ACCESS.bat`** - fixes everything automatically
 
-```
-================================================
-  SRC Preset Manager by karlitto__
-================================================
+## Step 3: Add Your Game
 
-Existing presets:
-🟢 Elden Ring - Any% Glitchless
-• Dark Souls III - All Bosses
+1. Double-click `configure.ps1` or continue with the last `FIX_ACCESS.bat` option.
+2. Select **"Add a new preset"**
+3. Type your game name (e.g., "Elden Ring")
+4. Choose your game from the list
+5. Select category (Any%, 100%, etc.)
+6. Give it a name and activate it
+7. You can close the program.
 
-What would you like to do?
-► Add a new preset
-  View details of an existing preset
-  Change active preset
-  Delete a preset
-  Set player name
-  Language settings
-  Quit program
+## Step 4: Set Your Name (Optional)
 
-Use ↑↓ to navigate, Enter to select
-```
+1. Select **"Set my name"**
+2. Enter your speedrun.com username exactly
+3. This enables the temporary PB feature - skip if not needed
 
-### 🌐 Multilingual support (v1.20)
-The interface is available in **5 languages**:
-- **🇫🇷 Français** (default)
-- **🇺🇸 English**
-- **🇪🇸 Español**
-- **🇧🇷 Português**  
-- **🇨🇳 中文**
+## Step 5: Add to OBS
 
-**Change language**:
-1. Main menu → **Option 6** "Language settings"
-2. Navigate with ↑↓ to choose your language
-3. Press **Enter** → Immediate change!
-4. Language is **saved automatically**
+1. Add **Browser Source**
+2. **Local File** → browse to `leaderboard.html`
+3. **Width**: 400px
+4. **Height**: 250px
+5. **Done!**
 
-**Navigation**: Use **↑↓** to move between options  
-**Selection**: Press **Enter** to confirm  
-**Go back**: Press **⌫ Backspace** when available (indicated on screen)  
-**Cancel input**: Press **Esc** when typing text  
-**Confirmations**: Simple **yes/no** dialog (y/N) - no complex typing!
-
-### Available options
-
-**1. Add new preset**: Create new preset (same workflow as first time)  
-**2. View details**: View complete details of a preset  
-**3. Change active preset**: Select which preset is active in OBS  
-**4. Delete preset**: Delete a preset (simple y/N confirmation)  
-**5. Set player name**: Show your rank line on the leaderboard  
-**6. Language settings**: Change interface language (5 languages available)  
-**7. Quit**: Close the program
-
-### Using in OBS
-- **Simple URL**: `leaderboard.html` (always the same!)
-- **Browser source**: Width 400, Height 280
-- **Auto refresh**: every 30 seconds
-- **No parameters**: automatically reads the active preset
+Your leaderboard will update automatically and display your position at the bottom on a separate row when you're outside the top 3.
 
 ---
 
-## Common issues
-
-### PowerShell script blocked
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-### "Failed to fetch" when testing in browser
-**Normal**: CORS limitations. **Works perfectly in OBS!**
-
-### Preset not displayed
-1. Use [main.ps1](main.ps1) → **Option 3** to change the active preset
-2. All settings are automatically managed by the script
-
----
-
-## Useful links
-
-- **Auto configuration**: [main.ps1](main.ps1) (multilingual interface)
-- **Display**: [leaderboard.html](leaderboard.html)
-- **Full documentation**: [README.md](README.md)
-
----
-
-**Streamer tip**: Only one URL in OBS (`leaderboard.html`)! Change games with the script → **Option 3** during stream!
-
-**Multilingual tip**: Configure once in your language, everything is saved automatically!
-
----
-
-## Need help?
-
-- **Can't find Game ID** → Run `main.ps1` - fully automated!
-- **No runs showing** → Use the script to reconfigure the preset
-- **Carousel doesn't scroll** → Fewer runs than configured amount
-- **"Failed to fetch" when double-clicking** → Run local server: `python -m http.server 8000`
-- **PS script won't execute** → Right-click → "Run with PowerShell"
-- **Change language** → Option 6 in the main script menu
+**Need more features?** Check the full README.md for temporary PB system, multiple presets, and advanced configuration.
