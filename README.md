@@ -5,8 +5,7 @@
 
 Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, fully configurable.
 
-<img width="430" height="292" alt="image" src="https://github.com/user-attachments/assets/9b1e9e20-8349-4d7d-abf6-905c66bce986" />
-
+<img width="452" height="313" alt="image" src="https://github.com/user-attachments/assets/f407cec4-25d8-4434-9ede-b3f17c1daa3d" />
 
 ## Installation (2 minutes)
 
