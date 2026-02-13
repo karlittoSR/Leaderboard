@@ -6,7 +6,7 @@
 
 Dynamic and animated display of Speedrun.com leaderboards with advanced features for streamers and speedrunners.
 
-![Leaderboard Preview](images/leaderboard-preview.png)
+<img src="images/leaderboard-preview.png" width="50%" alt="Leaderboard Preview">
 
 ---
 
@@ -78,7 +78,7 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
    - Change font to a Chinese-compatible font (e.g., SimSun, SimHei, or Microsoft YaHei)
    - Click "OK"
    
-   ![Chinese Font Setup](images/chinesecharacters.png)
+   <img src="images/chinesecharacters.png" width="50%" alt="Chinese Font Setup">
 
 ### Quick Setup
 
