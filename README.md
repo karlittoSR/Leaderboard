@@ -1,6 +1,6 @@
-# Speedrun Leaderboard Canvas
+# Speedrun Leaderboard Overlay
 
-**Version 1.30** - Canvas-based speedrun.com leaderboard display  
+**Version 1.30** - Overlay-based speedrun.com leaderboard display  
 **Multilingual preset manager with intelligent automation**  
 **Supports 5 languages**: Français, English, Español, Português, 中文
 
@@ -31,7 +31,7 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - **Global Accessibility**: Designed for the international speedrun community
 
 ### Display Features
-- **Canvas-based Rendering**: Smooth, simple graphics
+- **Overlay Rendering**: Smooth, simple graphics
 - **Animated Carousel**: Rotating display of additional leaderboard entries
 - **Country Flags**: Automatic flag display from flagcdn.com
 - **Ranking Colors**: Gold/Silver/Bronze for top 3, blue-grey for others
@@ -149,7 +149,7 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 ```
 
 ### Display Customization
-- **Canvas Dimensions**: Adjust `canvasWidth`/`canvasHeight` for resolution
+- **Overlay Dimensions**: Adjust `canvasWidth`/`canvasHeight` for resolution
 - **OBS Dimensions**: Modify `displayWidth`/`displayHeight` for browser source
 - **Text Limits**: Change `maxPlayerNameChars` for name truncation
 - **Carousel Speed**: Adjust `carouselInterval` for rotation timing
@@ -226,7 +226,7 @@ Use formats like `1:23.45` or `82.5` for time entry
 ```
 leaderboard/
 ├── configure.ps1          # Main configuration script (multilingual)
-├── leaderboard.html       # Canvas display (for OBS)
+├── leaderboard.html       # Overlay display (for OBS)
 ├── config.json           # Settings and presets storage
 ├── FIX_ACCESS.bat        # Execution policy fixer
 ├── README.md             # Complete documentation
@@ -248,7 +248,7 @@ leaderboard/
 - **High DPI Support**: Device pixel ratio awareness for crisp display
 - **Smooth Animations**: 60fps carousel transitions with fade effects
 - **Efficient Drawing**: Optimized render loops for performance
-- **Responsive Design**: Adapts to different canvas resolutions
+- **Responsive Design**: Adapts to different overlay resolutions
 
 ### Data Management
 - **JSON Configuration**: Human-readable settings format

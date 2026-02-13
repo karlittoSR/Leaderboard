@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Elden Ring – Any% Glitchless: Top 10 (Canvas)</title>
+  <title>Elden Ring – Any% Glitchless: Top 10 (Overlay)</title>
   <style>
     :root { --muted:#94a3b8; --text:#e2e8f0; }
     html, body { height: 100%; margin: 0; }
@@ -86,9 +86,9 @@
         MAX_PLAYER_NAME_CHARS = defaults.maxPlayerNameChars || 14;
 
         // Mettre a jour le titre
-        document.title = preset.name + ': Top ' + TOP_COUNT + ' (Canvas)';
+        document.title = preset.name + ': Top ' + TOP_COUNT + ' (Overlay)';
 
-        // Mettre a jour la taille du canvas depuis les defaults
+        // Update overlay size from defaults
         canvas.width = defaults.canvasWidth;
         canvas.height = defaults.canvasHeight;
         canvas.style.width = defaults.displayWidth;
@@ -102,7 +102,7 @@
       }
     }
 
-    // === Canvas Setup ===
+    // === Overlay Setup ===
     const canvas = document.getElementById('board');
     const ctx = canvas.getContext('2d');
 
