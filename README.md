@@ -1,5 +1,5 @@
 # Speedrun Leaderboard Canvas
-**Version**: 1.1.0  
+**Version**: 1.20  
 **Multilingual preset manager with arrow-based navigation**  
 **Supports 5 languages**: French, English, Spanish, Portuguese, Chinese
 
@@ -62,12 +62,12 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 3. **Run the setup** - Double-click `main.ps1`:
    
    Then navigate with arrow keys to find your game and category.
-   - **Choose language**: Option 5 in the main menu
+   - **Choose language**: Option 6 in the main menu
    - Interface available in **5 languages**
 
 4. **Add the file to OBS** (Browser Source) with these values: Width 400, Height 280
 
-## Features v1.1.0
+## Features v1.20
 
 ### Multilingual Support
 - **5 languages available**: FR, EN, ES, PT, ZH
@@ -84,6 +84,12 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 - **Visual indicators**: checkmark [ACTIVE] and pin for active preset
 - **Modern interface**
 - **Integrated language menu**
+- **Player name option** (optional rank line on leaderboard)
+
+### Levels
+- **Full game or Levels** selection when supported
+- **Per-level categories** for games like Celeste
+- **Level stored in preset** for automatic display
 
 ### Leaderboard
 - Display of **top 3** + **animated carousel** of other runs
@@ -92,20 +98,32 @@ Dynamic display of Speedrun.com leaderboards on canvas with animated carousel, f
 - **Fully configurable** via config.json
 - **URL parameters** to override settings
 - **Responsive** and transparent (perfect for Twitch streams)
+- **Optional player line** at the bottom (your position)
 
 ## How it works
 
 The **"config.json"** file contains **presets** for different games/categories:
 
-`json
+```json
+"playerName": "Karlitto",
 "presets": {
-  "elden-any-glitchless": {
-    "gameId": "nd28z0ed",
-    "category": "Any%",
-    "subcategory": "Glitchless"
-  }
+   "elden-any-glitchless": {
+      "gameId": "nd28z0ed",
+      "category": "Any%",
+      "subcategory": "Glitchless",
+      "subcategories": [
+         { "variableId": "7891zr5n", "valueId": "qj740p3q", "label": "Glitchless" }
+      ]
+   },
+   "celeste-level": {
+      "gameId": "o1y9j9v6",
+      "levelId": "r9g4k7p9",
+      "levelName": "Celestial Resort",
+      "category": "Collectibles",
+      "subcategory": "Full Clear"
+   }
 }
-`
+```
 
 You can access a preset like this:
 - **Default**: leaderboard.html (uses the first preset)
@@ -116,7 +134,7 @@ You can access a preset like this:
 **Recommended method**: Use the main.ps1 script!
 
 1. **Double-click** on main.ps1
-2. **Choose language** (Option 5) if needed
+2. **Choose language** (Option 6) if needed
 3. **Select** "Add new preset"
 4. **Follow** the automatic wizard
 
@@ -139,7 +157,7 @@ See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screen
 
 ### Configuration
 - **Detailed configuration?** → See comments in config.json
-- **Multilingual interface** → Option 5 in the script menu
+- **Multilingual interface** → Option 6 in the script menu
 
 ## Customizing Appearance
 

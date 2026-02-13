@@ -24,6 +24,10 @@
     let GAME_ID;
     let CATEGORY_NAME;
     let SUBCATEGORY_LABEL;
+    let SUBCATEGORIES;
+    let LEVEL_ID;
+    let LEVEL_NAME;
+    let PLAYER_NAME;
     let CAROUSEL_INTERVAL;
     let RUNS_PER_BATCH;
     let TOP_COUNT;
@@ -53,6 +57,14 @@
         GAME_ID = preset.gameId;
         CATEGORY_NAME = preset.category;
         SUBCATEGORY_LABEL = preset.subcategory;
+        SUBCATEGORIES = preset.subcategories || null;
+        if (SUBCATEGORIES && !Array.isArray(SUBCATEGORIES)) {
+          SUBCATEGORIES = [SUBCATEGORIES];
+        }
+        LEVEL_ID = preset.levelId || null;
+        LEVEL_NAME = preset.levelName || null;
+        PLAYER_NAME = (config.playerName || '').trim();
+        if (PLAYER_NAME === '') PLAYER_NAME = null;
 
         // Appliquer les valeurs par defaut depuis config.json
         const defaults = config.defaults;
@@ -195,8 +207,40 @@
       ctx.fillStyle = '#e2e8f0';
     }
 
+    function hslToRgb(h, s, l) {
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+
+      if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+      else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+      else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+      else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+      else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+      else { r = c; g = 0; b = x; }
+
+      const rr = Math.round((r + m) * 255);
+      const gg = Math.round((g + m) * 255);
+      const bb = Math.round((b + m) * 255);
+      return `rgb(${rr}, ${gg}, ${bb})`;
+    }
+
+    function applyRainbowText(x, y, text, phase, alpha = 1) {
+      const width = ctx.measureText(text).width || 1;
+      const grad = ctx.createLinearGradient(x, y, x + width, y);
+      const stops = 6;
+      for (let i = 0; i <= stops; i++) {
+        const t = i / stops;
+        const hue = (phase + t * 360) % 360;
+        grad.addColorStop(t, hslToRgb(hue, 0.5, 0.7));
+      }
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = grad;
+    }
+
     // === Draw ===
-    function draw(topRuns, carouselBatch, fadeProgress = 1) {
+    function draw(topRuns, carouselBatch, fadeProgress = 1, playerRow = null) {
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.floor(canvas.clientWidth * dpr);
       canvas.height = Math.floor(canvas.clientHeight * dpr);
@@ -228,7 +272,8 @@
         // Draw rank number
         ctx.fillStyle = color;
         ctx.textAlign = 'left';
-        ctx.fillText(`#${r.rank}`, colRank, y);
+        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `#${r.rank}` : `${r.rank}`;
+        ctx.fillText(rankText, colRank, y);
 
         // Draw flag + name
         let x = colRank + fixedMaxRankW + 3;
@@ -252,6 +297,36 @@
         ctx.fillText(r.time, timeX, y);
 
         ctx.globalAlpha = globalAlpha;
+      }
+
+      if (playerRow) {
+        const gap = rowH; // One clear blank row
+        const canvasH = canvas.clientHeight;
+        const desiredY = startY + allDisplay.length * rowH + gap;
+        const y = Math.min(desiredY, canvasH - rowH);
+        const phase = (Date.now() / 30) % 360;
+
+        ctx.textAlign = 'left';
+        const rankText = (typeof playerRow.rank === 'number' && playerRow.rank > 0) ? `#${playerRow.rank}` : `${playerRow.rank}`;
+        applyRainbowText(colRank, y, rankText, phase);
+        ctx.fillText(rankText, colRank, y);
+
+        let x = colRank + fixedMaxRankW + 3;
+        if (playerRow.flagImg) {
+          drawRoundedImage(playerRow.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
+          x += DRAW.FLAG.w + 4;
+        }
+
+        const displayName = truncatePlayer(playerRow.player);
+        applyRainbowText(x, y, displayName, phase + 40);
+        ctx.textAlign = 'left';
+        ctx.fillText(displayName, x, y);
+
+        ctx.font = DRAW.FONT_MONO;
+        applyRainbowText(timeX - ctx.measureText(playerRow.time).width, y, playerRow.time, phase + 80);
+        ctx.textAlign = 'right';
+        ctx.fillText(playerRow.time, timeX, y);
+        ctx.globalAlpha = 1;
       }
 
       ctx.shadowBlur = 0;
@@ -282,38 +357,59 @@
       const url = `https://www.speedrun.com/api/v1/games/${GAME_ID}?embed=categories.variables`;
       const data = await fetchJSON(url);
       const cats = data.data.categories.data;
-      const cat = cats.find(c => c.type === 'per-game' && c.name === CATEGORY_NAME);
+      const targetType = LEVEL_ID ? 'per-level' : 'per-game';
+      const cat = cats.find(c => c.type === targetType && c.name === CATEGORY_NAME);
       if (!cat) throw new Error(`Categorie "${CATEGORY_NAME}" non trouvee (options : ${cats.map(c => c.name).join(', ')})`);
       
+      // Nouvelle structure: liste d'IDs des sous-categories
+      if (Array.isArray(SUBCATEGORIES) && SUBCATEGORIES.length > 0) {
+        const variablePairs = SUBCATEGORIES
+          .filter(s => s && s.variableId && s.valueId)
+          .map(s => ({ variableId: s.variableId, valueId: s.valueId }));
+        return { categoryId: cat.id, variablePairs };
+      }
+
       // Si pas de sous-categorie requis
       if (!SUBCATEGORY_LABEL) {
-        return { categoryId: cat.id, variableId: null, valueId: null };
+        return { categoryId: cat.id, variablePairs: [] };
       }
 
       const vars = (cat.variables?.data) || [];
-      const sub = vars.find(v => v['is-subcategory'] && v.values?.values &&
-        Object.values(v.values.values).some(val => val.label.toLowerCase() === SUBCATEGORY_LABEL.toLowerCase()));
-      if (!sub) throw new Error(`Sous-categorie "${SUBCATEGORY_LABEL}" non trouvee pour "${CATEGORY_NAME}"`);
-      
-      for (const [variableId, value] of Object.entries(sub.values.values)) {
-        if (value.label.toLowerCase() === SUBCATEGORY_LABEL.toLowerCase()) {
-          return { categoryId: cat.id, variableId: sub.id, valueId: variableId };
-        }
+      const labels = SUBCATEGORY_LABEL.split(' - ').map(s => s.trim()).filter(Boolean);
+      const usedVars = new Set();
+      const variablePairs = [];
+
+      for (const label of labels) {
+        const sub = vars.find(v => v['is-subcategory'] && v.values?.values && !usedVars.has(v.id) &&
+          Object.values(v.values.values).some(val => val.label.toLowerCase() === label.toLowerCase()));
+        if (!sub) throw new Error(`Sous-categorie "${label}" non trouvee pour "${CATEGORY_NAME}"`);
+
+        const entry = Object.entries(sub.values.values)
+          .find(([, value]) => value.label.toLowerCase() === label.toLowerCase());
+        if (!entry) throw new Error(`Valeur "${label}" non trouvee`);
+
+        const [valueId] = entry;
+        variablePairs.push({ variableId: sub.id, valueId });
+        usedVars.add(sub.id);
       }
-      throw new Error(`Valeur "${SUBCATEGORY_LABEL}" non trouvee`);
+
+      return { categoryId: cat.id, variablePairs };
     }
 
-    function calculateColumnWidths(allRuns) {
+    function calculateColumnWidths(allRuns, playerRow) {
       ctx.font = DRAW.FONT_BASE;
       
       let maxRankW = 0;
       let maxNameBlock = 0;
 
-      for (const r of allRuns) {
+      const widthRuns = playerRow ? [...allRuns, playerRow] : allRuns;
+      for (const r of widthRuns) {
         // Largeur du numero de rang
-        const rankW = (r.rank >= 1 && r.rank <= 3) 
+        const isNumericRank = typeof r.rank === 'number' && r.rank >= 1 && r.rank <= 3;
+        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `#${r.rank}` : `${r.rank}`;
+        const rankW = isNumericRank
           ? (DRAW.MEDAL.w + DRAW.MEDAL.spacing)
-          : ctx.measureText(`#${r.rank}`).width;
+          : ctx.measureText(rankText).width;
         maxRankW = Math.max(maxRankW, rankW);
 
         // Largeur du bloc nom (drapeau + nom tronque)
@@ -329,12 +425,21 @@
 
     async function loadTop() {
       try {
-        const { categoryId, variableId, valueId } = await resolveCategoryAndVariable();
+        const { categoryId, variablePairs } = await resolveCategoryAndVariable();
         
         // Build leaderboard URL
-        let lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=100&embed=players`;
-        if (variableId && valueId) {
-          lbUrl += `&var-${variableId}=${valueId}`;
+        let lbUrl;
+        if (LEVEL_ID) {
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?top=100&embed=players`;
+        } else {
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=100&embed=players`;
+        }
+        if (Array.isArray(variablePairs) && variablePairs.length > 0) {
+          for (const pair of variablePairs) {
+            if (pair.variableId && pair.valueId) {
+              lbUrl += `&var-${pair.variableId}=${pair.valueId}`;
+            }
+          }
         }
         
         const lb = await fetchJSON(lbUrl);
@@ -355,17 +460,36 @@
         // Traiter les runs
         const allRuns = (lb.data.runs || []).map((entry) => {
           const run = entry.run;
+          const players = (run.players || []).map((p) => {
+            if (p.rel === 'guest') return p.name;
+            const info = playerMap.get(p.id);
+            return info ? info.name : p.id;
+          });
+
           const firstPlayer = run.players?.[0];
-          const playerInfo = firstPlayer ? playerMap.get(firstPlayer.id) : { name: 'Inconnu', style: null, country: null };
+          const playerInfo = firstPlayer && firstPlayer.rel !== 'guest'
+            ? (playerMap.get(firstPlayer.id) || { name: players[0] || 'Inconnu', style: null, country: null })
+            : { name: players[0] || 'Inconnu', style: null, country: null };
+
           return {
             rank: entry.place || 0,
             player: playerInfo.name,
+            players,
             nameStyle: playerInfo.style,
             country: playerInfo.country,
             time: formatTime(run.times?.primary_t || 0),
             submitted: run.submitted
           };
         });
+
+        let playerRow = null;
+        if (PLAYER_NAME) {
+          const target = PLAYER_NAME.toLowerCase();
+          const match = allRuns.find(r => (r.players || []).some(n => n.toLowerCase() === target));
+          if (match) {
+            playerRow = { ...match, player: PLAYER_NAME };
+          }
+        }
 
         // Diviser en TOP N et carousel
         const topRuns = allRuns.slice(0, TOP_COUNT);
@@ -391,18 +515,27 @@
 
         const processedTop = processRuns(topRuns);
         carouselRuns = processRuns(carouselRuns);
+        const processedPlayerRow = playerRow ? {
+          ...playerRow,
+          flagImg: flagMap.get(playerRow.country) || null
+        } : null;
 
         // Stocker pour le carousel
         processedTopRuns = processedTop;
 
         // Calculate fixed widths
-        calculateColumnWidths(allRuns);
+        calculateColumnWidths(allRuns, processedPlayerRow);
 
         // Draw and start carousel
-        const firstBatch = carouselRuns.slice(0, RUNS_PER_BATCH);
-        draw(processedTop, firstBatch);
+        const availableRows = Math.floor((canvas.clientHeight - DRAW.LAYOUT.startY) / DRAW.LAYOUT.rowH);
+        const extraRows = processedPlayerRow ? 2 : 0; // blank row + player row
+        const neededRows = TOP_COUNT + RUNS_PER_BATCH + extraRows;
+        const overflow = Math.max(0, neededRows - availableRows);
+        const displayRunsPerBatch = Math.max(0, RUNS_PER_BATCH - overflow);
+        const firstBatch = displayRunsPerBatch > 0 ? carouselRuns.slice(0, displayRunsPerBatch) : [];
+        draw(processedTop, firstBatch, 1, processedPlayerRow);
 
-        if (carouselRuns.length > 0) {
+        if (carouselRuns.length > 0 && displayRunsPerBatch > 0) {
           if (carouselInterval) clearInterval(carouselInterval);
           carouselPage = 0;
           carouselStartTime = Date.now();
@@ -410,14 +543,14 @@
           
           carouselInterval = setInterval(() => {
             const elapsed = Date.now() - carouselStartTime;
-            const batchStart = carouselPage * RUNS_PER_BATCH;
-            const batch = carouselRuns.slice(batchStart, batchStart + RUNS_PER_BATCH);
+            const batchStart = carouselPage * displayRunsPerBatch;
+            const batch = carouselRuns.slice(batchStart, batchStart + displayRunsPerBatch);
             
             if (carouselPhase === 'fadeIn') {
               // Phase de transition d'arrivee (0 vers 1)
               if (elapsed < CAROUSEL_FADE_DURATION) {
                 const fadeProgress = elapsed / CAROUSEL_FADE_DURATION;
-                draw(processedTop, batch, fadeProgress);
+                draw(processedTop, batch, fadeProgress, processedPlayerRow);
               } else {
                 carouselPhase = 'display';
                 carouselStartTime = Date.now();
@@ -425,7 +558,7 @@
             } else if (carouselPhase === 'display') {
               // Phase d'affichage stable (opacity = 1)
               if (elapsed < CAROUSEL_DISPLAY_DURATION) {
-                draw(processedTop, batch, 1);
+                draw(processedTop, batch, 1, processedPlayerRow);
               } else {
                 carouselPhase = 'fadeOut';
                 carouselStartTime = Date.now();
@@ -434,10 +567,10 @@
               // Phase de transition de depart (1 vers 0)
               if (elapsed < CAROUSEL_FADE_DURATION) {
                 const fadeProgress = 1 - (elapsed / CAROUSEL_FADE_DURATION);
-                draw(processedTop, batch, fadeProgress);
+                draw(processedTop, batch, fadeProgress, processedPlayerRow);
               } else {
                 // Passage a la page suivante
-                carouselPage = (carouselPage + 1) % Math.ceil(carouselRuns.length / RUNS_PER_BATCH);
+                carouselPage = (carouselPage + 1) % Math.ceil(carouselRuns.length / displayRunsPerBatch);
                 carouselPhase = 'fadeIn';
                 carouselStartTime = Date.now();
               }
@@ -446,7 +579,7 @@
         }
       } catch (e) {
         console.error(e);
-        draw([], []);
+        draw([], [], 1, null);
       }
     }
 

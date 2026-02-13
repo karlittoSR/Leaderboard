@@ -24,7 +24,7 @@
 
 ---
 
-## Método automático (v1.1.0+)
+## Método automático (v1.20+)
 
 ### Primeiro uso
 1. **Clique duplo** em `main.ps1`
@@ -33,14 +33,16 @@
 4. **Pressionar Enter** para confirmar
 5. **Inserir** o nome do jogo (ex: "Elden Ring")
 6. **Navegar** ↑↓ e **Enter** para selecionar o jogo da lista
-7. **Navegar** ↑↓ e **Enter** para escolher a categoria (Any%, 100%, etc.)
-8. **Opcional**: subcategoria se disponível
-9. **Dar um ID** ao preset (sugestão automática fornecida)
-10. **Ativar automaticamente** o preset (se for o primeiro)
+7. **Escolher** Jogo completo ou Niveis (se disponível)
+8. **Se Niveis**: selecionar o nivel
+9. **Navegar** ↑↓ e **Enter** para escolher a categoria (Any%, 100%, etc.)
+10. **Opcional**: subcategorias (varias escolhas possiveis)
+11. **Dar um ID** ao preset (sugestão automática fornecida)
+12. **Ativar automaticamente** o preset (se for o primeiro)
 
 **Resultado**: preset salvo + ativado automaticamente + URL copiada!
 
-### Interface do menu principal (v1.1.0)
+### Interface do menu principal (v1.20)
 O script exibe um menu com navegação intuitiva no seu idioma:
 
 ```
@@ -61,13 +63,14 @@ O que você gostaria de fazer?
   Ver detalhes de um preset existente
   Alterar preset ativo
   Remover um preset
+  Definir nome do jogador
   Configurações de idioma
   Sair do programa
 
 Use ↑↓ para navegar, Enter para selecionar
 ```
 
-### 🌐 Suporte multilíngue (v1.1.0)
+### 🌐 Suporte multilíngue (v1.20)
 A interface está disponível em **5 idiomas**:
 - **🇫🇷 Français** (padrão)
 - **🇺🇸 English**
@@ -76,7 +79,7 @@ A interface está disponível em **5 idiomas**:
 - **🇨🇳 中文**
 
 **Mudar idioma**:
-1. Menu principal → **Opção 5** "Configurações de idioma"
+1. Menu principal → **Opção 6** "Configurações de idioma"
 2. Navegar com ↑↓ para escolher seu idioma
 3. Pressionar **Enter** → Mudança imediata!
 4. O idioma é **salvo automaticamente**
@@ -87,8 +90,9 @@ A interface está disponível em **5 idiomas**:
 **2. Ver detalhes**: Ver detalhes completos de um preset  
 **3. Alterar preset ativo**: Selecionar qual preset está ativo no OBS  
 **4. Remover preset**: Remover um preset (confirmação simples s/N)  
-**5. Configurações de idioma**: Alterar idioma da interface (5 idiomas disponíveis)  
-**6. Sair**: Fechar o programa
+**5. Definir nome do jogador**: Mostrar sua posicao no leaderboard  
+**6. Configurações de idioma**: Alterar idioma da interface (5 idiomas disponíveis)  
+**7. Sair**: Fechar o programa
 
 **Navegação**: Use **↑↓** para mover entre opções  
 **Seleção**: Pressione **Enter** para confirmar  

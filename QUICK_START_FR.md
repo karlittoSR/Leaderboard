@@ -24,7 +24,7 @@ Configuration **automatique** en 5 minutes pour streamers !
 
 ---
 
-## Méthode automatique (v1.1.0+)
+## Méthode automatique (v1.20+)
 
 ### Première utilisation
 1. **Double-clic** sur `main.ps1`
@@ -33,14 +33,16 @@ Configuration **automatique** en 5 minutes pour streamers !
 4. **Appuyer sur Entrée** pour confirmer
 5. **Entrer** le nom du jeu (ex: "Elden Ring")  
 6. **Naviguer** ↑↓ et **Entrée** pour sélectionner le jeu dans la liste
-7. **Naviguer** ↑↓ et **Entrée** pour choisir la catégorie (Any%, 100%, etc.)
-8. **Optionnel** : sous-catégorie si disponible
-9. **Donner un ID** au preset (suggestion auto fournie)
-10. **Activer automatiquement** le preset (si c'est le premier)
+7. **Choisir** Full game ou Niveaux (si disponible)
+8. **Si Niveaux** : sélectionner le niveau
+9. **Naviguer** ↑↓ et **Entrée** pour choisir la catégorie (Any%, 100%, etc.)
+10. **Optionnel** : sous-catégories (plusieurs choix possibles)
+11. **Donner un ID** au preset (suggestion auto fournie)
+12. **Activer automatiquement** le preset (si c'est le premier)
 
 **Résultat** : preset sauvé + activé automatiquement + URL copiée !
 
-### Interface du menu principal (v1.1.0)
+### Interface du menu principal (v1.20)
 Le script affiche un menu avec navigation intuitive dans votre langue :
 
 ```
@@ -61,13 +63,14 @@ Que voulez-vous faire ?
   Voir les détails d'un preset existant  
   Changer le preset actif
   Supprimer un preset
+  Définir le nom du joueur
   Paramètres de langue
   Quitter le programme
 
 Utilisez ↑↓ pour naviguer, Entrée pour sélectionner
 ```
 
-### 🌐 Support multilingue (v1.1.0)
+### 🌐 Support multilingue (v1.20)
 L'interface est disponible dans **5 langues** :
 - **🇫🇷 Français** (par défaut)
 - **🇺🇸 English**  
@@ -76,7 +79,7 @@ L'interface est disponible dans **5 langues** :
 - **🇨🇳 中文**
 
 **Changer de langue** :
-1. Menu principal → **Option 5** "Paramètres de langue"
+1. Menu principal → **Option 6** "Paramètres de langue"
 2. Naviguer avec ↑↓ pour choisir votre langue
 3. Appuyer sur **Entrée** → Changement immédiat !
 4. La langue est **sauvegardée automatiquement**
@@ -92,8 +95,9 @@ L'interface est disponible dans **5 langues** :
 **2. Voir les détails** : Consulter détails complets d'un preset  
 **3. Changer le preset actif** : Sélectionner quel preset est actif dans OBS  
 **4. Supprimer un preset** : Supprimer un preset (confirmation simple o/N)  
-**5. Paramètres de langue** : Changer la langue de l'interface (5 langues disponibles)  
-**6. Quitter** : Fermer le programme
+**5. Définir le nom du joueur** : Afficher ta position sur le leaderboard  
+**6. Paramètres de langue** : Changer la langue de l'interface (5 langues disponibles)  
+**7. Quitter** : Fermer le programme
 
 ### Utilisation dans OBS
 - **URL simple** : `leaderboard.html` (toujours la même !)
@@ -140,4 +144,4 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **Le carousel ne défile pas** → Il y a moins de runs que configuré
 - **"Failed to fetch" en double-cliquant** → Lance un serveur local : `python -m http.server 8000`
 - **Le script PS ne s'exécute pas** : Clique-droit → "Exécuter avec PowerShell"
-- **Changer de langue** → Option 5 dans le menu principal du script
+- **Changer de langue** → Option 6 dans le menu principal du script

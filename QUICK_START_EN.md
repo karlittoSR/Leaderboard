@@ -24,7 +24,7 @@
 
 ---
 
-## Automatic method (v1.1.0+)
+## Automatic method (v1.20+)
 
 ### First use
 1. **Double-click** on `main.ps1`
@@ -33,14 +33,16 @@
 4. **Press Enter** to confirm
 5. **Enter** the game name (e.g., "Elden Ring")
 6. **Navigate** ↑↓ and **Enter** to select the game from the list
-7. **Navigate** ↑↓ and **Enter** to choose the category (Any%, 100%, etc.)
-8. **Optional**: subcategory if available
-9. **Give an ID** to the preset (auto suggestion provided)
-10. **Automatically activate** the preset (if it's the first one)
+7. **Choose** Full game or Levels (if available)
+8. **If Levels**: select the level
+9. **Navigate** ↑↓ and **Enter** to choose the category (Any%, 100%, etc.)
+10. **Optional**: subcategories (multiple choices possible)
+11. **Give an ID** to the preset (auto suggestion provided)
+12. **Automatically activate** the preset (if it's the first one)
 
 **Result**: preset saved + activated automatically + URL copied!
 
-### Main menu interface (v1.1.0)
+### Main menu interface (v1.20)
 The script displays a menu with intuitive navigation in your language:
 
 ```
@@ -61,13 +63,14 @@ What would you like to do?
   View details of an existing preset
   Change active preset
   Delete a preset
+  Set player name
   Language settings
   Quit program
 
 Use ↑↓ to navigate, Enter to select
 ```
 
-### 🌐 Multilingual support (v1.1.0)
+### 🌐 Multilingual support (v1.20)
 The interface is available in **5 languages**:
 - **🇫🇷 Français** (default)
 - **🇺🇸 English**
@@ -76,7 +79,7 @@ The interface is available in **5 languages**:
 - **🇨🇳 中文**
 
 **Change language**:
-1. Main menu → **Option 5** "Language settings"
+1. Main menu → **Option 6** "Language settings"
 2. Navigate with ↑↓ to choose your language
 3. Press **Enter** → Immediate change!
 4. Language is **saved automatically**
@@ -92,8 +95,9 @@ The interface is available in **5 languages**:
 **2. View details**: View complete details of a preset  
 **3. Change active preset**: Select which preset is active in OBS  
 **4. Delete preset**: Delete a preset (simple y/N confirmation)  
-**5. Language settings**: Change interface language (5 languages available)  
-**6. Quit**: Close the program
+**5. Set player name**: Show your rank line on the leaderboard  
+**6. Language settings**: Change interface language (5 languages available)  
+**7. Quit**: Close the program
 
 ### Using in OBS
 - **Simple URL**: `leaderboard.html` (always the same!)
@@ -140,4 +144,4 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **Carousel doesn't scroll** → Fewer runs than configured amount
 - **"Failed to fetch" when double-clicking** → Run local server: `python -m http.server 8000`
 - **PS script won't execute** → Right-click → "Run with PowerShell"
-- **Change language** → Option 5 in the main script menu
+- **Change language** → Option 6 in the main script menu

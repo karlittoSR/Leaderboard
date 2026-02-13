@@ -3,7 +3,7 @@
 
 # Script PowerShell pour gérer les presets speedrun.com facilement
 # Gère plusieurs jeux et categories pour streamers
-# Version 1.1.0 - Support multilingue (FR/EN) + Navigation par flèches et affichage persistant des presets
+# Version 1.20 - Levels/Full game + sous-categories multiples + ligne joueur
 # Par karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
@@ -46,6 +46,7 @@ $Global:Languages = @{
         menu_change_active = "Changer le preset actif"
         menu_remove_preset = "Supprimer un preset"
         menu_language_settings = "Paramètres de langue"
+        menu_player_name = "Définir le nom du joueur"
         menu_quit = "Quitter le programme"
         menu_what_to_do = "Que voulez-vous faire ?"
         
@@ -139,6 +140,14 @@ $Global:Languages = @{
         language_available = "Langues disponibles :"
         language_changed = "[OK] Langue changée vers :"
         language_restart_info = "Le changement sera effectif immédiatement dans l'interface."
+
+        # Nom du joueur
+        player_name_title = "=== NOM DU JOUEUR ==="
+        player_name_current = "Nom actuel :"
+        player_name_prompt = "Entrez le nom du joueur (laisser vide pour désactiver, /retour pour annuler)"
+        player_name_saved = "[OK] Nom du joueur enregistré :"
+        player_name_cleared = "Nom du joueur désactivé."
+        player_name_cancelled = "Opération annulée."
         
         # Erreurs
         config_load_error = "Erreur lors du chargement de la config :"
@@ -157,6 +166,7 @@ $Global:Languages = @{
         menu_change_active = "Change active preset"
         menu_remove_preset = "Delete a preset"
         menu_language_settings = "Language settings"
+        menu_player_name = "Set player name"
         menu_quit = "Quit program"
         menu_what_to_do = "What would you like to do?"
         
@@ -250,6 +260,14 @@ $Global:Languages = @{
         language_available = "Available languages:"
         language_changed = "[OK] Language changed to:"
         language_restart_info = "The change will take effect immediately in the interface."
+
+        # Player name
+        player_name_title = "=== PLAYER NAME ==="
+        player_name_current = "Current name:"
+        player_name_prompt = "Enter player name (leave empty to disable, /back to cancel)"
+        player_name_saved = "[OK] Player name saved:"
+        player_name_cleared = "Player name disabled."
+        player_name_cancelled = "Operation cancelled."
         
         # Erreurs
         config_load_error = "Error loading config:"
@@ -268,6 +286,7 @@ $Global:Languages = @{
         menu_change_active = "Cambiar preset activo"
         menu_remove_preset = "Eliminar un preset"
         menu_language_settings = "Configuración de idioma"
+        menu_player_name = "Definir nombre del jugador"
         menu_quit = "Salir del programa"
         menu_what_to_do = "¿Qué te gustaría hacer?"
         
@@ -361,6 +380,14 @@ $Global:Languages = @{
         language_available = "Idiomas disponibles:"
         language_changed = "[OK] Idioma cambiado a:"
         language_restart_info = "El cambio se aplicará inmediatamente en la interfaz."
+
+        # Nombre del jugador
+        player_name_title = "=== NOMBRE DEL JUGADOR ==="
+        player_name_current = "Nombre actual:"
+        player_name_prompt = "Introduce el nombre del jugador (vacío para desactivar, /atras para cancelar)"
+        player_name_saved = "[OK] Nombre del jugador guardado:"
+        player_name_cleared = "Nombre del jugador desactivado."
+        player_name_cancelled = "Operacion cancelada."
         
         # Errores
         config_load_error = "Error al cargar la configuración:"
@@ -379,6 +406,7 @@ $Global:Languages = @{
         menu_change_active = "Alterar preset ativo"
         menu_remove_preset = "Remover um preset"
         menu_language_settings = "Configurações de idioma"
+        menu_player_name = "Definir nome do jogador"
         menu_quit = "Sair do programa"
         menu_what_to_do = "O que você gostaria de fazer?"
         
@@ -472,6 +500,14 @@ $Global:Languages = @{
         language_available = "Idiomas disponíveis:"
         language_changed = "[OK] Idioma alterado para:"
         language_restart_info = "A mudança será aplicada imediatamente na interface."
+
+        # Nome do jogador
+        player_name_title = "=== NOME DO JOGADOR ==="
+        player_name_current = "Nome atual:"
+        player_name_prompt = "Digite o nome do jogador (vazio para desativar, /voltar para cancelar)"
+        player_name_saved = "[OK] Nome do jogador salvo:"
+        player_name_cleared = "Nome do jogador desativado."
+        player_name_cancelled = "Operacao cancelada."
         
         # Erros
         config_load_error = "Erro ao carregar configuração:"
@@ -490,6 +526,7 @@ $Global:Languages = @{
         menu_change_active = "更改活动预设"
         menu_remove_preset = "删除预设"
         menu_language_settings = "语言设置 / Language settings"
+        menu_player_name = "设置玩家名称"
         menu_quit = "退出程序"
         menu_what_to_do = "您想要做什么？"
         
@@ -583,6 +620,14 @@ $Global:Languages = @{
         language_available = "可用语言："
         language_changed = "[OK] 语言已更改为："
         language_restart_info = "更改将立即在界面中生效。"
+
+        # 玩家名称
+        player_name_title = "=== 玩家名称 ==="
+        player_name_current = "当前名称："
+        player_name_prompt = "输入玩家名称（留空禁用，/back 取消）"
+        player_name_saved = "[OK] 玩家名称已保存："
+        player_name_cleared = "玩家名称已禁用。"
+        player_name_cancelled = "操作已取消。"
         
         # 错误
         config_load_error = "加载配置时出错："
@@ -695,6 +740,127 @@ function Set-Language {
     Write-Host ""
     Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+}
+
+# === FONCTION CONFIG ===
+function Ensure-Config {
+  param($config)
+
+  if (-not $config) { $config = @{} }
+
+  if (-not $config.language) {
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "language" -Value "fr" -Force
+    } else {
+      $config.language = "fr"
+    }
+  }
+
+  if (-not $config.activePreset) {
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "activePreset" -Value $null -Force
+    } else {
+      $config.activePreset = $null
+    }
+  }
+
+  if (-not $config.presets) {
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "presets" -Value @{} -Force
+    } else {
+      $config.presets = @{}
+    }
+  }
+
+  if (-not $config.defaults) {
+      $defaults = @{
+        carouselInterval = 5000
+        runsPerBatch = 3
+        topCount = 3
+        canvasWidth = 1200
+        canvasHeight = 400
+        displayWidth = "900px"
+        displayHeight = "274px"
+      CAROUSEL_DISPLAY_DURATION = 10000
+      API_CALL_INTERVAL = 30000
+      FLAGS_API_ENABLED = $true
+      DISPLAY_COUNTRY_FLAGS = $true
+    }
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "defaults" -Value $defaults -Force
+    } else {
+      $config.defaults = $defaults
+    }
+  }
+
+  if (-not ($config.PSObject.Properties.Name -contains "playerName")) {
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "playerName" -Value $null -Force
+    } else {
+      $config.playerName = $null
+    }
+  }
+
+  return $config
+}
+
+# === FONCTION NOM DU JOUEUR ===
+function Set-PlayerName {
+  param($currentConfig)
+
+  $config = Ensure-Config $currentConfig
+
+  Clear-Host
+  Write-Host (Get-LocalizedString "player_name_title") -ForegroundColor Cyan
+  Write-Host ""
+
+  $currentName = if ($config.playerName) { $config.playerName } else { (Get-LocalizedString "not_defined") }
+  Write-Host "$(Get-LocalizedString 'player_name_current') $currentName" -ForegroundColor White
+  Write-Host ""
+
+  $newName = Read-Host (Get-LocalizedString "player_name_prompt")
+  $trimmedName = $newName.Trim()
+  $cancelKeywords = switch ($Global:CurrentLanguage) {
+    "en" { @("/back", "back", "cancel") }
+    "es" { @("/atras", "atras", "cancelar") }
+    "pt" { @("/voltar", "voltar", "cancelar") }
+    "zh" { @("/back", "back") }
+    default { @("/retour", "retour", "annuler", "back") }
+  }
+
+  if ($cancelKeywords -contains $trimmedName.ToLower()) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "player_name_cancelled") -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  if ([string]::IsNullOrWhiteSpace($newName)) {
+    if ($config.GetType().Name -eq "PSCustomObject" -and -not ($config.PSObject.Properties.Name -contains "playerName")) {
+      $config | Add-Member -MemberType NoteProperty -Name "playerName" -Value $null -Force
+    } else {
+      $config.playerName = $null
+    }
+    Clear-Host
+    Write-Host (Get-LocalizedString "player_name_cleared") -ForegroundColor Yellow
+  } else {
+    if ($config.GetType().Name -eq "PSCustomObject" -and -not ($config.PSObject.Properties.Name -contains "playerName")) {
+      $config | Add-Member -MemberType NoteProperty -Name "playerName" -Value $newName.Trim() -Force
+    } else {
+      $config.playerName = $trimmedName
+    }
+    Clear-Host
+    Write-Host "$(Get-LocalizedString 'player_name_saved') $($config.playerName)" -ForegroundColor Green
+  }
+
+  $jsonOutput = $config | ConvertTo-Json -Depth 10
+  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+
+  Write-Host ""
+  Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+  $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
 # === FONCTION NAVIGATION PAR FLÈCHES ===
@@ -993,14 +1159,69 @@ function New-Preset($currentConfig) {
       $selectedGame = $games[0]
     }
     
-    # === ETAPE 2: Recuperer les categories ===
+    # === ETAPE 2: Full Game ou Levels ===
+    $selectedLevel = $null
+    $levels = @()
+    try {
+      $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
+      $levelsData = $levelsResponse.Content | ConvertFrom-Json
+      $levels = $levelsData.data
+    } catch {
+      $levels = @()
+    }
+
+    if ($levels.Count -gt 0) {
+      $modeTitle = switch ($Global:CurrentLanguage) {
+        "en" { "Choose leaderboard type:" }
+        "es" { "Elige el tipo de leaderboard:" }
+        "pt" { "Escolha o tipo de leaderboard:" }
+        "zh" { "选择排行榜类型：" }
+        default { "Choisissez le type de leaderboard :" }
+      }
+      $modeOptions = switch ($Global:CurrentLanguage) {
+        "en" { @("Full game", "Levels") }
+        "es" { @("Juego completo", "Niveles") }
+        "pt" { @("Jogo completo", "Niveis") }
+        "zh" { @("完整游戏", "关卡") }
+        default { @("Full game", "Niveaux") }
+      }
+
+      $selectedMode = Show-ArrowMenu -Title $modeTitle -Options $modeOptions -AllowCancel
+      if ($selectedMode -eq -1) {
+        Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
+        return
+      }
+
+      if ($selectedMode -eq 1) {
+        $levelOptions = @()
+        foreach ($level in $levels) {
+          $levelOptions += $level.name
+        }
+        $levelTitle = switch ($Global:CurrentLanguage) {
+          "en" { "Select a level:" }
+          "es" { "Selecciona un nivel:" }
+          "pt" { "Selecione um nivel:" }
+          "zh" { "选择一个关卡：" }
+          default { "Selectionnez un niveau :" }
+        }
+        $selectedLevelIndex = Show-ArrowMenu -Title $levelTitle -Options $levelOptions -AllowCancel
+        if ($selectedLevelIndex -eq -1) {
+          Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
+          return
+        }
+        $selectedLevel = $levels[$selectedLevelIndex]
+      }
+    }
+
+    # === ETAPE 3: Recuperer les categories ===
     Write-Host ""
     Write-Host (Get-LocalizedString "add_loading_categories") -ForegroundColor Yellow
     
     $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
     $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
     
-    $categories = $categoriesData.data.categories.data | Where-Object { $_.type -eq "per-game" }
+    $categoryType = if ($selectedLevel) { "per-level" } else { "per-game" }
+    $categories = $categoriesData.data.categories.data | Where-Object { $_.type -eq $categoryType }
     
     if ($categories.Count -eq 0) {
       Write-Host (Get-LocalizedString "add_no_categories") -ForegroundColor Red
@@ -1018,35 +1239,99 @@ function New-Preset($currentConfig) {
     $selectedCategoryIndex = Show-ArrowMenu -Title (Get-LocalizedString "add_categories_available") -Options $categoryOptions
     $selectedCategory = $categories[$selectedCategoryIndex]
     
-    # === ETAPE 3: Gérer les sous-catégories ===
-    $selectedSubcategory = $null
-    $selectedSubcategoryLabel = (Get-LocalizedString "null_value")
+    # === ETAPE 3: Gérer les sous-catégories (TOUTES) ===
+    $selectedSubcategoryLabels = @()  # Affichage lisible
+    $selectedSubcategories = @()      # IDs pour l'API
     
     $subcategoryVariables = $selectedCategory.variables.data | Where-Object { $_.'is-subcategory' -eq $true -and $_.values.values }
     
+    # Filtrer les variables non pertinentes (categorie + scope)
+    $subcategoryVariables = $subcategoryVariables | Where-Object {
+      (-not $_.category) -or ($_.category -eq $selectedCategory.id)
+    }
+    $subcategoryVariables = $subcategoryVariables | Where-Object {
+      if (-not $_.scope -or -not $_.scope.type) { return $true }
+      if ($selectedLevel) {
+        if ($_.scope.type -eq "all-levels") { return $true }
+        if ($_.scope.type -eq "single-level") { return $_.scope.level -eq $selectedLevel.id }
+        if ($_.scope.type -eq "global") { return $true }
+        return $false
+      }
+      return $_.scope.type -in @("full-game", "all-levels", "global")
+    }
+
+    # De-dup pour eviter de reposer la meme variable plusieurs fois
+    $seenVarIds = @{}
+    $subcategoryVariables = $subcategoryVariables | Where-Object {
+      if (-not $_.id) { return $true }
+      if ($seenVarIds.ContainsKey($_.id)) { return $false }
+      $seenVarIds[$_.id] = $true
+      return $true
+    }
+    
     if ($subcategoryVariables.Count -gt 0) {
-      # On prend la première variable de sous-catégorie trouvée
-      $subcatVariable = $subcategoryVariables[0]
-      $subcatValues = $subcatVariable.values.values.PSObject.Properties
-      
-      $subcatOptions = @((Get-LocalizedString "add_no_subcategory"))
-      $subcatArray = @()
-      
-      foreach ($value in $subcatValues) {
-        $subcatOptions += $value.Value.label
-        $subcatArray += @{
-          id = $value.Name
-          label = $value.Value.label
+      # Itérer sur TOUTES les variables de sous-catégories
+      foreach ($subcatVariable in $subcategoryVariables) {
+        $varName = $subcatVariable.name
+        $subcatValues = $subcatVariable.values.values.PSObject.Properties
+        
+        # Construire les options pour cette variable
+        $subcatOptions = @()
+        $subcatArray = @()
+        
+        # Option "Any" (skip cette variable)
+        $anyLabel = switch ($Global:CurrentLanguage) {
+          "en" { "Any (skip this filter)" }
+          "es" { "Cualquiera (omitir este filtro)" }
+          "pt" { "Qualquer (pular este filtro)" }
+          "zh" { "任意（跳过此过滤器）" }
+          default { "Any (ignorer ce filtre)" }
+        }
+        $subcatOptions += $anyLabel
+        
+        foreach ($value in $subcatValues) {
+          $subcatOptions += $value.Value.label
+          $subcatArray += @{
+            id = $value.Name
+            label = $value.Value.label
+          }
+        }
+        
+        # Afficher le menu pour cette variable spécifique
+        $menuTitle = switch ($Global:CurrentLanguage) {
+          "en" { "$varName - Select value:" }
+          "es" { "$varName - Selecciona valor:" }
+          "pt" { "$varName - Selecione valor:" }
+          "zh" { "$varName - 选择值：" }
+          default { "$varName - Sélectionnez la valeur :" }
+        }
+        
+        $selectedSubcatIndex = Show-ArrowMenu -Title $menuTitle -Options $subcatOptions -AllowCancel
+        
+        # Si l'utilisateur annule, sortir
+        if ($selectedSubcatIndex -eq -1) {
+          Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
+          return
+        }
+        
+        # Si l'utilisateur choisit une valeur (pas "Any")
+        if ($selectedSubcatIndex -gt 0) {
+          $selectedEntry = $subcatArray[$selectedSubcatIndex - 1]
+          $selectedSubcategoryLabels += $selectedEntry.label
+          $selectedSubcategories += [PSCustomObject]@{
+            variableId = $subcatVariable.id
+            valueId = $selectedEntry.id
+            label = $selectedEntry.label
+          }
         }
       }
-      
-      # Sélection de la sous-catégorie
-      $selectedSubcatIndex = Show-ArrowMenu -Title (Get-LocalizedString "add_subcategories_available") -Options $subcatOptions
-      
-      if ($selectedSubcatIndex -gt 0) {
-        $selectedSubcategory = $subcatArray[$selectedSubcatIndex - 1]
-        $selectedSubcategoryLabel = $selectedSubcategory.label
-      }
+    }
+    
+    # Combiner toutes les sous-catégories sélectionnées en une seule string
+    $selectedSubcategoryLabel = if ($selectedSubcategoryLabels.Count -gt 0) {
+      $selectedSubcategoryLabels -join " - "
+    } else {
+      (Get-LocalizedString "null_value")
     }
     
     # === ETAPE 4: Preset ID et sauvegarde ===
@@ -1055,21 +1340,46 @@ function New-Preset($currentConfig) {
     Write-Host ""
     Write-Host "$(Get-LocalizedString 'final_game') $($selectedGame.names.international)" -ForegroundColor White
     Write-Host "$(Get-LocalizedString 'final_game_id') $($selectedGame.id)" -ForegroundColor Cyan
+    if ($selectedLevel) {
+      $levelLabel = switch ($Global:CurrentLanguage) {
+        "en" { "Level" }
+        "es" { "Nivel" }
+        "pt" { "Nivel" }
+        "zh" { "关卡" }
+        default { "Niveau" }
+      }
+      Write-Host "$levelLabel : $($selectedLevel.name)" -ForegroundColor Cyan
+    }
     Write-Host "$(Get-LocalizedString 'final_category') $($selectedCategory.name)" -ForegroundColor Cyan
     Write-Host "$(Get-LocalizedString 'final_subcategory') $selectedSubcategoryLabel" -ForegroundColor Cyan
     Write-Host ""
     
     # Generer le nom complet avec sous-categorie si elle existe
     $fullName = if ($selectedSubcategoryLabel -eq (Get-LocalizedString "null_value")) {
-      "$($selectedGame.names.international) - $($selectedCategory.name)"
+      if ($selectedLevel) {
+        "$($selectedGame.names.international) - $($selectedLevel.name) - $($selectedCategory.name)"
+      } else {
+        "$($selectedGame.names.international) - $($selectedCategory.name)"
+      }
     } else {
-      "$($selectedGame.names.international) - $($selectedCategory.name) $selectedSubcategoryLabel"
+      if ($selectedLevel) {
+        "$($selectedGame.names.international) - $($selectedLevel.name) - $($selectedCategory.name) $selectedSubcategoryLabel"
+      } else {
+        "$($selectedGame.names.international) - $($selectedCategory.name) $selectedSubcategoryLabel"
+      }
     }
     
     # Suggestions d'ID pour le preset
-    $gamePart = $selectedGame.names.international -replace '[^a-zA-Z0-9]', '' -replace '\s+', ''
-    $catPart = $selectedCategory.name -replace '[^a-zA-Z0-9]', '' -replace '\s+', ''
-    $defaultPresetId = ($gamePart.ToLower() + "-" + $catPart.ToLower()) -replace '--+', '-'
+    $cleanGame = $selectedGame.names.international -replace '[^a-zA-Z0-9]', ''
+    $gamePart = if ($cleanGame.Length -ge 4) { $cleanGame.Substring(0, 4) } else { $cleanGame }
+    $catPart = $selectedCategory.name -replace '[^a-zA-Z0-9]', ''
+    $subcatPart = if ($selectedSubcategoryLabel -ne (Get-LocalizedString "null_value")) {
+      $selectedSubcategoryLabel -replace '[^a-zA-Z0-9]', ''
+    } else { "" }
+    $levelPart = if ($selectedLevel) { $selectedLevel.name -replace '[^a-zA-Z0-9]', '' } else { "" }
+
+    $idParts = @($gamePart, $catPart, $levelPart, $subcatPart) | Where-Object { $_ -and $_.Length -gt 0 }
+    $defaultPresetId = ($idParts -join "-").ToLower() -replace '--+', '-'
     
     Write-Host (Get-LocalizedString "final_preset_id") -ForegroundColor Yellow
     Write-Host "$(Get-LocalizedString 'final_suggestion') $defaultPresetId" -ForegroundColor Gray
@@ -1080,7 +1390,7 @@ function New-Preset($currentConfig) {
     }
     
     # Verification que l'ID n'existe pas deja
-    if ($currentConfig -and $currentConfig.presets.$presetId) {
+    if ($currentConfig -and $currentConfig.presets -and $currentConfig.presets.$presetId) {
       Write-Host (Get-LocalizedString "final_id_exists" -f $presetId) -ForegroundColor Red
       $overwritePrompt = switch ($Global:CurrentLanguage) {
         "en" { "Do you want to overwrite it? (y/N)" }
@@ -1107,6 +1417,7 @@ function New-Preset($currentConfig) {
     
     # Preparer l'objet preset
     $subcatValue = if ($selectedSubcategoryLabel -eq (Get-LocalizedString "null_value")) { $null } else { $selectedSubcategoryLabel }
+    $subcatSelections = if ($selectedSubcategories.Count -gt 0) { @($selectedSubcategories) } else { $null }
     
     $newPreset = @{
       name = $fullName
@@ -1114,30 +1425,16 @@ function New-Preset($currentConfig) {
       category = $selectedCategory.name
       subcategory = $subcatValue
     }
+    if ($selectedLevel) {
+      $newPreset.levelId = $selectedLevel.id
+      $newPreset.levelName = $selectedLevel.name
+    }
+    if ($subcatSelections) {
+      $newPreset.subcategories = $subcatSelections
+    }
     
     # Charger ou creer la config
-    if ($currentConfig) {
-      $config = $currentConfig
-    } else {
-      $config = @{
-        language = "fr"
-        activePreset = $null
-        presets = @{}
-        defaults = @{
-          carouselInterval = 15000
-          runsPerBatch = 10
-          topCount = 10
-          canvasWidth = 1200
-          canvasHeight = 400
-          displayWidth = "900px"
-          displayHeight = "174px"
-          CAROUSEL_DISPLAY_DURATION = 10000
-          API_CALL_INTERVAL = 30000
-          FLAGS_API_ENABLED = $true
-          DISPLAY_COUNTRY_FLAGS = $true
-        }
-      }
-    }
+    $config = Ensure-Config $currentConfig
     
     # Ajouter le nouveau preset
     # Si c'est un PSCustomObject (chargé depuis JSON), utiliser Add-Member
@@ -1264,6 +1561,7 @@ function Start-MainLoop {
           (Get-LocalizedString "menu_view_details"), 
           (Get-LocalizedString "menu_change_active"),
           (Get-LocalizedString "menu_remove_preset"),
+          (Get-LocalizedString "menu_player_name"),
           (Get-LocalizedString "menu_language_settings"),
           (Get-LocalizedString "menu_quit")
         )
@@ -1271,7 +1569,7 @@ function Start-MainLoop {
         $selectedOption = Show-ArrowMenu -Title (Get-LocalizedString "menu_what_to_do") -Options $menuOptions -ContextText $contextText
         
         switch ($selectedOption) {
-          5 { # Quitter le programme
+          6 { # Quitter le programme
             Clear-Host
             Write-Host (Get-LocalizedString "goodbye") -ForegroundColor Green 
             return 
@@ -1280,7 +1578,8 @@ function Start-MainLoop {
           1 { Write-PresetDetails $presetList $currentConfig }
           2 { Update-ActivePreset $presetList $currentConfig }
           3 { Remove-Preset $presetList $currentConfig }
-          4 { Set-Language $currentConfig }
+          4 { Set-PlayerName $currentConfig }
+          5 { Set-Language $currentConfig }
         }
       } else {
         # Premier preset - affichage direct
