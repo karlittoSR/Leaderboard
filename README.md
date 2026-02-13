@@ -1,6 +1,6 @@
 # Speedrun Leaderboard Canvas
 
-**Version 1.30** - Professional canvas-based speedrun.com leaderboard display  
+**Version 1.30** - Canvas-based speedrun.com leaderboard display  
 **Multilingual preset manager with intelligent automation**  
 **Supports 5 languages**: Français, English, Español, Português, 中文
 
@@ -30,7 +30,7 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - **Persistent Settings**: Language automatically saved in configuration
 - **Global Accessibility**: Designed for the international speedrun community
 
-### Professional Display
+### Display Features
 - **Canvas-based Rendering**: Smooth, simple graphics
 - **Animated Carousel**: Rotating display of additional leaderboard entries
 - **Country Flags**: Automatic flag display from flagcdn.com
@@ -258,7 +258,7 @@ leaderboard/
 
 ---
 
-**Professional speedrun leaderboard solution by karlitto__**
+**Speedrun leaderboard solution by karlitto__**
 - **Configurable fetch limit** via defaults.maxRuns (default: 200)
 - **URL parameters** to override settings
 - **Responsive** and transparent (perfect for Twitch streams)
