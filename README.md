@@ -138,10 +138,12 @@ Edit `config.json` for customization:
 ### Flag Overrides
 Override country flags for specific players using ISO 3166-1 alpha-2 codes
 
+**Format**: The left side is the original country code (what players have), the right side is the flag to display instead.
+
 ```json
 {
   "flagOverrides": {
-    "HR": "FR"               // Example: Display FR flag instead of HR flag
+    "HR": "FR"               // Players from HR (Croatia) will display FR (France) flag
   }
 }
 ```
