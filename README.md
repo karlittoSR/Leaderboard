@@ -78,7 +78,7 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
    - Change font to a Chinese-compatible font (e.g., SimSun, SimHei, or Microsoft YaHei)
    - Click "OK"
    
-   ![Chinese Font Setup](https://github.com/user-attachments/assets/d3f435c3-ae3b-40ac-a1ec-0ca4c09392c0)
+   ![Chinese Font Setup](images/chinesecharacters.png)
 
 ### Quick Setup
 
