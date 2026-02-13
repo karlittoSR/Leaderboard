@@ -141,7 +141,7 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 ```json
 {
   "flagOverrides": {
-    "TW": "CN"               // Example: Display TW flag instead of CN flag
+    "HR": "FR"               // Example: Display FR flag instead of HR flag
   }
 }
 ```
