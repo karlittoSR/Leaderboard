@@ -1,60 +1,45 @@
 {
   "defaults": {
     "topCount": 3,
-    "maxPlayerNameChars": 20,
-    "DISPLAY_COUNTRY_FLAGS": true,
-    "CAROUSEL_DISPLAY_DURATION": 10000,
-    "FLAGS_API_ENABLED": true,
-    "useTrophyIcons": false,
-    "displayHeight": "274px",
-    "canvasHeight": 400,
-    "carouselInterval": 5000,
-    "displayWidth": "900px",
-    "API_CALL_INTERVAL": 30000,
-    "canvasWidth": 1200,
-    "runsPerBatch": 3,
-    "maxRuns": 200
+    "timeFormat": "1:25:25.255",
+    "rankAlign": "center",
+    "rankPrefixMode": "dot",
+    "nameSpacing": 4,
+    "pbSeparatorWidth": 320,
+    "rainbowIntensity": 90,
+    "CAROUSEL_DISPLAY_DURATION": 1000,
+    "useTrophyIcons": true,
+    "displayHeight": "300px",
+    "canvasHeight": 300,
+    "carouselInterval": 6000,
+    "displayWidth": "700px",
+    "canvasWidth": 300,
+    "runsPerBatch": 4,
+    "maxRuns": 200,
+    "fontStyle": "Arial", 
+    "maxNameWidthVisible": 18
   },
   "flagOverrides": {
-    "CR": "FR"
+    "TW": "CN"
   },
   "presets": {
-    "elde-twogods-glitchless": {
-      "name": "Elden Ring - Two Gods Glitchless",
+    "elde-any-glitchless": {
+      "name": "Elden Ring - Any% Glitchless",
       "gameId": "nd28z0ed",
       "subcategory": "Glitchless",
-      "category": "Two Gods",
+      "category": "Any%",
       "subcategories": {
-        "variableId": "p85yxj5l",
-        "valueId": "1gnon28l",
+        "variableId": "7891zr5n",
+        "valueId": "qj740p3q",
         "label": "Glitchless"
       }
-    },
-    "dark-allbossesglitchless": {
-      "name": "Dark Souls III - All Bosses Glitchless",
-      "gameId": "k6qg0xdg",
-      "subcategory": null,
-      "category": "All Bosses Glitchless"
-    },
-    "cele-clear-forsakencity-dash": {
-      "gameId": "o1y9j9v6",
-      "levelName": "Forsaken City",
-      "category": "Clear",
-      "name": "Celeste - Forsaken City - Clear Dash",
-      "subcategory": "Dash",
-      "subcategories": {
-        "variableId": "yn2v3pj8",
-        "valueId": "013v5nxl",
-        "label": "Dash"
-      },
-      "levelId": "ywe5zq7w"
     }
   },
-  "language": "fr",
-  "playerName": "Negisa",
-  "activePreset": "elde-twogods-glitchless",
+  "language": "en",
+  "playerName": "Xeill",
+  "activePreset": "elde-any-glitchless",
   "temporaryRun": {
-    "time": "1:23:00",
-    "active": true
+    "active": true,
+    "time": "55:05"
   }
 }

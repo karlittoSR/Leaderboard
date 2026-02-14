@@ -1,10 +1,10 @@
 ﻿# Encoding: UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Script PowerShell pour gérer les presets speedrun.com facilement
-# Gère plusieurs jeux et categories pour streamers
-# Version 1.30 - Multiple presets + temporary PB + flag overrides + 5-language support
-# Par karlitto__
+# PowerShell script to manage speedrun.com presets easily
+# Manages multiple games and categories for streamers
+# Version 1.40 - Parameters menu + visual tweaks editor
+# By karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
 $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
@@ -36,16 +36,66 @@ if ($scriptPath) {
     }
 }
 
-# === DICTIONNAIRE DE LANGUES ===
+# === DEFAULT CONFIGURATION ===
+$Global:DefaultConfigJSON = @'
+{
+  "defaults": {
+    "topCount": 3,
+    "timeFormat": "1:25:25.255",
+    "rankAlign": "center",
+    "rankPrefixMode": "dot",
+    "nameSpacing": 4,
+    "pbSeparatorWidth": 320,
+    "rainbowIntensity": 90,
+    "CAROUSEL_DISPLAY_DURATION": 1000,
+    "useTrophyIcons": true,
+    "displayHeight": "300px",
+    "canvasHeight": 300,
+    "carouselInterval": 6000,
+    "displayWidth": "700px",
+    "canvasWidth": 300,
+    "runsPerBatch": 4,
+    "maxRuns": 200,
+    "fontStyle": "Arial", 
+    "maxNameWidthVisible": 18
+  },
+  "flagOverrides": {
+    "TW": "CN"
+  },
+  "presets": {
+    "elde-any-glitchless": {
+      "name": "Elden Ring - Any% Glitchless",
+      "gameId": "nd28z0ed",
+      "subcategory": "Glitchless",
+      "category": "Any%",
+      "subcategories": {
+        "variableId": "7891zr5n",
+        "valueId": "qj740p3q",
+        "label": "Glitchless"
+      }
+    }
+  },
+  "language": "en",
+  "playerName": "Xeill",
+  "activePreset": "elde-any-glitchless",
+  "temporaryRun": {
+    "active": true,
+    "time": "55:05"
+  }
+}
+'@
+
+# === LANGUAGE DICTIONARY ===
 $Global:Languages = @{
     fr = @{
-        # Menu principal
-        menu_title = "Gestionnaire de presets SRC by karlitto__"
+        # Main menu
+        menu_title = "Gestionnaire de presets SRC by karlitto__ v1.40"
         menu_add_preset = "Ajouter un nouveau preset"
         menu_view_details = "Voir les détails d'un preset existant"
         menu_change_active = "Changer le preset actif"
         menu_remove_preset = "Supprimer un preset"
         menu_language_settings = "Paramètres de langue / 语言设置"
+        menu_parameters = "Paramètres"
         menu_player_name = "Définir mon nom"
         menu_temp_time = "Mon PB temporaire"
         menu_quit = "Quitter le programme"
@@ -55,12 +105,12 @@ $Global:Languages = @{
         nav_instructions = "Utilisez flèches HAUT/BAS pour naviguer, Entrée pour sélectionner"
         nav_instructions_cancel = "Utilisez flèches HAUT/BAS pour naviguer, Entrée pour sélectionner, Backspace pour annuler"
         
-        # Presets existants
+        # Existing presets
         existing_presets = "Presets existants :"
         active_preset = "Preset actuellement actif :"
         not_defined = "Non défini"
         
-        # Détails preset
+        # Preset details
         details_title = "=== DETAILS D'UN PRESET ==="
         details_choose = "Choisissez un preset à voir :"
         details_name = "Nom :"
@@ -78,7 +128,7 @@ $Global:Languages = @{
         details_edit_cancelled = "Modification annulee."
         details_back = "Retour"
         
-        # Messages communs
+        # Common messages
         continue_key = "Appuyez sur une touche pour continuer..."
         yes = "OUI"
         no = "NON"
@@ -86,7 +136,7 @@ $Global:Languages = @{
         cancelled = "Annulé."
         success = "[OK]"
         
-        # Nouveau preset
+        # New preset
         add_title = "=== AJOUT D'UN NOUVEAU PRESET ==="
         add_game_name = "Nom du jeu :"
         add_game_name_hint = "Appuyez sur ESC pour annuler et revenir au menu principal"
@@ -101,7 +151,7 @@ $Global:Languages = @{
         add_subcategories_available = "Sous-catégories disponibles :"
         add_no_subcategory = "Aucune sous-catégorie (null)"
         
-        # Configuration finale
+        # Final settings
         final_config = "========[ CONFIGURATION FINALE ]========"
         final_game = "Jeu      :"
         final_game_id = "Game ID  :"
@@ -122,13 +172,13 @@ $Global:Languages = @{
         final_obs_will_show = "[OK] OBS affichera automatiquement ce preset !"
         final_activate_later = "Pour activer ce preset plus tard, utilisez l'option de changement de preset actif."
         
-        # Changer preset actif
+        # Change active preset
         change_active_title = "=== CHANGER LE PRESET ACTIF ==="
         change_active_available = "Presets disponibles :"
         change_active_changed = "[OK] Preset actif changé vers :"
         change_active_obs_info = "OBS va automatiquement utiliser ce preset !"
         
-        # Supprimer preset
+        # Delete preset
         remove_title = "=== SUPPRIMER UN PRESET ==="
         remove_impossible_title = "=== IMPOSSIBLE DE SUPPRIMER ==="
         remove_impossible_last = "Impossible de supprimer le dernier preset !"
@@ -140,31 +190,55 @@ $Global:Languages = @{
         remove_success = "[OK] Preset '%s' supprimé avec succès !"
         remove_new_active = "Nouveau preset actif :"
         
-        # Premier lancement
+        # First launch
         first_launch_no_preset = "Aucun preset trouvé. Création du premier preset..."
         
-        # Langue
+        # Language
         language_title = "=== PARAMÈTRES DE LANGUE ==="
         language_current = "Langue actuelle :"
         language_available = "Langues disponibles :"
         language_changed = "[OK] Langue changée vers :"
         language_restart_info = "Le changement sera effectif immédiatement dans l'interface."
 
-        # Nom du joueur
+        parameters_title = "=== PARAMÈTRES ==="
+        parameters_visuals = "Ajustements visuels"
+        parameters_language = "Paramètres de langue / 语言设置"
+        parameters_reset_config = "Réinitialiser la configuration"
+        parameters_back = "Retour"
+        parameters_visuals_title = "=== AJUSTEMENTS VISUELS ==="
+        parameters_select_value = "Nouvelle valeur (Echap pour annuler) :"
+        parameters_invalid_number = "Valeur invalide."
+        parameters_saved = "[OK] Valeur mise à jour"
+        parameters_invalid_format = "Format invalide."
+        parameters_flag_override_prompt = "Entrer un override (AA BB, ex: CR FR) :"
+        parameters_visuals_section_layout = "Mise en page"
+        parameters_visuals_section_list_ranks = "Liste et rangs"
+        parameters_visuals_section_text_spacing = "Typo et espacement"
+        parameters_visuals_max_name_chars = "Largeur Nom (visible)"
+        parameters_visuals_section_pb = "PB"
+        parameters_visuals_section_effects = "Effets"
+        parameters_visuals_section_flags_trophies = "Drapeaux et trophées"
+        parameters_visuals_section_carousel = "Carrousel"
+
+        # Player name
         player_name_title = "=== NOM DU JOUEUR ==="
         player_name_current = "Nom actuel :"
         player_name_prompt = "Entrez le nom du joueur (laisser vide pour désactiver, Echap pour annuler) :"
         player_name_saved = "[OK] Nom du joueur enregistré :"
         player_name_cleared = "Nom du joueur désactivé."
         player_name_cancelled = "Opération annulée."
+        player_country_current = "Pays actuel :"
+        player_country_prompt = "Entrez le code pays (2 lettres, ex: FR) :"
+        player_country_invalid = "Invalide. Doit faire 2 lettres."
+        player_country_saved = "[OK] Pays enregistré :"
 
-        # Temps temporaire
+        # Temporary time
         temp_time_title = "=== TEMPS TEMPORAIRE ==="
         temp_time_current = "Temps temporaire actuel :"
         temp_time_action_set = "Definir/modifier le temps temporaire"
         temp_time_action_clear = "Supprimer le temps temporaire"
         temp_time_action_back = "Retour"
-        temp_time_prompt = "Entrez le temps temporaire (Echap pour annuler) :"
+        temp_time_prompt = "Entrez le temps temporaire (hh:mm:ss.ms) (Echap pour annuler) :"
         temp_time_invalid = "Format invalide. Exemples : 1:23, 12:34, 1:02:03, 1:18.268"
         temp_time_saved = "[OK] Temps temporaire enregistre :"
         temp_time_cleared = "Temps temporaire supprime."
@@ -174,23 +248,29 @@ $Global:Languages = @{
         temp_time_check_status = "Recherche dans le preset selectionne"
         temp_time_disabled = "PB temporaire desactive (joueur introuvable dans ce preset)."
         
-        # Erreurs
+        # Reset
+        reset_confirm = "Êtes-vous sûr de vouloir réinitialiser la configuration ? (o/N)"
+        reset_success = "[OK] Configuration réinitialisée par défaut."
+        reset_cancelled = "Réinitialisation annulée."
+
+        # Errors
         config_load_error = "Erreur lors du chargement de la config :"
         critical_error = "Erreur critique :"
         error_general = "Erreur :"
         close_key = "Appuyez sur une touche pour fermer..."
         
-        # Messages de fin
+        # Closing messages
         goodbye = "GL pour tes runs !"
     }
     en = @{
-        # Menu principal
-        menu_title = "SRC Preset Manager by karlitto__"
+        # Main menu
+        menu_title = "SRC Preset Manager by karlitto__ v1.40"
         menu_add_preset = "Add a new preset"
         menu_view_details = "View details of an existing preset"
         menu_change_active = "Change active preset"
         menu_remove_preset = "Delete a preset"
         menu_language_settings = "Language settings / 语言设置"
+        menu_parameters = "Parameters"
         menu_player_name = "Set my name"
         menu_temp_time = "My temporary PB"
         menu_quit = "Quit program"
@@ -200,12 +280,12 @@ $Global:Languages = @{
         nav_instructions = "Use UP/DOWN arrows to navigate, Enter to select"
         nav_instructions_cancel = "Use UP/DOWN arrows to navigate, Enter to select, Backspace to cancel"
         
-        # Presets existants
+        # Existing presets
         existing_presets = "Existing presets:"
         active_preset = "Currently active preset:"
         not_defined = "Not defined"
         
-        # Détails preset
+        # Preset details
         details_title = "=== PRESET DETAILS ==="
         details_choose = "Choose a preset to view:"
         details_name = "Name:"
@@ -223,7 +303,7 @@ $Global:Languages = @{
         details_edit_cancelled = "Edit cancelled."
         details_back = "Back"
         
-        # Messages communs
+        # Common messages
         continue_key = "Press any key to continue..."
         yes = "YES"
         no = "NO"
@@ -231,7 +311,7 @@ $Global:Languages = @{
         cancelled = "Cancelled."
         success = "[OK]"
         
-        # Nouveau preset
+        # New preset
         add_title = "=== ADD NEW PRESET ==="
         add_game_name = "Game name:"
         add_game_name_hint = "Press ESC to cancel and return to the main menu"
@@ -246,7 +326,7 @@ $Global:Languages = @{
         add_subcategories_available = "Available subcategories:"
         add_no_subcategory = "No subcategory (null)"
         
-        # Configuration finale
+        # Final settings
         final_config = "========[ FINAL CONFIGURATION ]========"
         final_game = "Game     :"
         final_game_id = "Game ID  :"
@@ -267,13 +347,13 @@ $Global:Languages = @{
         final_obs_will_show = "[OK] OBS will automatically display this preset!"
         final_activate_later = "To activate this preset later, use the active preset change option."
         
-        # Changer preset actif
+        # Change active preset
         change_active_title = "=== CHANGE ACTIVE PRESET ==="
         change_active_available = "Available presets:"
         change_active_changed = "[OK] Active preset changed to:"
         change_active_obs_info = "OBS will automatically use this preset!"
         
-        # Supprimer preset
+        # Delete preset
         remove_title = "=== DELETE PRESET ==="
         remove_impossible_title = "=== CANNOT DELETE ==="
         remove_impossible_last = "Cannot delete the last preset!"
@@ -285,15 +365,35 @@ $Global:Languages = @{
         remove_success = "[OK] Preset '%s' deleted successfully!"
         remove_new_active = "New active preset:"
         
-        # Premier lancement
+        # First launch
         first_launch_no_preset = "No preset found. Creating first preset..."
         
-        # Langue
+        # Language
         language_title = "=== LANGUAGE SETTINGS ==="
         language_current = "Current language:"
         language_available = "Available languages:"
         language_changed = "[OK] Language changed to:"
         language_restart_info = "The change will take effect immediately in the interface."
+
+        parameters_title = "=== PARAMETERS ==="
+        parameters_visuals = "Visual tweaks"
+        parameters_language = "Language settings / 语言设置"
+        parameters_reset_config = "Reset configuration"
+        parameters_back = "Back"
+        parameters_visuals_title = "=== VISUAL TWEAKS ==="
+        parameters_select_value = "New value (Esc to cancel):"
+        parameters_invalid_number = "Invalid value."
+        parameters_saved = "[OK] Value updated"
+        parameters_invalid_format = "Invalid format."
+        parameters_flag_override_prompt = "Enter override (AA BB, e.g. CR FR):"
+        parameters_visuals_section_layout = "Layout"
+        parameters_visuals_section_list_ranks = "List and ranks"
+        parameters_visuals_section_text_spacing = "Typography and spacing"
+        parameters_visuals_max_name_chars = "Name width (visible)"
+        parameters_visuals_section_pb = "PB"
+        parameters_visuals_section_effects = "Effects"
+        parameters_visuals_section_flags_trophies = "Flags and trophies"
+        parameters_visuals_section_carousel = "Carousel"
 
         # Player name
         player_name_title = "=== PLAYER NAME ==="
@@ -302,6 +402,10 @@ $Global:Languages = @{
         player_name_saved = "[OK] Player name saved:"
         player_name_cleared = "Player name disabled."
         player_name_cancelled = "Operation cancelled."
+        player_country_current = "Current country:"
+        player_country_prompt = "Enter country code (2 letters, e.g. FR):"
+        player_country_invalid = "Invalid. Must be 2 letters."
+        player_country_saved = "[OK] Country saved:"
 
         # Temporary time
         temp_time_title = "=== TEMPORARY TIME ==="
@@ -309,7 +413,7 @@ $Global:Languages = @{
         temp_time_action_set = "Set/change temporary time"
         temp_time_action_clear = "Clear temporary time"
         temp_time_action_back = "Back"
-        temp_time_prompt = "Enter temporary time (Esc to cancel):"
+        temp_time_prompt = "Enter temporary time (hh:mm:ss.ms) (Esc to cancel):"
         temp_time_invalid = "Invalid format. Examples: 1:23, 12:34, 1:02:03, 1:18.268"
         temp_time_saved = "[OK] Temporary time saved:"
         temp_time_cleared = "Temporary time cleared."
@@ -319,38 +423,44 @@ $Global:Languages = @{
         temp_time_check_status = "Searching in selected preset"
         temp_time_disabled = "Temporary PB disabled (player not found in this preset)."
         
-        # Erreurs
+        # Reset
+        reset_confirm = "Are you sure you want to reset the configuration? (y/N)"
+        reset_success = "[OK] Configuration reset to default."
+        reset_cancelled = "Reset cancelled."
+
+        # Errors
         config_load_error = "Error loading config:"
         critical_error = "Critical error:"
         error_general = "Error:"
         close_key = "Press any key to close..."
         
-        # Messages de fin
+        # Closing messages
         goodbye = "GL for your runs!"
     }
     es = @{
-        # Menu principal
-        menu_title = "Gestor de Presets SRC by karlitto__"
+        # Main menu
+        menu_title = "Gestor de Presets SRC by karlitto__ v1.40"
         menu_add_preset = "Añadir un nuevo preset"
         menu_view_details = "Ver detalles de un preset existente"
         menu_change_active = "Cambiar preset activo"
         menu_remove_preset = "Eliminar un preset"
         menu_language_settings = "Configuración de idioma / 语言设置"
+        menu_parameters = "Parametros"
         menu_player_name = "Definir mi nombre"
         menu_temp_time = "Mi PB temporal"
         menu_quit = "Salir del programa"
         menu_what_to_do = "¿Qué te gustaría hacer?"
         
-        # Navegación
+        # Navigation
         nav_instructions = "Usa flechas ARRIBA/ABAJO para navegar, Enter para seleccionar"
         nav_instructions_cancel = "Usa flechas ARRIBA/ABAJO para navegar, Enter para seleccionar, Backspace para cancelar"
         
-        # Presets existentes
+        # Existing presets
         existing_presets = "Presets existentes:"
         active_preset = "Preset actualmente activo:"
         not_defined = "No definido"
         
-        # Detalles preset
+        # Preset details
         details_title = "=== DETALLES DEL PRESET ==="
         details_choose = "Elige un preset para ver:"
         details_name = "Nombre:"
@@ -368,7 +478,7 @@ $Global:Languages = @{
         details_edit_cancelled = "Edicion cancelada."
         details_back = "Volver"
         
-        # Mensajes comunes
+        # Common messages
         continue_key = "Presiona cualquier tecla para continuar..."
         yes = "SÍ"
         no = "NO"
@@ -376,28 +486,28 @@ $Global:Languages = @{
         cancelled = "Cancelado."
         success = "[OK]"
         
-        # Nuevo preset
+        # New preset
         add_title = "=== AÑADIR NUEVO PRESET ==="
         add_game_name = "Nombre del juego:"
         add_game_name_hint = "Presiona ESC para cancelar y volver al menu principal"
         add_error_empty_name = "Error: ¡Debes introducir un nombre de juego!"
         add_searching = "Buscando:"
-        add_no_game_found = "No se encontró ningún juego para:"
+        add_no_game_found = "Ningún juego encontrado para:"
         add_games_found = "Juegos encontrados:"
         add_loading_categories = "Cargando categorías..."
         add_loading_levels = "Cargando niveles..."
-        add_no_categories = "¡No se encontraron categorías para este juego!"
+        add_no_categories = "¡No se encontró ninguna categoría para este juego!"
         add_categories_available = "Categorías disponibles:"
         add_subcategories_available = "Subcategorías disponibles:"
-        add_no_subcategory = "Sin subcategoria (null)"
+        add_no_subcategory = "Sin subcategoría (null)"
         
-        # Configuracion final
-        final_config = "========[ CONFIGURACION FINAL ]========"
+        # Final settings
+        final_config = "========[ CONFIGURACIÓN FINAL ]========"
         final_game = "Juego    :"
         final_game_id = "ID Juego :"
-        final_category = "Categoria :"
-        final_subcategory = "Subcategoria :"
-        final_preset_id = "Introduce un ID unico para este preset:"
+        final_category = "Categoría :"
+        final_subcategory = "Subcategoría :"
+        final_preset_id = "Introduce un ID único para este preset:"
         final_suggestion = "Sugerencia:"
         final_preset_id_prompt = "ID del preset (o Enter para sugerencia)"
         final_id_exists = "ATENCIÓN: ¡Ya existe un preset con ID '%s'!"
@@ -412,90 +522,120 @@ $Global:Languages = @{
         final_obs_will_show = "¡[OK] OBS mostrará automáticamente este preset!"
         final_activate_later = "Para activar este preset más tarde, usa la opción de cambio de preset activo."
         
-        # Cambiar preset activo
+        # Change active preset
         change_active_title = "=== CAMBIAR PRESET ACTIVO ==="
         change_active_available = "Presets disponibles:"
         change_active_changed = "[OK] Preset activo cambiado a:"
         change_active_obs_info = "¡OBS usará automáticamente este preset!"
         
-        # Eliminar preset
+        # Delete preset
         remove_title = "=== ELIMINAR PRESET ==="
-        remove_impossible_title = "=== NO SE PUEDE ELIMINAR ==="
-        remove_impossible_last = "¡No se puede eliminar el último preset!"
+        remove_impossible_title = "=== NO ES POSIBLE ELIMINAR ==="
+        remove_impossible_last = "¡No es posible eliminar el último preset!"
         remove_impossible_rule = "Debes tener al menos un preset configurado."
         remove_warning = "ATENCIÓN: Vas a eliminar permanentemente:"
-        remove_confirm = "¿Estás seguro de que quieres eliminar este preset? (s/N)"
+        remove_confirm = "¿Seguro que quieres eliminar este preset? (s/N)"
         remove_cancelled = "Eliminación cancelada."
-        remove_active_deleted = "El preset activo fue eliminado. Elige el nuevo preset activo:"
-        remove_success = "¡[OK] Preset '%s' eliminado con éxito!"
+        remove_active_deleted = "El preset activo ha sido eliminado. Elige el nuevo preset activo:"
+        remove_success = "[OK] Preset '%s' eliminado con éxito!"
         remove_new_active = "Nuevo preset activo:"
         
-        # Primer lanzamiento
-        first_launch_no_preset = "No se encontraron presets. Creando el primer preset..."
+        # First launch
+        first_launch_no_preset = "No se encontró ningún preset. Creando el primer preset..."
         
-        # Idioma
+        # Language
         language_title = "=== CONFIGURACIÓN DE IDIOMA ==="
         language_current = "Idioma actual:"
         language_available = "Idiomas disponibles:"
         language_changed = "[OK] Idioma cambiado a:"
         language_restart_info = "El cambio se aplicará inmediatamente en la interfaz."
 
-        # Nombre del jugador
+        parameters_title = "=== PARÁMETROS ==="
+        parameters_visuals = "Ajustes visuales"
+        parameters_language = "Configuración de idioma / 语言设置"
+        parameters_reset_config = "Restablecer configuración"
+        parameters_back = "Volver"
+        parameters_visuals_title = "=== AJUSTES VISUALES ==="
+        parameters_select_value = "Nuevo valor (Esc para cancelar):"
+        parameters_invalid_number = "Valor inválido."
+        parameters_saved = "[OK] Valor actualizado"
+        parameters_invalid_format = "Formato inválido."
+        parameters_flag_override_prompt = "Introduce override (AA BB, ej.: CR FR):"
+        parameters_visuals_section_layout = "Diseño"
+        parameters_visuals_section_list_ranks = "Lista y rankings"
+        parameters_visuals_section_text_spacing = "Tipografía y espaciado"
+        parameters_visuals_max_name_chars = "Ancho del nombre (visible)"
+        parameters_visuals_section_pb = "PB"
+        parameters_visuals_section_effects = "Efectos"
+        parameters_visuals_section_flags_trophies = "Banderas y trofeos"
+        parameters_visuals_section_carousel = "Carrusel"
+
+        # Player name
         player_name_title = "=== NOMBRE DEL JUGADOR ==="
         player_name_current = "Nombre actual:"
         player_name_prompt = "Introduce el nombre del jugador (vacio para desactivar, Esc para cancelar):"
         player_name_saved = "[OK] Nombre del jugador guardado:"
         player_name_cleared = "Nombre del jugador desactivado."
         player_name_cancelled = "Operacion cancelada."
+        player_country_current = "País actual:"
+        player_country_prompt = "Introduce el código del país (2 letras, ex: FR):"
+        player_country_invalid = "Inválido. Debe tener 2 letras."
+        player_country_saved = "[OK] País guardado:"
 
-        # Tiempo temporal
+        # Temporary time
         temp_time_title = "=== TIEMPO TEMPORAL ==="
         temp_time_current = "Tiempo temporal actual:"
         temp_time_action_set = "Definir/cambiar tiempo temporal"
         temp_time_action_clear = "Eliminar tiempo temporal"
         temp_time_action_back = "Volver"
-        temp_time_prompt = "Introduce el tiempo temporal (Esc para cancelar):"
-        temp_time_invalid = "Formato invalido. Ejemplos: 1:23, 12:34, 1:02:03, 1:18.268"
+        temp_time_prompt = "Introduce el tiempo temporal (hh:mm:ss.ms) (Esc para cancelar):"
+        temp_time_invalid = "Formato inválido. Ejemplos: 1:23, 12:34, 1:02:03, 1:18.268"
         temp_time_saved = "[OK] Tiempo temporal guardado:"
         temp_time_cleared = "Tiempo temporal eliminado."
-        temp_time_cancelled = "Operacion cancelada."
-        temp_time_no_player = "No disponible sin nombre del jugador."
+        temp_time_cancelled = "Operación cancelada."
+        temp_time_no_player = "No disponible sin nombre de jugador."
         temp_time_check_title = "Verificando jugador..."
         temp_time_check_status = "Buscando en el preset seleccionado"
         temp_time_disabled = "PB temporal desactivado (jugador no encontrado en este preset)."
         
-        # Errores
+        # Reset
+        reset_confirm = "¿Seguro que quieres restablecer la configuración? (s/N)"
+        reset_success = "[OK] Configuración restablecida por defecto."
+        reset_cancelled = "Restablecimiento cancelado."
+        
+        # Errors
         config_load_error = "Error al cargar la configuración:"
         critical_error = "Error crítico:"
         error_general = "Error:"
-        close_key = "Presiona cualquier tecla para cerrar..."
+        close_key = "Pulsa cualquier tecla para cerrar..."
         
-        # Mensajes de fin
+        # Closing messages
         goodbye = "¡GL en tus runs!"
     }
     pt = @{
-        # Menu principal
-        menu_title = "Gerenciador de Presets SRC by karlitto__"
+        # Main menu
+        menu_title = "Gerenciador de Presets SRC by karlitto__ v1.40"
         menu_add_preset = "Adicionar um novo preset"
         menu_view_details = "Ver detalhes de um preset existente"
         menu_change_active = "Alterar preset ativo"
         menu_remove_preset = "Remover um preset"
         menu_language_settings = "Configurações de idioma / 语言设置"
+        menu_parameters = "Parâmetros"
         menu_player_name = "Definir meu nome"
-        menu_temp_time = "Meu PB temporario"
+        menu_temp_time = "Meu PB temporário"
         menu_quit = "Sair do programa"
         menu_what_to_do = "O que você gostaria de fazer?"
         
-        # Navegação
+        # Navigation
         nav_instructions = "Use setas CIMA/BAIXO para navegar, Enter para selecionar"
         nav_instructions_cancel = "Use setas CIMA/BAIXO para navegar, Enter para selecionar, Backspace para cancelar"
         
-        # Presets existentes
+        # Existing presets
         existing_presets = "Presets existentes:"
         active_preset = "Preset atualmente ativo:"
         not_defined = "Não definido"
         
-        # Detalhes preset
+        # Preset details
         details_title = "=== DETALHES DO PRESET ==="
         details_choose = "Escolha um preset para ver:"
         details_name = "Nome:"
@@ -513,7 +653,7 @@ $Global:Languages = @{
         details_edit_cancelled = "Edicao cancelada."
         details_back = "Voltar"
         
-        # Mensagens comuns
+        # Common messages
         continue_key = "Pressione qualquer tecla para continuar..."
         yes = "SIM"
         no = "NÃO"
@@ -521,12 +661,12 @@ $Global:Languages = @{
         cancelled = "Cancelado."
         success = "[OK]"
         
-        # Novo preset
+        # New preset
         add_title = "=== ADICIONAR NOVO PRESET ==="
         add_game_name = "Nome do jogo:"
         add_game_name_hint = "Pressione ESC para cancelar e voltar ao menu principal"
         add_error_empty_name = "Erro: Você deve inserir um nome de jogo!"
-        add_searching = "Pesquisando por:"
+        add_searching = "Pesquisando:"
         add_no_game_found = "Nenhum jogo encontrado para:"
         add_games_found = "Jogos encontrados:"
         add_loading_categories = "Carregando categorias..."
@@ -536,8 +676,8 @@ $Global:Languages = @{
         add_subcategories_available = "Subcategorias disponíveis:"
         add_no_subcategory = "Sem subcategoria (null)"
         
-        # Configuração final
-        final_config = "========[ CONFIGURACAO FINAL ]========"
+        # Final settings
+        final_config = "========[ CONFIGURAÇÃO FINAL ]========"
         final_game = "Jogo     :"
         final_game_id = "ID Jogo  :"
         final_category = "Categoria :"
@@ -550,20 +690,20 @@ $Global:Languages = @{
         final_operation_cancelled = "Operação cancelada."
         final_activate_now = "Você quer ativar este preset agora? (s/N)"
         final_saved = "Preset '%s' salvo com sucesso!"
-        final_status = "Status:"
+        final_status = "Estado:"
         final_auto_active = "Ativado automaticamente (primeiro preset)"
         final_active_now = "Ativado como preset principal"
-        final_saved_inactive = "Salvo sem ativar"
+        final_saved_inactive = "Guardado sem ativar"
         final_obs_will_show = "[OK] O OBS mostrará automaticamente este preset!"
         final_activate_later = "Para ativar este preset mais tarde, use a opção de mudança de preset ativo."
         
-        # Alterar preset ativo
+        # Change active preset
         change_active_title = "=== ALTERAR PRESET ATIVO ==="
         change_active_available = "Presets disponíveis:"
         change_active_changed = "[OK] Preset ativo alterado para:"
-        change_active_obs_info = "O OBS usará automaticamente este preset!"
+        change_active_obs_info = "OBS usará automaticamente este preset!"
         
-        # Remover preset
+        # Delete preset
         remove_title = "=== REMOVER PRESET ==="
         remove_impossible_title = "=== NÃO É POSSÍVEL REMOVER ==="
         remove_impossible_last = "Não é possível remover o último preset!"
@@ -575,72 +715,102 @@ $Global:Languages = @{
         remove_success = "[OK] Preset '%s' removido com sucesso!"
         remove_new_active = "Novo preset ativo:"
         
-        # Primeiro lançamento
+        # First launch
         first_launch_no_preset = "Nenhum preset encontrado. Criando o primeiro preset..."
         
-        # Idioma
+        # Language
         language_title = "=== CONFIGURAÇÕES DE IDIOMA ==="
         language_current = "Idioma atual:"
         language_available = "Idiomas disponíveis:"
         language_changed = "[OK] Idioma alterado para:"
         language_restart_info = "A mudança será aplicada imediatamente na interface."
 
-        # Nome do jogador
+        parameters_title = "=== PARÂMETROS ==="
+        parameters_visuals = "Ajustes visuais"
+        parameters_language = "Idioma / 语言设置"
+        parameters_reset_config = "Redefinir configuração"
+        parameters_back = "Voltar"
+        parameters_visuals_title = "=== AJUSTES VISUAIS ==="
+        parameters_select_value = "Novo valor (Esc para cancelar):"
+        parameters_invalid_number = "Valor inválido."
+        parameters_saved = "[OK] Valor atualizado"
+        parameters_invalid_format = "Formato inválido."
+        parameters_flag_override_prompt = "Digite override (AA BB, ex.: CR FR):"
+        parameters_visuals_section_layout = "Layout"
+        parameters_visuals_section_list_ranks = "Lista e rankings"
+        parameters_visuals_section_text_spacing = "Tipografia e espaçamento"
+        parameters_visuals_max_name_chars = "Largura do nome (visível)"
+        parameters_visuals_section_pb = "PB"
+        parameters_visuals_section_effects = "Efeitos"
+        parameters_visuals_section_flags_trophies = "Bandeiras e trofeus"
+        parameters_visuals_section_carousel = "Carrossel"
+
+        # Player name
         player_name_title = "=== NOME DO JOGADOR ==="
         player_name_current = "Nome atual:"
-        player_name_prompt = "Digite o nome do jogador (vazio para desativar, Esc para cancelar):"
-        player_name_saved = "[OK] Nome do jogador salvo:"
+        player_name_prompt = "Introduza o nome do jogador (vazio para desativar, Esc para cancelar):"
+        player_name_saved = "[OK] Nome do jogador guardado:"
         player_name_cleared = "Nome do jogador desativado."
         player_name_cancelled = "Operacao cancelada."
+        player_country_current = "País atual:"
+        player_country_prompt = "Introduza o código do país (2 letras, ex: FR):"
+        player_country_invalid = "Inválido. Deve ter 2 letras."
+        player_country_saved = "[OK] País guardado:"
 
-        # Tempo temporario
-        temp_time_title = "=== TEMPO TEMPORARIO ==="
-        temp_time_current = "Tempo temporario atual:"
-        temp_time_action_set = "Definir/alterar tempo temporario"
-        temp_time_action_clear = "Remover tempo temporario"
+        # Temporary time
+        temp_time_title = "=== TEMPO TEMPORÁRIO ==="
+        temp_time_current = "Tempo temporário atual:"
+        temp_time_action_set = "Definir/alterar tempo temporário"
+        temp_time_action_clear = "Eliminar tempo temporário"
         temp_time_action_back = "Voltar"
-        temp_time_prompt = "Digite o tempo temporario (Esc para cancelar):"
-        temp_time_invalid = "Formato invalido. Exemplos: 1:23, 12:34, 1:02:03, 1:18.268"
-        temp_time_saved = "[OK] Tempo temporario salvo:"
-        temp_time_cleared = "Tempo temporario removido."
-        temp_time_cancelled = "Operacao cancelada."
+        temp_time_prompt = "Introduza o tempo temporário (hh:mm:ss.ms) (Esc para cancelar):"
+        temp_time_invalid = "Formato inválido. Exemplos: 1:23, 12:34, 1:02:03, 1:18.268"
+        temp_time_saved = "[OK] Tempo temporário guardado:"
+        temp_time_cleared = "Tempo temporário eliminado."
+        temp_time_cancelled = "Operação cancelada."
         temp_time_no_player = "Indisponivel sem nome do jogador."
         temp_time_check_title = "Verificando jogador..."
-        temp_time_check_status = "Buscando no preset selecionado"
+        temp_time_check_status = "Buscando no preset seleccionado"
         temp_time_disabled = "PB temporario desativado (jogador nao encontrado neste preset)."
         
-        # Erros
+        # Reset
+        reset_confirm = "Tem certeza que deseja redefinir a configuração? (s/N)"
+        reset_success = "[OK] Configuração restaurada para o padrão."
+        reset_cancelled = "Redefinição cancelada."
+        
+        # Errors
         config_load_error = "Erro ao carregar configuração:"
         critical_error = "Erro crítico:"
         error_general = "Erro:"
         close_key = "Pressione qualquer tecla para fechar..."
         
-        # Mensagens de fim
+        # Closing messages
         goodbye = "GL nas suas runs!"
     }
     zh = @{
-        # Menu principal
-        menu_title = "SRC 预设管理器 by karlitto__ 卡里托"
+        # Main menu
+        menu_title = "SRC 预设管理器 by karlitto__ v1.40 卡里托"
         menu_add_preset = "添加新预设"
         menu_view_details = "查看现有预设详情"
         menu_change_active = "更改活动预设"
         menu_remove_preset = "删除预设"
         menu_language_settings = "语言设置 / Language settings"
+        menu_parameters = "参数"
         menu_player_name = "设置我的名字"
         menu_temp_time = "我的临时PB"
         menu_quit = "退出程序"
         menu_what_to_do = "您想要做什么？"
         
-        # 导航
+        # Navigation
         nav_instructions = "使用上/下箭头导航，回车选择"
         nav_instructions_cancel = "使用上/下箭头导航，回车选择，Backspace取消"
         
-        # 现有预设
+        # Existing presets
         existing_presets = "现有预设："
         active_preset = "当前活动预设："
         not_defined = "未定义"
         
-        # 预设详情
+        # Preset details
         details_title = "=== 预设详情 ==="
         details_choose = "选择要查看的预设："
         details_name = "名称："
@@ -658,7 +828,7 @@ $Global:Languages = @{
         details_edit_cancelled = "已取消编辑。"
         details_back = "返回"
         
-        # 通用消息
+        # Common messages
         continue_key = "按任意键继续..."
         yes = "是"
         no = "否"
@@ -666,7 +836,7 @@ $Global:Languages = @{
         cancelled = "已取消。"
         success = "[OK]"
         
-        # 新预设
+        # New preset
         add_title = "=== 添加新预设 ==="
         add_game_name = "游戏名称"
         add_game_name_hint = "按 ESC 取消并返回主菜单"
@@ -681,7 +851,7 @@ $Global:Languages = @{
         add_subcategories_available = "可用子类别："
         add_no_subcategory = "无子类别（空）"
         
-        # 最终配置
+        # Final settings
         final_config = "========[ ZUI ZHONG PEI ZHI ]========"
         final_game = "游戏     ："
         final_game_id = "游戏ID   ："
@@ -702,13 +872,13 @@ $Global:Languages = @{
         final_obs_will_show = "[OK] OBS将自动显示此预设！"
         final_activate_later = "要稍后激活此预设，请使用活动预设更改选项。"
         
-        # 更改活动预设
+        # Change active preset
         change_active_title = "=== 更改活动预设 ==="
         change_active_available = "可用预设："
         change_active_changed = "[OK] 活动预设已更改为："
         change_active_obs_info = "OBS将自动使用此预设！"
         
-        # 删除预设
+        # Delete preset
         remove_title = "=== 删除预设 ==="
         remove_impossible_title = "=== 无法删除 ==="
         remove_impossible_last = "无法删除最后一个预设！"
@@ -720,31 +890,55 @@ $Global:Languages = @{
         remove_success = "[OK] 预设 '%s' 删除成功！"
         remove_new_active = "新活动预设："
         
-        # 首次启动
+        # First launch
         first_launch_no_preset = "未找到预设。正在创建第一个预设..."
         
-        # 语言
+        # Language
         language_title = "=== 语言设置 ==="
         language_current = "当前语言："
         language_available = "可用语言："
         language_changed = "[OK] 语言已更改为："
         language_restart_info = "更改将立即在界面中生效。"
 
-        # 玩家名称
+        parameters_title = "=== 参数 ==="
+        parameters_visuals = "视觉调整"
+        parameters_language = "语言设置 / Language settings"
+        parameters_reset_config = "重置配置"
+        parameters_back = "返回"
+        parameters_visuals_title = "=== 视觉调整 ==="
+        parameters_select_value = "新值（按 Esc 取消）："
+        parameters_invalid_number = "无效的数值。"
+        parameters_saved = "[OK] 值已更新"
+        parameters_invalid_format = "格式无效。"
+        parameters_flag_override_prompt = "输入覆写代码（AA BB，例如：CR FR）："
+        parameters_visuals_section_layout = "布局"
+        parameters_visuals_section_list_ranks = "列表和名次"
+        parameters_visuals_section_text_spacing = "字体与间距"
+        parameters_visuals_max_name_chars = "名称宽度（可见）"
+        parameters_visuals_section_pb = "PB"
+        parameters_visuals_section_effects = "特效"
+        parameters_visuals_section_flags_trophies = "旗帜与奖杯"
+        parameters_visuals_section_carousel = "轮播"
+
+        # Player name
         player_name_title = "=== 玩家名称 ==="
         player_name_current = "当前名称："
         player_name_prompt = "输入玩家名称（留空禁用，Esc 取消）："
         player_name_saved = "[OK] 玩家名称已保存："
         player_name_cleared = "玩家名称已禁用。"
         player_name_cancelled = "操作已取消。"
+        player_country_current = "当前国家/地区："
+        player_country_prompt = "输入国家/地区代码（2个字母，例如 FR）："
+        player_country_invalid = "无效。必须是2个字母。"
+        player_country_saved = "[OK] 国家/地区已保存："
 
-        # 临时成绩
+        # Temporary time
         temp_time_title = "=== 临时成绩 ==="
         temp_time_current = "当前临时成绩："
         temp_time_action_set = "设置/修改临时成绩"
         temp_time_action_clear = "清除临时成绩"
         temp_time_action_back = "返回"
-        temp_time_prompt = "输入临时成绩（Esc 取消）："
+        temp_time_prompt = "输入临时成绩 (hh:mm:ss.ms)（Esc 取消）："
         temp_time_invalid = "格式无效。示例：1:23, 12:34, 1:02:03, 1:18.268"
         temp_time_saved = "[OK] 临时成绩已保存："
         temp_time_cleared = "临时成绩已清除。"
@@ -754,49 +948,54 @@ $Global:Languages = @{
         temp_time_check_status = "在所选预设中查找"
         temp_time_disabled = "临时PB已禁用（该预设中未找到玩家）。"
         
-        # 错误
+        # Reset
+        reset_confirm = "您确定要重置配置吗？(y/N)"
+        reset_success = "[OK] 配置已重置为默认值。"
+        reset_cancelled = "重置已取消。"
+        
+        # Errors
         config_load_error = "加载配置时出错："
         critical_error = "严重错误："
         error_general = "错误："
         close_key = "按任意键关闭..."
         
-        # 结束消息
+        # Closing messages
         goodbye = "祝你跑得愉快！"
     }
 }
 
-# === FONCTION DE LOCALISATION ===
+# === LOCALIZATION FUNCTION ===
 function Get-LocalizedString {
     param(
         [string]$key,
         [string]$lang = $null
     )
     
-    # Utiliser la langue du config ou fallback vers français
+    # Use settings language or fall back to French
     if (-not $lang) {
         $lang = if ($Global:CurrentLanguage) { $Global:CurrentLanguage } else { "fr" }
     }
     
-    # Fallback vers français si la langue n'existe pas
+    # Fall back to French if the language does not exist
     if (-not $Global:Languages.ContainsKey($lang)) {
         $lang = "fr"
     }
     
-    # Récupérer la chaîne
+    # Fetch the string
     if ($Global:Languages[$lang].ContainsKey($key)) {
         return $Global:Languages[$lang][$key]
     }
     
-    # Fallback vers français si la clé n'existe pas
+    # Fall back to French if the key does not exist
     if ($lang -ne "fr" -and $Global:Languages.fr.ContainsKey($key)) {
         return $Global:Languages.fr[$key]
     }
     
-    # Retourner la clé si rien n'est trouvé
+    # Return the key if nothing is found
     return "[$key]"
 }
 
-# === FONCTION GESTION LANGUE ===
+# === LANGUAGE MANAGEMENT FUNCTION ===
 function Set-Language {
     param($currentConfig)
     
@@ -819,7 +1018,15 @@ function Set-Language {
     Write-Host ""
     
     $languageOptions = @("Français (FR)", "English (EN)", "Español (ES)", "Português (PT)", "中文 (ZH)")
-    $selectedLangIndex = Show-ArrowMenu -Title (Get-LocalizedString "language_available") -Options $languageOptions -AllowCancel
+    $currentLangIndex = switch ($currentLang) {
+      "fr" { 0 }
+      "en" { 1 }
+      "es" { 2 }
+      "pt" { 3 }
+      "zh" { 4 }
+      default { 0 }
+    }
+    $selectedLangIndex = Show-ArrowMenu -Title (Get-LocalizedString "language_available") -Options $languageOptions -AllowCancel -SelectedIndex $currentLangIndex
     
     if ($selectedLangIndex -eq -1) { 
         return 
@@ -833,7 +1040,7 @@ function Set-Language {
         4 { "zh" }
     }
     
-    # Sauvegarder la nouvelle langue
+    # Save the new language
     if (-not $currentConfig) {
         $currentConfig = @{
             language = $newLang
@@ -852,10 +1059,10 @@ function Set-Language {
         }
     }
     
-    # Appliquer immédiatement
+    # Apply immediately
     $Global:CurrentLanguage = $newLang
     
-    # Sauvegarder
+    # Save
     $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
     $jsonOutput | Set-Content "config.json" -Encoding UTF8
     
@@ -867,7 +1074,342 @@ function Set-Language {
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
-# === FONCTION CONFIG ===
+  function Clamp-IntValue {
+    param(
+      [int]$Value,
+      [int]$Min,
+      [int]$Max
+    )
+
+    if ($Value -lt $Min) { return $Min }
+    if ($Value -gt $Max) { return $Max }
+    return $Value
+  }
+
+  function Convert-SizeToPx {
+    param(
+      [string]$Text,
+      [int]$Min,
+      [int]$Max
+    )
+
+    $clean = $Text.Trim()
+    if ($clean -match '^\d+$') {
+      $num = [int]$clean
+    } elseif ($clean -match '^\d+\s*px$') {
+      $num = [int]($clean -replace '[^0-9]', '')
+    } else {
+      return $null
+    }
+
+    $clamped = Clamp-IntValue -Value $num -Min $Min -Max $Max
+    return "$clamped`px"
+  }
+
+  function Save-Config {
+    param($Config)
+
+    $jsonOutput = $Config | ConvertTo-Json -Depth 10
+    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+  }
+
+  function Set-VisualTweaks {
+    param($currentConfig)
+
+    $config = Initialize-Config $currentConfig
+
+    $padX = 12.0
+    $displayWidthValue = $null
+    if ($config.defaults.displayWidth) {
+      $displayWidthText = "$($config.defaults.displayWidth)"
+      if ($displayWidthText -match '(\d+)') {
+        $displayWidthValue = [int]$Matches[1]
+      }
+    }
+    $canvasWidthValue = $null
+    if ([int]::TryParse("$($config.defaults.canvasWidth)", [ref]$canvasWidthValue)) {
+      # parsed
+    } else {
+      $canvasWidthValue = $null
+    }
+    $baseWidthValue = 350.0
+    if ($displayWidthValue -ne $null) {
+      [void][double]::TryParse("$displayWidthValue", [ref]$baseWidthValue)
+    } elseif ($canvasWidthValue -ne $null) {
+      [void][double]::TryParse("$canvasWidthValue", [ref]$baseWidthValue)
+    }
+
+    $timeXValue = [Math]::Min(350.0, $baseWidthValue - $padX)
+    if ([double]::IsNaN($timeXValue) -or [double]::IsInfinity($timeXValue)) {
+      $timeXValue = 350.0 - $padX
+    }
+    $pbSeparatorMax = [Math]::Floor($timeXValue - $padX - 12.0)
+    if ($pbSeparatorMax -lt 50) { $pbSeparatorMax = 50 }
+
+    function Show-VisualTweaksCategory {
+      param(
+        [string]$Title,
+        [array]$Items,
+        [int]$SelectedIndex
+      )
+
+      $lastIndex = $SelectedIndex
+      while ($true) {
+        $options = @()
+        $maxLabel = 0
+        foreach ($item in $Items) {
+          if ($item.label.Length -gt $maxLabel) {
+            $maxLabel = $item.label.Length
+          }
+        }
+        foreach ($item in $Items) {
+          if ($item.type -eq "flagOverride") {
+            $flagProps = @()
+            if ($config.flagOverrides) {
+              $flagProps = $config.flagOverrides.PSObject.Properties
+            }
+            if ($flagProps.Count -gt 0) {
+              $first = $flagProps | Select-Object -First 1
+              $extraCount = $flagProps.Count - 1
+              if ($extraCount -gt 0) {
+                $currentValue = "$($first.Name)->$($first.Value) +$extraCount"
+              } else {
+                $currentValue = "$($first.Name)->$($first.Value)"
+              }
+            } else {
+              $currentValue = (Get-LocalizedString "not_defined")
+            }
+          } else {
+            $currentValue = $config.defaults.$($item.key)
+          }
+          $labelPad = $item.label.PadRight($maxLabel)
+          $options += "$labelPad : $currentValue"
+        }
+        $options += (Get-LocalizedString "parameters_back")
+
+        $selectedIndex = Show-ArrowMenu -Title $Title -Options $options -AllowCancel -SelectedIndex $lastIndex
+        if ($selectedIndex -eq -1 -or $selectedIndex -eq ($options.Count - 1)) {
+          return $lastIndex
+        }
+        $lastIndex = $selectedIndex
+
+        $selected = $Items[$selectedIndex]
+        $currentValue = $config.defaults.$($selected.key)
+
+        if ($selected.type -eq "flagOverride") {
+          $inputResult = Read-InputWithEscape (Get-LocalizedString "parameters_flag_override_prompt")
+          if ($inputResult.Cancelled) {
+            continue
+          }
+
+          $text = $inputResult.Text.Trim()
+          if ($text -match '^(?<from>[A-Za-z]{2})\s+(?<to>[A-Za-z]{2})$') {
+            $from = $Matches.from.ToUpperInvariant()
+            $to = $Matches.to.ToUpperInvariant()
+            if ($config.GetType().Name -eq "PSCustomObject") {
+              $config.flagOverrides = [PSCustomObject]@{ $from = $to }
+            } else {
+              $config.flagOverrides = @{ $from = $to }
+            }
+            Save-Config $config
+            Clear-Host
+            Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
+            Start-Sleep -Milliseconds 400
+          } else {
+            Clear-Host
+            Write-Host (Get-LocalizedString "parameters_invalid_format") -ForegroundColor Red
+            Write-Host ""
+            Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+            $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+          }
+          continue
+        }
+
+        if ($selected.type -eq "bool") {
+          $config.defaults.$($selected.key) = -not [bool]$currentValue
+          Save-Config $config
+          Clear-Host
+          Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
+          Start-Sleep -Milliseconds 400
+          continue
+        }
+
+        if ($selected.type -eq "enum") {
+          $enumOptions = $selected.options
+          $currentIndex = 0
+          for ($i = 0; $i -lt $enumOptions.Count; $i++) {
+            if ($enumOptions[$i].ToLowerInvariant() -eq "$currentValue".ToLowerInvariant()) {
+              $currentIndex = $i
+              break
+            }
+          }
+          $enumIndex = Show-ArrowMenu -Title $selected.label -Options $enumOptions -SelectedIndex $currentIndex -AllowCancel
+          if ($enumIndex -eq -1) {
+            continue
+          }
+          $config.defaults.$($selected.key) = $enumOptions[$enumIndex]
+          Save-Config $config
+          Clear-Host
+          Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
+          Start-Sleep -Milliseconds 400
+          continue
+        }
+
+        $prompt = "$(Get-LocalizedString 'parameters_select_value') [$($selected.min)-$($selected.max)] (current: $currentValue)"
+        $inputResult = Read-InputWithEscape $prompt
+        if ($inputResult.Cancelled) {
+          continue
+        }
+
+        $newValue = $null
+        if ($selected.type -eq "int") {
+          $parsed = 0
+          if ([int]::TryParse($inputResult.Text.Trim(), [ref]$parsed)) {
+            $newValue = Clamp-IntValue -Value $parsed -Min $selected.min -Max $selected.max
+          }
+        } elseif ($selected.type -eq "px") {
+          $newValue = Convert-SizeToPx -Text $inputResult.Text -Min $selected.min -Max $selected.max
+        }
+
+        if ($null -eq $newValue) {
+          Clear-Host
+          Write-Host (Get-LocalizedString "parameters_invalid_number") -ForegroundColor Red
+          Write-Host ""
+          Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+          $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+          continue
+        }
+
+        $config.defaults.$($selected.key) = $newValue
+        Save-Config $config
+        Clear-Host
+        Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
+        Start-Sleep -Milliseconds 400
+      }
+    }
+
+    $categories = @(
+      @{ key = "layout"; label = (Get-LocalizedString "parameters_visuals_section_layout"); items = @(
+          @{ key = "canvasWidth"; label = "canvasWidth"; type = "int"; min = 300; max = 4000 }
+          @{ key = "canvasHeight"; label = "canvasHeight"; type = "int"; min = 200; max = 3000 }
+          @{ key = "displayWidth"; label = "displayWidth"; type = "px"; min = 200; max = 4000 }
+          @{ key = "displayHeight"; label = "displayHeight"; type = "px"; min = 100; max = 3000 }
+        ) }
+      @{ key = "listRanks"; label = (Get-LocalizedString "parameters_visuals_section_list_ranks"); items = @(
+          @{ key = "topCount"; label = "topCount"; type = "int"; min = 1; max = 5 }
+          @{ key = "runsPerBatch"; label = "runsPerBatch"; type = "int"; min = 1; max = 5 }
+          @{ key = "maxRuns"; label = "maxRuns"; type = "int"; min = 10; max = 200 }
+          @{ key = "rankAlign"; label = "rankAlign"; type = "enum"; options = @("left", "center", "right") }
+          @{ key = "rankPrefixMode"; label = "rankPrefixMode"; type = "enum"; options = @("dot", "hash") }
+        ) }
+      @{ key = "textSpacing"; label = (Get-LocalizedString "parameters_visuals_section_text_spacing"); items = @(
+          @{ key = "fontStyle"; label = "fontStyle"; type = "enum"; options = @("Arial", "Verdana", "TimesNewRoman", "Georgia", "CourierNew", "Impact", "TrebuchetMS", "Tahoma", "ComicSans", "SegoeUI") }
+          @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 30 }
+          @{ key = "nameSpacing"; label = "nameSpacing"; type = "int"; min = 0; max = 10 }
+          @{ key = "timeFormat"; label = "timeFormat"; type = "enum"; options = @("1:25:25.255", "1h25m25s225ms") }
+        ) }
+      @{ key = "pb"; label = (Get-LocalizedString "parameters_visuals_section_pb"); items = @(
+          @{ key = "pbSeparatorWidth"; label = "pbSeparatorWidth"; type = "int"; min = 50; max = $pbSeparatorMax }
+        ) }
+      @{ key = "effects"; label = (Get-LocalizedString "parameters_visuals_section_effects"); items = @(
+          @{ key = "rainbowIntensity"; label = "rainbowIntensity"; type = "int"; min = 0; max = 100 }
+        ) }
+      @{ key = "flagsTrophies"; label = (Get-LocalizedString "parameters_visuals_section_flags_trophies"); items = @(
+          @{ key = "useTrophyIcons"; label = "useTrophyIcons"; type = "bool" }
+          @{ key = "flagOverrides"; label = "flagOverrides"; type = "flagOverride" }
+        ) }
+      @{ key = "carousel"; label = (Get-LocalizedString "parameters_visuals_section_carousel"); items = @(
+          @{ key = "carouselInterval"; label = "carouselInterval"; type = "int"; min = 1000; max = 100000 }
+          @{ key = "CAROUSEL_DISPLAY_DURATION"; label = "CAROUSEL_DISPLAY_DURATION"; type = "int"; min = 1000; max = 100000 }
+        ) }
+    )
+
+    $categoryIndexByKey = @{}
+    foreach ($cat in $categories) {
+      $categoryIndexByKey[$cat.key] = 0
+    }
+
+    $lastIndex = 0
+    while ($true) {
+      $options = @($categories | ForEach-Object { $_.label })
+      $options += (Get-LocalizedString "parameters_back")
+
+      if ($lastIndex -lt 0 -or $lastIndex -ge $options.Count) {
+        $lastIndex = 0
+      }
+      $selectedIndex = Show-ArrowMenu -Title (Get-LocalizedString "parameters_visuals_title") -Options $options -AllowCancel -SelectedIndex $lastIndex
+      if ($selectedIndex -eq -1 -or $selectedIndex -eq ($options.Count - 1)) {
+        return
+      }
+      $lastIndex = $selectedIndex
+
+      $selectedCategory = $categories[$selectedIndex]
+      $lastItemIndex = $categoryIndexByKey[$selectedCategory.key]
+      $updatedIndex = Show-VisualTweaksCategory -Title $selectedCategory.label -Items $selectedCategory.items -SelectedIndex $lastItemIndex
+      $categoryIndexByKey[$selectedCategory.key] = $updatedIndex
+    }
+  }
+
+  function Set-Parameters {
+    param($currentConfig)
+
+    $config = Initialize-Config $currentConfig
+
+    $lastIndex = 0
+
+    while ($true) {
+      $options = @(
+        (Get-LocalizedString "parameters_visuals"),
+        (Get-LocalizedString "parameters_reset_config"),
+        (Get-LocalizedString "parameters_language"),
+        (Get-LocalizedString "parameters_back")
+      )
+      if ($lastIndex -lt 0 -or $lastIndex -ge $options.Count) {
+        $lastIndex = 0
+      }
+      $selectedIndex = Show-ArrowMenu -Title (Get-LocalizedString "parameters_title") -Options $options -AllowCancel -SelectedIndex $lastIndex
+      if ($selectedIndex -eq -1 -or $selectedIndex -eq 3) {
+        return
+      }
+
+      $lastIndex = $selectedIndex
+
+      if ($selectedIndex -eq 0) {
+        Set-VisualTweaks $config
+      } elseif ($selectedIndex -eq 1) {
+        # Reset Config
+        Clear-Host
+        Write-Host (Get-LocalizedString "reset_confirm") -ForegroundColor Yellow
+        
+        $expectedAnswer = switch ($Global:CurrentLanguage) {
+             "en" { "y" }
+             "es" { "s" }
+             "pt" { "s" }
+             "zh" { "y" }
+             default { "o" }
+        }
+        
+        $confirm = Read-Host
+        if ($confirm -and $confirm.ToLower().Trim() -eq $expectedAnswer) {
+             $Global:DefaultConfigJSON | Set-Content "config.json" -Encoding UTF8
+             Write-Host (Get-LocalizedString "reset_success") -ForegroundColor Green
+             Start-Sleep -Seconds 1
+             # Reload config
+             $config = Get-Content "config.json" -Raw | ConvertFrom-Json
+             # Reset language from config
+             if ($config.language) { $Global:CurrentLanguage = $config.language }
+        } else {
+             Write-Host (Get-LocalizedString "reset_cancelled") -ForegroundColor Cyan
+             Start-Sleep -Seconds 1
+        }
+      } elseif ($selectedIndex -eq 2) {
+        Set-Language $config
+        $config = Get-Content "config.json" -Raw | ConvertFrom-Json
+      }
+    }
+  }
+
+# === SETTINGS FUNCTION ===
 function Initialize-Config {
   param($config)
 
@@ -907,11 +1449,15 @@ function Initialize-Config {
       canvasHeight = 400
       displayWidth = "900px"
       displayHeight = "274px"
-      maxPlayerNameChars = 14
+      rankAlign = "right"
+      rankPrefixMode = "dot"
+      fontStyle = "Arial"
+      maxNameWidthVisible = 14
+      timeFormat = "1:25:25.255"
+      nameSpacing = 4
+      pbSeparatorWidth = 326
+      rainbowIntensity = 50
       CAROUSEL_DISPLAY_DURATION = 10000
-      API_CALL_INTERVAL = 30000
-      FLAGS_API_ENABLED = $true
-      DISPLAY_COUNTRY_FLAGS = $true
       useTrophyIcons = $false
     }
     if ($config.GetType().Name -eq "PSCustomObject") {
@@ -921,11 +1467,58 @@ function Initialize-Config {
     }
   }
 
+  # Ensure rankPrefixMode exists in defaults (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "rankPrefixMode")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "rankPrefixMode" -Value "dot" -Force
+    } else {
+      $config.defaults.rankPrefixMode = "dot"
+    }
+  }
+
+  # Ensure fontStyle exists in defaults (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "fontStyle")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "fontStyle" -Value "Arial" -Force
+    } else {
+      $config.defaults.fontStyle = "Arial"
+    }
+  }
+
+  # Ensure maxNameWidthVisible exists (migration from maxPlayerNameChars)
+  $defaultsObj = $config.defaults
+  $hasNewProp = $false
+  $oldValue = 14
+  
+  if ($defaultsObj -is [System.Collections.Hashtable]) {
+    $hasNewProp = $defaultsObj.ContainsKey("maxNameWidthVisible")
+    if ($defaultsObj.ContainsKey("maxPlayerNameChars")) { $oldValue = $defaultsObj["maxPlayerNameChars"] }
+  } elseif ($defaultsObj -is [System.Management.Automation.PSCustomObject]) {
+    $hasNewProp = $defaultsObj.PSObject.Properties.Name -contains "maxNameWidthVisible"
+    if ($defaultsObj.PSObject.Properties.Name -contains "maxPlayerNameChars") { $oldValue = $defaultsObj.maxPlayerNameChars }
+  }
+
+  if (-not $hasNewProp) {
+    if ($defaultsObj -is [System.Management.Automation.PSCustomObject]) {
+      $defaultsObj | Add-Member -MemberType NoteProperty -Name "maxNameWidthVisible" -Value $oldValue -Force
+    } else {
+      $defaultsObj["maxNameWidthVisible"] = $oldValue
+    }
+  }
+
   if (-not ($config.PSObject.Properties.Name -contains "playerName")) {
     if ($config.GetType().Name -eq "PSCustomObject") {
       $config | Add-Member -MemberType NoteProperty -Name "playerName" -Value $null -Force
     } else {
       $config.playerName = $null
+    }
+  }
+
+  if (-not ($config.PSObject.Properties.Name -contains "playerCountry")) {
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "playerCountry" -Value "FR" -Force
+    } else {
+      $config.playerCountry = "FR"
     }
   }
 
@@ -1006,7 +1599,7 @@ function Convert-TimeStringToSeconds {
 
   $clean = $Text.Trim().Replace(",", ".")
 
-  # Test pour un nombre simple (secondes directes)
+  # Check for a simple number (direct seconds)
   if ($clean -match '^\d+(\.\d+)?$') {
     $val = 0.0
     if ([double]::TryParse($clean, [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$val)) { 
@@ -1035,6 +1628,191 @@ function Convert-TimeStringToSeconds {
   if ($parts.Count -eq 3 -and ($minutes -ge 60)) { return $null }
 
   return ($hours * 3600) + ($minutes * 60) + $seconds
+}
+
+function Invoke-SrcApiJson {
+  param(
+    [Parameter(Mandatory = $true)][string]$Uri,
+    [int]$TimeoutSec = 10
+  )
+
+  $response = Invoke-WebRequest -Uri $Uri -TimeoutSec $TimeoutSec
+  return ($response.Content | ConvertFrom-Json)
+}
+
+function ConvertTo-SubcategoryVariable {
+  param(
+    [Parameter(Mandatory = $true)]$Variable
+  )
+
+  $values = @()
+  if ($Variable.values -and $Variable.values.values) {
+    foreach ($p in $Variable.values.values.PSObject.Properties) {
+      $values += [PSCustomObject]@{
+        id = $p.Name
+        label = $p.Value.label
+      }
+    }
+  }
+
+  return [PSCustomObject]@{
+    id = $Variable.id
+    name = $Variable.name
+    category = $Variable.category
+    scope = $Variable.scope
+    values = $values
+    raw = $Variable
+  }
+}
+
+function Get-SubcategoryVariablesForSelection {
+  param(
+    [Parameter(Mandatory = $true)]$SelectedCategory,
+    $SelectedLevel,
+    [array]$AllCategories
+  )
+
+  $subcategoryVariables = @()
+  try {
+    $varsData = Invoke-SrcApiJson -Uri "https://www.speedrun.com/api/v1/categories/$($SelectedCategory.id)/variables" -TimeoutSec 10
+    $subcategoryVariables = $varsData.data
+  } catch {
+    if ($SelectedCategory.variables -and $SelectedCategory.variables.data) {
+      $subcategoryVariables = $SelectedCategory.variables.data
+    } else {
+      $subcategoryVariables = @()
+    }
+  }
+  if (-not $subcategoryVariables) { $subcategoryVariables = @() }
+
+  $allowedVarIds = @{}
+  if ($SelectedCategory.variables -and $SelectedCategory.variables.data) {
+    foreach ($var in $SelectedCategory.variables.data) {
+      if ($var.id) { $allowedVarIds[$var.id] = $true }
+    }
+  }
+
+  $subcategoryVariables = $subcategoryVariables | Where-Object { $_.'is-subcategory' -eq $true -and $_.values.values }
+
+  $categoryNameSet = @{}
+  foreach ($catItem in $AllCategories) {
+    if ($catItem.name) {
+      $categoryNameSet[$catItem.name.ToLowerInvariant()] = $true
+    }
+  }
+
+  if ($allowedVarIds.Count -gt 0) {
+    $subcategoryVariables = $subcategoryVariables | Where-Object { $_.id -and $allowedVarIds.ContainsKey($_.id) }
+  } else {
+    # Filter irrelevant variables (category)
+    $subcategoryVariables = $subcategoryVariables | Where-Object {
+      (-not $_.category) -or ($_.category -eq $SelectedCategory.id)
+    }
+  }
+
+  # Filter irrelevant variables (scope)
+  $subcategoryVariables = $subcategoryVariables | Where-Object {
+    if (-not $_.scope -or -not $_.scope.type) { return $true }
+    if ($SelectedLevel) {
+      if ($_.scope.type -eq "all-levels") { return $true }
+      if ($_.scope.type -eq "single-level") { return $_.scope.level -eq $SelectedLevel.id }
+      if ($_.scope.type -eq "global") { return $true }
+      return $false
+    }
+    return $_.scope.type -in @("full-game", "all-levels", "global")
+  }
+
+  # Ignore global variables that only select a category
+  if ($categoryNameSet.Count -gt 0) {
+    $subcategoryVariables = $subcategoryVariables | Where-Object {
+      if ($_.category) { return $true }
+      $valueLabels = @()
+      if ($_.values -and $_.values.values) {
+        $valueLabels = $_.values.values.PSObject.Properties | ForEach-Object { $_.Value.label }
+      }
+      if (-not $valueLabels -or $valueLabels.Count -eq 0) { return $true }
+      foreach ($label in $valueLabels) {
+        if (-not $categoryNameSet.ContainsKey($label.ToLowerInvariant())) {
+          return $true
+        }
+      }
+      return $false
+    }
+  }
+
+  # Normalize + skip variables with <= 1 value (website won't show those)
+  $normalized = @()
+  foreach ($var in $subcategoryVariables) {
+    $n = ConvertTo-SubcategoryVariable -Variable $var
+    if ($n.values.Count -le 1) { continue }
+    $normalized += $n
+  }
+
+  return $normalized
+}
+
+function Select-SubcategorySelections {
+  param(
+    [array]$SubcategoryVariables
+  )
+
+  $selectedSubcategoryLabels = @()
+  $selectedSubcategories = @()
+
+  foreach ($subcatVariable in $SubcategoryVariables) {
+    $varName = $subcatVariable.name
+
+    $subcatOptions = @()
+    $subcatArray = @()
+
+    $anyLabel = switch ($Global:CurrentLanguage) {
+      "en" { "Any (skip this filter)" }
+      "es" { "Cualquiera (omitir este filtro)" }
+      "pt" { "Qualquer (pular este filtro)" }
+      "zh" { "任意（跳过此过滤器）" }
+      default { "Any (ignorer ce filtre)" }
+    }
+    $subcatOptions += $anyLabel
+
+    foreach ($v in $subcatVariable.values) {
+      $subcatOptions += $v.label
+      $subcatArray += $v
+    }
+    $subcatOptions += (Get-LocalizedString "details_back")
+
+    $menuTitle = switch ($Global:CurrentLanguage) {
+      "en" { "$varName - Select value:" }
+      "es" { "$varName - Selecciona valor:" }
+      "pt" { "$varName - Selecione valor:" }
+      "zh" { "$varName - 选择值：" }
+      default { "$varName - Sélectionnez la valeur :" }
+    }
+
+    $selectedSubcatIndex = Show-ArrowMenu -Title $menuTitle -Options $subcatOptions -AllowCancel
+
+    if ($selectedSubcatIndex -eq -1) {
+      return [PSCustomObject]@{ Restart = $true; Labels = @(); Selections = @() }
+    }
+    if ($selectedSubcatIndex -eq ($subcatOptions.Count - 1)) {
+      return [PSCustomObject]@{ Restart = $true; Labels = @(); Selections = @() }
+    }
+
+    if ($selectedSubcatIndex -gt 0) {
+      $selectedEntry = $subcatArray[$selectedSubcatIndex - 1]
+      $selectedSubcategoryLabels += $selectedEntry.label
+      $selectedSubcategories += [PSCustomObject]@{
+        variableId = $subcatVariable.id
+        valueId = $selectedEntry.id
+        label = $selectedEntry.label
+      }
+    }
+  }
+
+  return [PSCustomObject]@{
+    Restart = $false
+    Labels = $selectedSubcategoryLabels
+    Selections = $selectedSubcategories
+  }
 }
 
 function Resolve-PresetCategoryAndVariables {
@@ -1159,7 +1937,7 @@ function Test-PlayerInPreset {
   return $false
 }
 
-# === FONCTION NOM DU JOUEUR ===
+# === PLAYER NAME FUNCTION ===
 function Set-PlayerName {
   param($currentConfig)
 
@@ -1224,6 +2002,46 @@ function Set-PlayerName {
     }
     Clear-Host
     Write-Host "$(Get-LocalizedString 'player_name_saved') $($config.playerName)" -ForegroundColor Green
+    Write-Host ""
+    
+    # === ASK FOR COUNTRY ===
+    $currentCountry = if ($config.playerCountry) { $config.playerCountry } else { "FR" }
+    Write-Host "$(Get-LocalizedString 'player_country_current') $currentCountry" -ForegroundColor White
+    
+    while ($true) {
+        Write-Host (Get-LocalizedString "player_country_prompt") -NoNewline -ForegroundColor Cyan
+        $countryInput = Read-Host " "
+        $countryInput = $countryInput.Trim()
+        
+        if ([string]::IsNullOrWhiteSpace($countryInput)) {
+            # Keep existing value (or ensure default)
+            if (-not ($config.playerCountry)) {
+               if ($config.GetType().Name -eq "PSCustomObject") {
+                  $config | Add-Member -MemberType NoteProperty -Name "playerCountry" -Value "FR" -Force
+               } else {
+                  $config.playerCountry = "FR"
+               }
+            }
+            break
+        } elseif ($countryInput.Length -eq 2) {
+            $countryInput = $countryInput.ToUpper()
+            
+            # Save the value
+            if ($config.GetType().Name -eq "PSCustomObject") {
+               if ($config.PSObject.Properties.Name -contains "playerCountry") {
+                  $config.playerCountry = $countryInput
+               } else {
+                  $config | Add-Member -MemberType NoteProperty -Name "playerCountry" -Value $countryInput -Force
+               }
+            } else {
+               $config.playerCountry = $countryInput
+            }
+            Write-Host "$(Get-LocalizedString 'player_country_saved') $countryInput" -ForegroundColor Green
+            break
+        } else {
+            Write-Host (Get-LocalizedString "player_country_invalid") -ForegroundColor Red
+        }
+    }
   }
 
   $jsonOutput = $config | ConvertTo-Json -Depth 10
@@ -1329,7 +2147,7 @@ function Set-TemporaryRun {
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
-# === FONCTION NAVIGATION PAR FLÈCHES ===
+# === ARROW NAVIGATION FUNCTION ===
 function Show-ArrowMenu {
   param(
     [string]$Title,
@@ -1343,10 +2161,15 @@ function Show-ArrowMenu {
   $currentIndex = $SelectedIndex
   $maxIndex = $Options.Count - 1
   
+  # Flush input buffer to prevent ghost inputs
+  while ($Host.UI.RawUI.KeyAvailable) { 
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown,IncludeKeyUp") | Out-Null 
+  }
+
   while ($true) {
     Clear-Host
     
-    # Afficher le contexte si fourni
+    # Show context if provided
     if ($ContextText) {
       Write-Host $ContextText
     }
@@ -1379,19 +2202,19 @@ function Show-ArrowMenu {
     $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     
     switch ($key.VirtualKeyCode) {
-      38 { # Flèche haut
+      38 { # Up arrow
         $currentIndex = if ($currentIndex -eq 0) { $maxIndex } else { $currentIndex - 1 }
       }
-      40 { # Flèche bas
+      40 { # Down arrow
         $currentIndex = if ($currentIndex -eq $maxIndex) { 0 } else { $currentIndex + 1 }
       }
-      13 { # Entrée
+      13 { # Enter
         return $currentIndex
       }
-      27 { # Échap -> changé vers Backspace (code 8)
-        # Code inactif - voir ligne suivante
+      27 { # Escape -> changed to Backspace (code 8)
+        # Inactive code - see next line
       }
-      8 { # Backspace (Retour arrière)
+      8 { # Backspace
         if ($AllowCancel) {
           return -1
         }
@@ -1400,7 +2223,7 @@ function Show-ArrowMenu {
   }
 }
 
-# === FONCTION MENU PRINCIPAL ===
+# === MAIN MENU FUNCTION ===
 function Write-MainMenu {
   param($currentConfig)
   
@@ -1416,7 +2239,7 @@ function Write-MainMenu {
   }
 }
 
-# === FONCTION SHOW PRESET DETAILS ===
+# === SHOW PRESET DETAILS FUNCTION ===
 function Write-PresetDetails($presetList, $currentConfig) {
   Clear-Host
   Write-Host (Get-LocalizedString "details_title") -ForegroundColor Cyan
@@ -1510,7 +2333,7 @@ function Write-PresetDetails($presetList, $currentConfig) {
   }
 }
 
-# === FONCTION CHANGE ACTIVE PRESET ===
+# === CHANGE ACTIVE PRESET FUNCTION ===
 function Update-ActivePreset($presetList, $currentConfig) {
   $currentConfig = Initialize-Config $currentConfig
 
@@ -1549,7 +2372,7 @@ function Update-ActivePreset($presetList, $currentConfig) {
     }
   }
   
-  # Sauvegarder
+  # Save
   $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
   
@@ -1564,7 +2387,7 @@ function Update-ActivePreset($presetList, $currentConfig) {
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
-# === FONCTION REMOVE SINGLE PRESET (from details) ===
+# === REMOVE SINGLE PRESET FUNCTION (from details) ===
 function Remove-PresetSingle($selectedPreset, $currentConfig) {
   # Check if there's only one preset left
   $presetCount = 0
@@ -1589,33 +2412,17 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
   Write-Host "$($selectedPreset.Value.name)" -ForegroundColor Cyan
   Write-Host ""
   
-  # Confirmation simple selon la langue
-  $confirm = Read-Host (Get-LocalizedString "remove_confirm")
+  # Immediate deletion without confirmation
   
-  $expectedAnswer = switch ($Global:CurrentLanguage) {
-    "en" { "y" }
-    "es" { "s" }
-    "pt" { "s" }
-    "zh" { "y" }
-    default { "o" }
-  }
-  
-  if ($confirm.ToLower() -ne $expectedAnswer) {
-    Write-Host (Get-LocalizedString "remove_cancelled") -ForegroundColor Cyan
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-    return
-  }
-  
-  # Supprimer le preset
+  # Delete the preset
   $deletedPresetId = $selectedPreset.Name
   $currentConfig.presets.PSObject.Properties.Remove($deletedPresetId)
   
-  # Gérer le cas où le preset supprimé était actif
+  # Handle the case where the deleted preset was active
   if ($currentConfig.activePreset -eq $deletedPresetId) {
     $remainingPresets = $currentConfig.presets.PSObject.Properties
     if ($remainingPresets.Count -gt 1) {
-      # Plusieurs presets restants : demander à l'utilisateur de choisir
+      # Multiple presets remaining: ask the user to choose
       $newOptions = @()
       $newPresetList = @()
       foreach ($preset in $remainingPresets) {
@@ -1626,16 +2433,14 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
       $newActiveIndex = Show-ArrowMenu -Title (Get-LocalizedString "remove_active_deleted") -Options $newOptions
       $currentConfig.activePreset = $newPresetList[$newActiveIndex].Name
     } elseif ($remainingPresets.Count -eq 1) {
-      # Un seul preset restant : l'activer automatiquement  
-      $firstPreset = $remainingPresets | Select-Object -First 1
-      $newActiveId = $firstPreset.Name
-      $currentConfig.activePreset = $newActiveId
+      # One preset remaining: activate automatically
+      $currentConfig.activePreset = $remainingPresets[0].Name
     } else {
       $currentConfig.activePreset = $null
     }
   }
   
-  # Sauvegarder
+  # Save
   $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
   
@@ -1650,7 +2455,7 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
-# === FONCTION REMOVE PRESET ===
+# === REMOVE PRESET FUNCTION ===
 function Remove-Preset($presetList, $currentConfig) {
   Clear-Host
   
@@ -1690,33 +2495,17 @@ function Remove-Preset($presetList, $currentConfig) {
   Write-Host "$($presetToDelete.Value.name)" -ForegroundColor Cyan
   Write-Host ""
   
-  # Confirmation simple selon la langue
-  $confirm = Read-Host (Get-LocalizedString "remove_confirm")
+  # Immediate deletion without confirmation
   
-  $expectedAnswer = switch ($Global:CurrentLanguage) {
-    "en" { "y" }
-    "es" { "s" }
-    "pt" { "s" }
-    "zh" { "y" }
-    default { "o" }
-  }
-  
-  if ($confirm.ToLower() -ne $expectedAnswer) {
-    Write-Host (Get-LocalizedString "remove_cancelled") -ForegroundColor Cyan
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-    return
-  }
-  
-  # Supprimer le preset
+  # Delete the preset
   $deletedPresetId = $presetToDelete.Name
   $currentConfig.presets.PSObject.Properties.Remove($deletedPresetId)
   
-  # Gérer le cas où le preset supprimé était actif
+  # Handle the case where the deleted preset was active
   if ($currentConfig.activePreset -eq $deletedPresetId) {
     $remainingPresets = $currentConfig.presets.PSObject.Properties
     if ($remainingPresets.Count -gt 1) {
-      # Plusieurs presets restants : demander à l'utilisateur de choisir
+      # Multiple presets remaining: ask the user to choose
       $newOptions = @()
       $newPresetList = @()
       foreach ($preset in $remainingPresets) {
@@ -1727,14 +2516,14 @@ function Remove-Preset($presetList, $currentConfig) {
       $newActiveIndex = Show-ArrowMenu -Title (Get-LocalizedString "remove_active_deleted") -Options $newOptions
       $currentConfig.activePreset = $newPresetList[$newActiveIndex].Name
     } elseif ($remainingPresets.Count -eq 1) {
-      # Un seul preset restant : l'activer automatiquement
+      # One preset remaining: activate automatically
       $currentConfig.activePreset = $remainingPresets[0].Name
     } else {
       $currentConfig.activePreset = $null
     }
   }
   
-  # Sauvegarder
+  # Save
   $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
   
@@ -1749,36 +2538,38 @@ function Remove-Preset($presetList, $currentConfig) {
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 }
 
-# === FONCTION ADD NEW PRESET ===
+# === ADD NEW PRESET FUNCTION ===
 function New-Preset($currentConfig) {
-  Clear-Host
-  Write-Host (Get-LocalizedString "add_title") -ForegroundColor Green
-  Write-Host ""
-  Write-Host (Get-LocalizedString "add_game_name_hint") -ForegroundColor Gray
-  Write-Host ""
+  :GameNameLoop while ($true) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "add_title") -ForegroundColor Green
+    Write-Host ""
+    Write-Host (Get-LocalizedString "add_game_name_hint") -ForegroundColor Gray
+    Write-Host ""
 
-  $gameInput = Read-InputWithEscape (Get-LocalizedString "add_game_name")
-  if ($gameInput.Cancelled) {
-    Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-    return
-  }
+    $gameInput = Read-InputWithEscape (Get-LocalizedString "add_game_name")
+    if ($gameInput.Cancelled) {
+      Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      return
+    }
 
-  $gameName = $gameInput.Text
+    $gameName = $gameInput.Text
 
-  if ([string]::IsNullOrWhiteSpace($gameName)) {
-    Write-Host (Get-LocalizedString "add_error_empty_name") -ForegroundColor Red
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-    return
-  }
+    if ([string]::IsNullOrWhiteSpace($gameName)) {
+      Write-Host (Get-LocalizedString "add_error_empty_name") -ForegroundColor Red
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      continue
+    }
 
-  Show-ProgressStep -Activity (Get-LocalizedString "add_searching") -Status $gameName -PercentComplete 10
-  Start-Sleep -Milliseconds 50
+    Show-ProgressStep -Activity (Get-LocalizedString "add_searching") -Status $gameName -PercentComplete 10
+    Start-Sleep -Milliseconds 50
 
-  try {
-    # === ETAPE 1: Chercher le jeu ===
+    $completed = $false
+    try {
+    # === STEP 1: Search for the game ===
     $response = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games?name=$([System.Web.HttpUtility]::UrlEncode($gameName))" -TimeoutSec 10
     $data = $response.Content | ConvertFrom-Json
     
@@ -1789,241 +2580,297 @@ function New-Preset($currentConfig) {
       Write-Host "$(Get-LocalizedString 'add_no_game_found') $gameName" -ForegroundColor Red
       Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
       $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-      return
+      continue GameNameLoop
     }
     
     Clear-Progress
 
-    # Selection du jeu
-    if ($games.Count -gt 1) {
-      $gameOptions = @()
-      foreach ($game in $games) {
-        $releaseYear = if ($game.released) { " ($($game.released))" } else { "" }
-        $gameOptions += "$($game.names.international)$releaseYear"
-      }
-      
-      $selectedGameIndex = Show-ArrowMenu -Title (Get-LocalizedString "add_games_found") -Options $gameOptions -AllowCancel
-      
-      if ($selectedGameIndex -eq -1) {
-        Clear-Progress
-        Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
-        return
-      }
-      
-      $selectedGame = $games[$selectedGameIndex]
-    } else {
-      $selectedGame = $games[0]
-    }
-
-    Show-ProgressStep -Activity (Get-LocalizedString "add_loading_levels") -Status $selectedGame.names.international -PercentComplete 40
-    Start-Sleep -Milliseconds 50
-    Clear-Progress
-    
-    # === ETAPE 2: Full Game ou Levels ===
+    $selectedGame = $null
     $selectedLevel = $null
-    $levels = @()
-    try {
-      $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
-      $levelsData = $levelsResponse.Content | ConvertFrom-Json
-      $levels = $levelsData.data
-    } catch {
-      $levels = @()
-    }
 
-    Clear-Progress
-
-    if ($levels.Count -gt 0) {
-      $modeTitle = switch ($Global:CurrentLanguage) {
-        "en" { "Choose leaderboard type:" }
-        "es" { "Elige el tipo de leaderboard:" }
-        "pt" { "Escolha o tipo de leaderboard:" }
-        "zh" { "选择排行榜类型：" }
-        default { "Choisissez le type de leaderboard :" }
-      }
-      $modeOptions = switch ($Global:CurrentLanguage) {
-        "en" { @("Full game", "Levels") }
-        "es" { @("Juego completo", "Niveles") }
-        "pt" { @("Jogo completo", "Niveis") }
-        "zh" { @("完整游戏", "关卡") }
-        default { @("Full game", "Niveaux") }
-      }
-
-      $selectedMode = Show-ArrowMenu -Title $modeTitle -Options $modeOptions -AllowCancel
-      if ($selectedMode -eq -1) {
-        Clear-Progress
-        Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
-        return
-      }
-
-      if ($selectedMode -eq 1) {
-        $levelOptions = @()
-        foreach ($level in $levels) {
-          $levelOptions += $level.name
+    :GameLoop while ($true) {
+      # Game selection
+      if ($games.Count -gt 1) {
+        $gameOptions = @()
+        foreach ($game in $games) {
+          $releaseYear = if ($game.released) { " ($($game.released))" } else { "" }
+          $gameOptions += "$($game.names.international)$releaseYear"
         }
-        $levelTitle = switch ($Global:CurrentLanguage) {
-          "en" { "Select a level:" }
-          "es" { "Selecciona un nivel:" }
-          "pt" { "Selecione um nivel:" }
-          "zh" { "选择一个关卡：" }
-          default { "Selectionnez un niveau :" }
-        }
-        $selectedLevelIndex = Show-ArrowMenu -Title $levelTitle -Options $levelOptions -AllowCancel
-        if ($selectedLevelIndex -eq -1) {
+        
+        $selectedGameIndex = Show-ArrowMenu -Title (Get-LocalizedString "add_games_found") -Options $gameOptions -AllowCancel
+        
+        if ($selectedGameIndex -eq -1) {
           Clear-Progress
-          Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
-          return
+          continue GameNameLoop
         }
-        $selectedLevel = $levels[$selectedLevelIndex]
-      }
-    }
-
-    # === ETAPE 3: Recuperer les categories ===
-    Show-ProgressStep -Activity (Get-LocalizedString "add_loading_categories") -Status $selectedGame.names.international -PercentComplete 70
-    Start-Sleep -Milliseconds 50
-    
-    $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
-    $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
-    
-    $categoryType = if ($selectedLevel) { "per-level" } else { "per-game" }
-    $categories = $categoriesData.data.categories.data | Where-Object { $_.type -eq $categoryType }
-    
-    Clear-Progress
-
-    if ($categories.Count -eq 0) {
-      Write-Host (Get-LocalizedString "add_no_categories") -ForegroundColor Red
-      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
-      return
-    }
-    
-    # Sélection de la catégorie
-    $categoryOptions = @()
-    foreach ($category in $categories) {
-      $categoryOptions += $category.name
-    }
-    
-    $selectedCategoryIndex = Show-ArrowMenu -Title (Get-LocalizedString "add_categories_available") -Options $categoryOptions
-    $selectedCategory = $categories[$selectedCategoryIndex]
-    
-    # === ETAPE 3: Gérer les sous-catégories (TOUTES) ===
-    $selectedSubcategoryLabels = @()  # Affichage lisible
-    $selectedSubcategories = @()      # IDs pour l'API
-    
-    $subcategoryVariables = $selectedCategory.variables.data | Where-Object { $_.'is-subcategory' -eq $true -and $_.values.values }
-    
-    # Filtrer les variables non pertinentes (categorie + scope)
-    $subcategoryVariables = $subcategoryVariables | Where-Object {
-      (-not $_.category) -or ($_.category -eq $selectedCategory.id)
-    }
-    $subcategoryVariables = $subcategoryVariables | Where-Object {
-      if (-not $_.scope -or -not $_.scope.type) { return $true }
-      if ($selectedLevel) {
-        if ($_.scope.type -eq "all-levels") { return $true }
-        if ($_.scope.type -eq "single-level") { return $_.scope.level -eq $selectedLevel.id }
-        if ($_.scope.type -eq "global") { return $true }
-        return $false
-      }
-      return $_.scope.type -in @("full-game", "all-levels", "global")
-    }
-
-    # De-dup par nom (preferer la variable liee a la categorie si doublon)
-    $byName = @{}
-    $dedupedByName = @()
-    foreach ($var in $subcategoryVariables) {
-      $nameKey = ($var.name | ForEach-Object { $_ })
-      $nameKey = if ($nameKey) { $nameKey.Trim().ToLowerInvariant() } else { "" }
-      if (-not $nameKey) {
-        $dedupedByName += $var
-        continue
-      }
-      $score = 0
-      if ($var.category -and $var.category -eq $selectedCategory.id) {
-        $score = 2
-      } elseif (-not $var.category) {
-        $score = 1
-      }
-      if (-not $byName.ContainsKey($nameKey) -or $score -gt $byName[$nameKey].score) {
-        $byName[$nameKey] = @{ score = $score; item = $var }
-      }
-    }
-    $dedupedByName += $byName.Values | ForEach-Object { $_.item }
-    $subcategoryVariables = $dedupedByName
-
-    # De-dup pour eviter de reposer la meme variable plusieurs fois
-    $seenVarIds = @{}
-    $subcategoryVariables = $subcategoryVariables | Where-Object {
-      if (-not $_.id) { return $true }
-      if ($seenVarIds.ContainsKey($_.id)) { return $false }
-      $seenVarIds[$_.id] = $true
-      return $true
-    }
-    
-    if ($subcategoryVariables.Count -gt 0) {
-      # Itérer sur TOUTES les variables de sous-catégories
-      foreach ($subcatVariable in $subcategoryVariables) {
-        $varName = $subcatVariable.name
-        $subcatValues = $subcatVariable.values.values.PSObject.Properties
         
-        # Construire les options pour cette variable
-        $subcatOptions = @()
-        $subcatArray = @()
-        
-        # Option "Any" (skip cette variable)
-        $anyLabel = switch ($Global:CurrentLanguage) {
-          "en" { "Any (skip this filter)" }
-          "es" { "Cualquiera (omitir este filtro)" }
-          "pt" { "Qualquer (pular este filtro)" }
-          "zh" { "任意（跳过此过滤器）" }
-          default { "Any (ignorer ce filtre)" }
-        }
-        $subcatOptions += $anyLabel
-        
-        foreach ($value in $subcatValues) {
-          $subcatOptions += $value.Value.label
-          $subcatArray += @{
-            id = $value.Name
-            label = $value.Value.label
+        $selectedGame = $games[$selectedGameIndex]
+      } else {
+        $selectedGame = $games[0]
+      }
+
+      Show-ProgressStep -Activity (Get-LocalizedString "add_loading_levels") -Status $selectedGame.names.international -PercentComplete 40
+      Start-Sleep -Milliseconds 50
+      Clear-Progress
+      
+      # === STEP 2: Full game or levels ===
+      $selectedLevel = $null
+      $levels = @()
+      try {
+        $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
+        $levelsData = $levelsResponse.Content | ConvertFrom-Json
+        $levels = $levelsData.data
+      } catch {
+        $levels = @()
+      }
+
+      Clear-Progress
+
+      :ModeCategoryLoop while ($true) {
+        $selectedLevel = $null
+        if ($levels.Count -gt 0) {
+          while ($true) {
+            $modeTitle = switch ($Global:CurrentLanguage) {
+              "en" { "Choose leaderboard type:" }
+              "es" { "Elige el tipo de leaderboard:" }
+              "pt" { "Escolha o tipo de leaderboard:" }
+              "zh" { "选择排行榜类型：" }
+              default { "Choisissez le type de leaderboard :" }
+            }
+            $modeOptions = switch ($Global:CurrentLanguage) {
+              "en" { @("Full game", "Levels") }
+              "es" { @("Juego completo", "Niveles") }
+              "pt" { @("Jogo completo", "Niveis") }
+              "zh" { @("完整游戏", "关卡") }
+              default { @("Full game", "Niveaux") }
+            }
+
+            $selectedMode = Show-ArrowMenu -Title $modeTitle -Options $modeOptions -AllowCancel
+            if ($selectedMode -eq -1) {
+              Clear-Progress
+              continue GameLoop
+            }
+
+            if ($selectedMode -eq 1) {
+              $levelOptions = @()
+              foreach ($level in $levels) {
+                $levelOptions += $level.name
+              }
+              $levelTitle = switch ($Global:CurrentLanguage) {
+                "en" { "Select a level:" }
+                "es" { "Selecciona un nivel:" }
+                "pt" { "Selecione um nivel:" }
+                "zh" { "选择一个关卡：" }
+                default { "Selectionnez un niveau :" }
+              }
+              $selectedLevelIndex = Show-ArrowMenu -Title $levelTitle -Options $levelOptions -AllowCancel
+              if ($selectedLevelIndex -eq -1) {
+                Clear-Progress
+                continue
+              }
+              $selectedLevel = $levels[$selectedLevelIndex]
+            }
+            break
           }
         }
+
+        # === STEP 3: Fetch categories ===
+        Show-ProgressStep -Activity (Get-LocalizedString "add_loading_categories") -Status $selectedGame.names.international -PercentComplete 70
+        Start-Sleep -Milliseconds 50
         
-        # Afficher le menu pour cette variable spécifique
-        $menuTitle = switch ($Global:CurrentLanguage) {
-          "en" { "$varName - Select value:" }
-          "es" { "$varName - Selecciona valor:" }
-          "pt" { "$varName - Selecione valor:" }
-          "zh" { "$varName - 选择值：" }
-          default { "$varName - Sélectionnez la valeur :" }
-        }
+        $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
+        $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
         
-        $selectedSubcatIndex = Show-ArrowMenu -Title $menuTitle -Options $subcatOptions -AllowCancel
+        $categoryType = if ($selectedLevel) { "per-level" } else { "per-game" }
+        $categories = $categoriesData.data.categories.data | Where-Object { $_.type -eq $categoryType }
         
-        # Si l'utilisateur annule, sortir
-        if ($selectedSubcatIndex -eq -1) {
-          Write-Host (Get-LocalizedString "cancelled") -ForegroundColor Cyan
+        Clear-Progress
+
+        if ($categories.Count -eq 0) {
+          Write-Host (Get-LocalizedString "add_no_categories") -ForegroundColor Red
+          Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+          $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
           return
         }
         
-        # Si l'utilisateur choisit une valeur (pas "Any")
-        if ($selectedSubcatIndex -gt 0) {
-          $selectedEntry = $subcatArray[$selectedSubcatIndex - 1]
-          $selectedSubcategoryLabels += $selectedEntry.label
-          $selectedSubcategories += [PSCustomObject]@{
-            variableId = $subcatVariable.id
-            valueId = $selectedEntry.id
-            label = $selectedEntry.label
+        :CategoryLoop while ($true) {
+          # Category selection
+          $categoryOptions = @()
+          foreach ($category in $categories) {
+            $categoryOptions += $category.name
           }
+          
+          $selectedCategoryIndex = Show-ArrowMenu -Title (Get-LocalizedString "add_categories_available") -Options $categoryOptions -AllowCancel
+          if ($selectedCategoryIndex -eq -1) {
+            if ($levels.Count -gt 0) {
+              continue ModeCategoryLoop
+            }
+            continue GameLoop
+          }
+          $selectedCategory = $categories[$selectedCategoryIndex]
+          
+          # === STEP 3: Handle subcategories (all) ===
+          $selectedSubcategoryLabels = @()  # Human-readable display
+          $selectedSubcategories = @()      # IDs for the API
+          
+          $subcategoryVariables = @()
+          try {
+            $varsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/categories/$($selectedCategory.id)/variables" -TimeoutSec 10
+            $varsData = $varsResponse.Content | ConvertFrom-Json
+            $subcategoryVariables = $varsData.data
+          } catch {
+            $subcategoryVariables = $selectedCategory.variables.data
+          }
+          if (-not $subcategoryVariables) { $subcategoryVariables = @() }
+
+          $allowedVarIds = @{}
+          if ($selectedCategory.variables -and $selectedCategory.variables.data) {
+            foreach ($var in $selectedCategory.variables.data) {
+              if ($var.id) { $allowedVarIds[$var.id] = $true }
+            }
+          }
+
+          $subcategoryVariables = $subcategoryVariables | Where-Object { $_.'is-subcategory' -eq $true -and $_.values.values }
+
+          $categoryNameSet = @{}
+          foreach ($catItem in $categories) {
+            if ($catItem.name) {
+              $categoryNameSet[$catItem.name.ToLowerInvariant()] = $true
+            }
+          }
+
+          if ($allowedVarIds.Count -gt 0) {
+            $subcategoryVariables = $subcategoryVariables | Where-Object { $_.id -and $allowedVarIds.ContainsKey($_.id) }
+          } else {
+            # Filter irrelevant variables (category)
+            $subcategoryVariables = $subcategoryVariables | Where-Object {
+              (-not $_.category) -or ($_.category -eq $selectedCategory.id)
+            }
+          }
+
+          # Filter irrelevant variables (scope)
+          $subcategoryVariables = $subcategoryVariables | Where-Object {
+            if (-not $_.scope -or -not $_.scope.type) { return $true }
+            if ($selectedLevel) {
+              if ($_.scope.type -eq "all-levels") { return $true }
+              if ($_.scope.type -eq "single-level") { return $_.scope.level -eq $selectedLevel.id }
+              if ($_.scope.type -eq "global") { return $true }
+              return $false
+            }
+            return $_.scope.type -in @("full-game", "all-levels", "global")
+          }
+
+          # Ignore global variables that only select a category
+          if ($categoryNameSet.Count -gt 0) {
+            $subcategoryVariables = $subcategoryVariables | Where-Object {
+              if ($_.category) { return $true }
+              $valueLabels = @()
+              if ($_.values -and $_.values.values) {
+                $valueLabels = $_.values.values.PSObject.Properties | ForEach-Object { $_.Value.label }
+              }
+              if (-not $valueLabels -or $valueLabels.Count -eq 0) { return $true }
+              foreach ($label in $valueLabels) {
+                if (-not $categoryNameSet.ContainsKey($label.ToLowerInvariant())) {
+                  return $true
+                }
+              }
+              return $false
+            }
+          }
+
+          # De-dup by label and keep the variable with the largest value set
+          # Do not deduplicate; present all subcategory variables in the order provided by the API
+          # This allows for chained filters like 'Moon Berry' after 'All Red Berries+Heart'
+          # $subcategoryVariables is already in correct order
+          
+          $restartCategorySelection = $false
+          if ($subcategoryVariables.Count -gt 0) {
+            # Iterate over all subcategory variables
+            foreach ($subcatVariable in $subcategoryVariables) {
+              $varName = $subcatVariable.name
+              $subcatValues = $subcatVariable.values.values.PSObject.Properties
+              
+              # Build options for this variable
+              $subcatOptions = @()
+              $subcatArray = @()
+              
+              # "Any" option (skip this variable)
+              $anyLabel = switch ($Global:CurrentLanguage) {
+                "en" { "Any (skip this filter)" }
+                "es" { "Cualquiera (omitir este filtro)" }
+                "pt" { "Qualquer (pular este filtro)" }
+                "zh" { "任意（跳过此过滤器）" }
+                default { "Any (ignorer ce filtre)" }
+              }
+              $subcatOptions += $anyLabel
+              
+              foreach ($value in $subcatValues) {
+                $subcatOptions += $value.Value.label
+                $subcatArray += @{
+                  id = $value.Name
+                  label = $value.Value.label
+                }
+              }
+
+              $subcatOptions += (Get-LocalizedString "details_back")
+              
+              # Show the menu for this specific variable
+              $menuTitle = switch ($Global:CurrentLanguage) {
+                "en" { "$varName - Select value:" }
+                "es" { "$varName - Selecciona valor:" }
+                "pt" { "$varName - Selecione valor:" }
+                "zh" { "$varName - 选择值：" }
+                default { "$varName - Sélectionnez la valeur :" }
+              }
+              
+              $selectedSubcatIndex = Show-ArrowMenu -Title $menuTitle -Options $subcatOptions -AllowCancel
+              
+              # Backspace/Esc -> return to category selection (like "Back")
+              if ($selectedSubcatIndex -eq -1) {
+                $restartCategorySelection = $true
+                break
+              }
+
+              # Return to category selection
+              if ($selectedSubcatIndex -eq ($subcatOptions.Count - 1)) {
+                $restartCategorySelection = $true
+                break
+              }
+              
+              # If the user selects a value (not "Any")
+              if ($selectedSubcatIndex -gt 0) {
+                $selectedEntry = $subcatArray[$selectedSubcatIndex - 1]
+                $selectedSubcategoryLabels += $selectedEntry.label
+                $selectedSubcategories += [PSCustomObject]@{
+                  variableId = $subcatVariable.id
+                  valueId = $selectedEntry.id
+                  label = $selectedEntry.label
+                }
+                # If this value is a terminal/leaf (no further subcategory variables should be prompted), break
+                # For Celeste, after selecting 'All Red Berries+Heart', 'Full Clear', or 'Heart+Cassette', stop prompting for more
+                if ($selectedEntry.label -match 'All Red Berries\+Heart|Full Clear|Heart\+Cassette') {
+                  break
+                }
+              }
+            }
+          }
+
+          if ($restartCategorySelection) {
+            continue CategoryLoop
+          }
+          break GameLoop
         }
       }
     }
     
-    # Combiner toutes les sous-catégories sélectionnées en une seule string
+    # Combine all selected subcategories into one string
     $selectedSubcategoryLabel = if ($selectedSubcategoryLabels.Count -gt 0) {
       $selectedSubcategoryLabels -join " - "
     } else {
       (Get-LocalizedString "null_value")
     }
     
-    # === ETAPE 4: Preset ID et sauvegarde ===
+    # === STEP 4: Preset ID and save ===
     Write-Host ""
     Write-Host (Get-LocalizedString "final_config") -ForegroundColor Green
     Write-Host ""
@@ -2043,7 +2890,7 @@ function New-Preset($currentConfig) {
     Write-Host "$(Get-LocalizedString 'final_subcategory') $selectedSubcategoryLabel" -ForegroundColor Cyan
     Write-Host ""
     
-    # Generer le nom complet avec sous-categorie si elle existe
+    # Generate full name with subcategory if it exists
     $fullName = if ($selectedSubcategoryLabel -eq (Get-LocalizedString "null_value")) {
       if ($selectedLevel) {
         "$($selectedGame.names.international) - $($selectedLevel.name) - $($selectedCategory.name)"
@@ -2058,7 +2905,7 @@ function New-Preset($currentConfig) {
       }
     }
     
-    # Suggestions d'ID pour le preset
+    # Preset ID suggestions
     $cleanGame = $selectedGame.names.international -replace '[^a-zA-Z0-9]', ''
     $gamePart = if ($cleanGame.Length -ge 4) { $cleanGame.Substring(0, 4) } else { $cleanGame }
     $catPart = $selectedCategory.name -replace '[^a-zA-Z0-9]', ''
@@ -2078,7 +2925,7 @@ function New-Preset($currentConfig) {
       $presetId = $defaultPresetId
     }
     
-    # Verification que l'ID n'existe pas deja
+    # Check that the ID does not already exist
     if ($currentConfig -and $currentConfig.presets -and $currentConfig.presets.$presetId) {
       Write-Host (Get-LocalizedString "final_id_exists" -f $presetId) -ForegroundColor Red
       $overwritePrompt = switch ($Global:CurrentLanguage) {
@@ -2104,7 +2951,7 @@ function New-Preset($currentConfig) {
       }
     }
     
-    # Preparer l'objet preset
+    # Prepare the preset object
     $subcatValue = if ($selectedSubcategoryLabel -eq (Get-LocalizedString "null_value")) { $null } else { $selectedSubcategoryLabel }
     $subcatSelections = if ($selectedSubcategories.Count -gt 0) { @($selectedSubcategories) } else { $null }
     
@@ -2122,7 +2969,7 @@ function New-Preset($currentConfig) {
       $newPreset.subcategories = $subcatSelections
     }
     
-    # Charger ou creer la config
+    # Load or create the settings
     $config = Initialize-Config $currentConfig
 
     $tempDisabled = $false
@@ -2143,16 +2990,16 @@ function New-Preset($currentConfig) {
       }
     }
     
-    # Ajouter le nouveau preset
-    # Si c'est un PSCustomObject (chargé depuis JSON), utiliser Add-Member
+    # Add the new preset
+    # If it's a PSCustomObject (loaded from JSON), use Add-Member
     if ($config.presets.GetType().Name -eq "PSCustomObject") {
       $config.presets | Add-Member -MemberType NoteProperty -Name $presetId -Value $newPreset -Force
     } else {
-      # Si c'est un hashtable (nouveau config), utiliser l'assignation normale
+      # If it's a hashtable (new settings), use normal assignment
       $config.presets.$presetId = $newPreset
     }
     
-    # Demander si on veut l'activer (ou l'activer automatiquement si c'est le premier)
+    # Ask whether to activate it (or auto-activate if first)
     $isFirstPreset = $config.presets.Count -eq 1 -or -not $config.activePreset
     
     if ($isFirstPreset) {
@@ -2183,7 +3030,7 @@ function New-Preset($currentConfig) {
       }
     }
     
-    # Sauvegarder
+    # Save
     $jsonOutput = $config | ConvertTo-Json -Depth 10
     $jsonOutput | Set-Content "config.json" -Encoding UTF8
     
@@ -2200,21 +3047,31 @@ function New-Preset($currentConfig) {
       Write-Host (Get-LocalizedString "final_activate_later") -ForegroundColor Cyan
     }
     Write-Host ""
+    $completed = $true
   } catch {
     Clear-Progress
     Write-Host ""
     Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
   }
   
-  Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-  $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    if ($completed) {
+      return
+    }
+  }
 }
 
-# === FONCTION PRINCIPALE ===
+# === MAIN FUNCTION ===
 function Start-MainLoop {
+  $mainMenuIndex = 0
   while ($true) {
     try {
-      # === CHARGER LES PRESETS EXISTANTS ===
+      # === LOAD EXISTING PRESETS ===
+      if (-not (Test-Path "config.json")) {
+        $Global:DefaultConfigJSON | Set-Content "config.json" -Encoding UTF8
+      }
+
       $configExists = Test-Path "config.json"
       $currentConfig = $null
       
@@ -2223,11 +3080,11 @@ function Start-MainLoop {
         $currentConfig = $configContent
       }
       
-      # === INITIALISER LA CONFIG (ajoute les propriétés manquantes) ===
+      # === INITIALIZE SETTINGS (adds missing properties) ===
       $currentConfig = Initialize-Config $currentConfig
       
-      # === INITIALISER LA LANGUE ===
-      $Global:CurrentLanguage = "fr" # Défaut
+      # === INITIALIZE LANGUAGE ===
+      $Global:CurrentLanguage = "fr" # Default
       if ($currentConfig -and $currentConfig.language) {
         $Global:CurrentLanguage = $currentConfig.language
       }
@@ -2235,7 +3092,7 @@ function Start-MainLoop {
       $presetList = Write-MainMenu $currentConfig
       
       if ($presetList.Count -gt 0) {
-        # Préparer le contexte à afficher au-dessus du menu
+        # Prepare context to display above the menu
         $contextLines = @()
         $contextLines += "================================================"
         $contextLines += "  $(Get-LocalizedString 'menu_title')"
@@ -2263,11 +3120,15 @@ function Start-MainLoop {
         }
 
         $menuItems += @{ Label = (Get-LocalizedString "menu_player_name"); Action = { param($cfg) Set-PlayerName $cfg } }
-        $menuItems += @{ Label = (Get-LocalizedString "menu_language_settings"); Action = { param($cfg) Set-Language $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_parameters"); Action = { param($cfg) Set-Parameters $cfg } }
         $menuItems += @{ Label = (Get-LocalizedString "menu_quit"); Action = { param($cfg) "__QUIT__" } }
 
         $menuOptions = $menuItems | ForEach-Object { $_.Label }
-        $selectedOption = Show-ArrowMenu -Title (Get-LocalizedString "menu_what_to_do") -Options $menuOptions -ContextText $contextText
+        if ($mainMenuIndex -lt 0 -or $mainMenuIndex -ge $menuOptions.Count) {
+          $mainMenuIndex = 0
+        }
+        $selectedOption = Show-ArrowMenu -Title (Get-LocalizedString "menu_what_to_do") -Options $menuOptions -ContextText $contextText -SelectedIndex $mainMenuIndex
+        $mainMenuIndex = $selectedOption
 
         $actionResult = & $menuItems[$selectedOption].Action $currentConfig
         if ($actionResult -eq "__QUIT__") {
@@ -2276,7 +3137,7 @@ function Start-MainLoop {
           return
         }
       } else {
-        # Premier preset - affichage direct
+        # First preset - direct display
         Clear-Host
         Write-Host "================================================" -ForegroundColor Cyan
         Write-Host "  $(Get-LocalizedString 'menu_title')" -ForegroundColor Cyan
@@ -2295,7 +3156,7 @@ function Start-MainLoop {
   }
 }
 
-# === DEMARRAGE DU PROGRAMME ===
+# === PROGRAM START ===
 try {
   Start-MainLoop
 } catch {

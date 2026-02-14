@@ -44,4 +44,17 @@ Your leaderboard will update automatically and display your position at the bott
 
 ---
 
-**Need more features?** Check the full README.md for temporary PB system, multiple presets, and advanced configuration.
+## Extra features
+- Visual tweaks menu in the preset manager to adjust layout, fonts, spacing, effects, flags/trophies and carousel.
+- New `fontStyle` option to choose the overlay font family.
+- Rank alignment and prefix style configurable (`rankAlign`, `rankPrefixMode`).
+- Smarter name rendering with `maxNameWidthVisible` and marquee scrolling for long names.
+- Temporary PB can be shown even if your account is not yet on the leaderboard (using `playerName` / `playerCountry`).
+- New PBs from the last 5 days are rainbow-highlighted, with adjustable `rainbowIntensity`.
+- Configurable separator bar width under your personal row (`pbSeparatorWidth`).
+- Optional `timeFormat` style `1h25m25s225ms`.
+- One-click option in the script to reset `config.json` back to default settings if needed.
+- Fully reviewed translations for FR/EN/ES/PT/ZH, including the new parameters/visuals menu.
+- Better flag display with consistent spacing, globe fallback and `flagOverrides` support.
+
+**Need more features?** Check the full README.md for the temporary PB system, multiple presets, and advanced configuration.

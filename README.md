@@ -1,6 +1,6 @@
 # Speedrun Leaderboard Overlay
 
-**Version 1.31** - Overlay-based speedrun.com leaderboard display  
+**Version 1.40** - Overlay-based speedrun.com leaderboard display  
 **Multilingual preset manager with intelligent automation**  
 **Supports 5 languages**: Français, English, Español, Português, 中文
 
@@ -11,6 +11,19 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 ---
 
 ## Features
+
+### Advanced customization
+- Visual tweaks menu in the PowerShell preset manager to customize layout, fonts, spacing, effects, flags/trophies and carousel.
+- Custom font selection for the overlay via `defaults.fontStyle` (Arial, Verdana, Times, etc.).
+- Configurable rank alignment (left/center/right) and rank prefix style (dot vs hash) via `defaults.rankAlign` and `defaults.rankPrefixMode`.
+- Smarter player name rendering with `defaults.maxNameWidthVisible`, marquee scrolling for long names, and spacing that respects the time column.
+- Enhanced temporary PB handling: your PB can appear even if your account is not on the loaded leaderboard, using `playerName` and `playerCountry`.
+- New PB highlight: personal bests submitted in the last 5 days are rainbow-colored on the board, with configurable `defaults.rainbowIntensity`.
+- Configurable separator bar width between the main table and the personal row via `defaults.pbSeparatorWidth`.
+- Optional time format `1h25m25s225ms` in addition to `1:25:25.255` via `defaults.timeFormat`.
+- Safe reset option in the PowerShell script to restore `config.json` to default values if your configuration is broken.
+- Full review and correction of all 5 language packs (FR/EN/ES/PT/ZH), including the new parameters/visuals menu texts.
+- Improved flag rendering: consistent spacing, fallback globe icon when no flag is available, and per-country overrides via `flagOverrides`.
 
 ### Personal Best Tracking
 - **Temporary PB Display**: Show your current attempt time with rainbow visual effects

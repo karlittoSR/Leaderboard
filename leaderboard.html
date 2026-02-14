@@ -19,8 +19,8 @@
 <body>
   <canvas id="board" width="1200" height="400"></canvas>
   <script>
-    // === Chargement Configuration ===
-    // Variables chargees depuis config.json
+    // === Settings Loading ===
+    // Variables loaded from settings file (config.json)
     let GAME_ID;
     let CATEGORY_NAME;
     let SUBCATEGORY_LABEL;
@@ -35,6 +35,12 @@
     let MAX_RUNS;
     let FLAG_OVERRIDES;
     let USE_TROPHY_ICONS = false;
+    let RANK_ALIGN = 'right';
+    let RANK_PREFIX_MODE = 'dot';
+    let NAME_SPACING = 4;
+    let TIME_FORMAT = '1:25:25.255';
+    let PB_SEPARATOR_WIDTH = null;
+    let RAINBOW_INTENSITY = 50;
 
     // Trophy icon URLs (loaded from game assets)
     let TROPHY_1ST_URL = null;
@@ -43,14 +49,14 @@
 
     async function loadConfig() {
       try {
-        // Charger config.json
+        // Load settings file (config.json)
         const configRes = await fetch('config.json');
         if (!configRes.ok) {
           throw new Error(`Impossible de charger config.json (HTTP ${configRes.status})`);
         }
         const config = await configRes.json();
         
-        // Obtenir le preset actif depuis config.json (plus besoin de parametre URL)
+        // Get the active preset from the settings file (no URL parameter needed)
         const presetName = config.activePreset;
         if (!presetName) {
           throw new Error('Aucun preset actif défini dans config.json. Utilisez le script PowerShell pour en définir un.');
@@ -62,7 +68,7 @@
           throw new Error(`Preset actif "${presetName}" non trouvé. Options disponibles : ${availablePresets.join(', ')}`);
         }
 
-        // Appliquer les parametres du preset
+        // Apply preset settings
         GAME_ID = preset.gameId;
         CATEGORY_NAME = preset.category;
         SUBCATEGORY_LABEL = preset.subcategory;
@@ -74,6 +80,9 @@
         LEVEL_NAME = preset.levelName || null;
         PLAYER_NAME = (config.playerName || '').trim();
         if (PLAYER_NAME === '') PLAYER_NAME = null;
+        PLAYER_COUNTRY = (config.playerCountry || 'FR').trim().toUpperCase();
+        if (PLAYER_COUNTRY.length !== 2) PLAYER_COUNTRY = 'FR'; // Fallback to FR if invalid
+
         const tempRun = config.temporaryRun || null;
         if (tempRun && tempRun.active && tempRun.time) {
           TEMPORARY_RUN = { time: String(tempRun.time).trim() };
@@ -82,17 +91,47 @@
         }
         FLAG_OVERRIDES = config.flagOverrides || {};
 
-        // Appliquer les valeurs par defaut depuis config.json
+        // Apply defaults from the settings file
         const defaults = config.defaults;
         CAROUSEL_INTERVAL = defaults.carouselInterval;
         CAROUSEL_DISPLAY_DURATION = CAROUSEL_INTERVAL - CAROUSEL_FADE_DURATION - CAROUSEL_FADE_DURATION;
         RUNS_PER_BATCH = defaults.runsPerBatch;
         TOP_COUNT = defaults.topCount;
         MAX_RUNS = Number.isFinite(defaults.maxRuns) ? defaults.maxRuns : 200;
-        MAX_PLAYER_NAME_CHARS = defaults.maxPlayerNameChars || 14;
+        MAX_PLAYER_NAME_CHARS = defaults.maxNameWidthVisible || defaults.maxPlayerNameChars || 14;
         USE_TROPHY_ICONS = defaults.useTrophyIcons === true;
+        const rankAlign = (defaults.rankAlign || 'right').toLowerCase();
+        RANK_ALIGN = ['left', 'center', 'right'].includes(rankAlign) ? rankAlign : 'right';
+        const rankPrefixMode = (defaults.rankPrefixMode || 'dot').toLowerCase();
+        RANK_PREFIX_MODE = ['dot', 'hash'].includes(rankPrefixMode) ? rankPrefixMode : 'dot';
+        const spacingValue = Number(defaults.nameSpacing);
+        NAME_SPACING = Number.isFinite(spacingValue) ? Math.min(10, Math.max(0, spacingValue)) : 4;
+        const timeFormatValue = String(defaults.timeFormat || '1:25:25.255').trim();
+        TIME_FORMAT = (timeFormatValue === '1h25m25s225ms' || timeFormatValue === '1:25:25.255') ? timeFormatValue : '1:25:25.255';
+        const pbSeparatorValue = Number(defaults.pbSeparatorWidth);
+        PB_SEPARATOR_WIDTH = Number.isFinite(pbSeparatorValue) ? pbSeparatorValue : null;
+        const rainbowValue = Number(defaults.rainbowIntensity);
+        RAINBOW_INTENSITY = Number.isFinite(rainbowValue) ? Math.min(100, Math.max(0, rainbowValue)) : 50;
 
-        // Mettre a jour le titre
+        // Apply Font Style
+        const fontStyle = defaults.fontStyle || 'Arial';
+        const fontMap = {
+            'Arial': 'Arial, sans-serif',
+            'Verdana': 'Verdana, Geneva, sans-serif',
+            'TimesNewRoman': '"Times New Roman", Times, serif',
+            'Georgia': 'Georgia, serif',
+            'CourierNew': '"Courier New", Courier, monospace',
+            'Impact': 'Impact, Charcoal, sans-serif',
+            'TrebuchetMS': '"Trebuchet MS", Helvetica, sans-serif',
+            'Tahoma': 'Tahoma, Geneva, sans-serif',
+            'ComicSans': '"Comic Sans MS", "Comic Sans", cursive, sans-serif',
+            'SegoeUI': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+        };
+        const selectedFontFamily = fontMap[fontStyle] || fontMap['Arial'];
+        DRAW.FONT_BASE = '700 18px ' + selectedFontFamily;
+        DRAW.FONT_MONO = '700 18px ' + selectedFontFamily;
+
+        // Update title
         document.title = preset.name + ': Top ' + TOP_COUNT + ' (Overlay)';
 
         // Update overlay size from defaults
@@ -101,7 +140,7 @@
         canvas.style.width = defaults.displayWidth;
         canvas.style.height = defaults.displayHeight;
 
-        // Demarrer le chargement des donnees
+        // Start data load
         loadTop();
       } catch (e) {
         console.error('Erreur de configuration :', e);
@@ -115,7 +154,7 @@
 
     // Drawing constants
     const DRAW = {
-      FLAG: { w: 20, h: 15, yOffset: 13, radius: 5 },
+      FLAG: { w: 20, h: 15, yOffset: 14, radius: 5 },
       TROPHY: { w: 20, h: 20, yOffset: 16, radius: 4 }, // Trophy icon dimensions
       LAYOUT: { padX: 12, startY: 30, rowH: 24 },
       FONT_BASE: '700 18px Arial, sans-serif',
@@ -130,14 +169,14 @@
       trophies: new Map()
     };
 
-    // État du carousel
+    // Carousel state
     let carouselPage = 0;
     let carouselRuns = [];
     let carouselInterval = null;
     let carouselStartTime = 0;
     let carouselPhase = 'display'; // 'display', 'fadeOut', 'fadeIn'
-    let CAROUSEL_FADE_DURATION = 500; // Durée de transition fade (ms)
-    let CAROUSEL_DISPLAY_DURATION = 3000; // Durée d'affichage (calculée dans loadConfig)
+    let CAROUSEL_FADE_DURATION = 500; // Fade transition duration (ms)
+    let CAROUSEL_DISPLAY_DURATION = 3000; // Display duration (computed in loadConfig)
 
     let fixedMaxRankW = 0;
     let fixedMaxNameBlock = 0;
@@ -190,6 +229,16 @@
       return key;
     }
 
+    function isRunRecent(submittedDate) {
+      if (!submittedDate) return false;
+      const date = new Date(submittedDate);
+      if (isNaN(date.getTime())) return false;
+      const now = new Date();
+      const diffMs = now - date;
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      return diffDays < 5;
+    }
+
     // === Utilities ===
     function drawRoundedImage(img, x, y, w, h, r) {
       ctx.save();
@@ -211,9 +260,51 @@
 
     function formatTime(sec) {
       const total = Number(sec);
-      const h = Math.floor(total / 3600);
-      const m = Math.floor((total % 3600) / 60);
-      const s = total % 60;
+      if (TIME_FORMAT === '1h25m25s225ms') {
+        const totalMs = Math.round(Number(sec) * 1000);
+        const absMs = Math.max(0, totalMs);
+        
+        const h = Math.floor(absMs / 3600000);
+        const remainderH = absMs % 3600000;
+        
+        const m = Math.floor(remainderH / 60000);
+        const remainderM = remainderH % 60000;
+        
+        const s = Math.floor(remainderM / 1000);
+        const ms = remainderM % 1000;
+
+        const parts = [];
+        
+        // Hours (only if > 0)
+        if (h > 0) { 
+            parts.push(`${h}h`); 
+        }
+        
+        // Minutes (if hours exist, pad with 0, else only if > 0)
+        if (h > 0) {
+            parts.push(`${String(m).padStart(2, '0')}m`);
+        } else if (m > 0) {
+            parts.push(`${m}m`);
+        }
+        
+        // Seconds (always show, pad if minutes or hours exist)
+        if (h > 0 || m > 0) {
+            parts.push(`${String(s).padStart(2, '0')}s`);
+        } else {
+            parts.push(`${s}s`);
+        }
+        
+        // Milliseconds: always padded 3 digits if present (e.g. 036ms)
+        if (ms > 0) { 
+            parts.push(`${String(ms).padStart(3, '0')}ms`); 
+        }
+        
+        return parts.join(' ');
+      }
+      
+      const h = Math.floor(Number(sec) / 3600);
+      const m = Math.floor((Number(sec) % 3600) / 60);
+      const s = Number(sec) % 60;
       
       // Check if we have milliseconds (non-integer seconds)
       const hasMilliseconds = s !== Math.floor(s);
@@ -271,7 +362,71 @@
       if (maxChars === null) {
         maxChars = MAX_PLAYER_NAME_CHARS || 14;
       }
-      return name.length > maxChars ? name.substring(0, maxChars) + '.' : name;
+      return name.length > maxChars ? 'W'.repeat(maxChars) : name;
+    }
+
+    function drawScrollingText(ctx, text, x, y, maxWidth, style, isTemporary, rainbowPhase, fontBase) {
+      if (!text) return;
+      
+      ctx.save();
+      if (fontBase) ctx.font = fontBase;
+      const textWidth = ctx.measureText(text).width;
+      ctx.restore();
+      
+      // If text fits, draw normally
+      if (textWidth <= maxWidth) {
+        if (isTemporary) {
+          applyRainbowText(x, y, text, rainbowPhase);
+          ctx.textAlign = 'left';
+          ctx.fillText(text, x, y);
+        } else {
+          ctx.fillStyle = DRAW.COLORS.other;
+          applyTextStyle(x, y, text, style);
+          ctx.textAlign = 'left';
+          ctx.fillText(text, x, y);
+        }
+        return;
+      }
+
+      // Scrolling logic (Marquee loop)
+      const speed = 30; // pixels per second
+      const gap = 20;   // gap between loops
+      const loopDist = textWidth + gap;
+      const totalTime = (loopDist / speed) * 1000;
+      const offset = (Date.now() % totalTime) / totalTime * loopDist;
+      
+      ctx.save();
+      if (fontBase) ctx.font = fontBase;
+      ctx.beginPath();
+      // Clip rectangle: x, y-ascent, width, height
+      // Assuming font size ~18px, baseline at y. extend up 18 and down 6
+      ctx.rect(x, y - 18, maxWidth, 26); 
+      ctx.clip();
+      
+      const drawInstance = (currentX) => {
+         if (isTemporary) {
+             applyRainbowText(currentX, y, text, rainbowPhase);
+             ctx.textAlign = 'left';
+             ctx.fillText(text, currentX, y);
+         } else {
+             // For gradient, we need to regenerate execution relative to currentX if desired, 
+             // but applyTextStyle uses ctx.createLinearGradient(x, ... x+width).
+             // We should pass currentX to applyTextStyle.
+             
+             ctx.fillStyle = DRAW.COLORS.other;
+             applyTextStyle(currentX, y, text, style);
+             ctx.textAlign = 'left';
+             ctx.fillText(text, currentX, y);
+         }
+      };
+
+      // Draw two instances for seamless loop
+      // Instance 1
+      drawInstance(x - offset);
+      // Instance 2
+      drawInstance(x - offset + loopDist);
+      
+      ctx.restore();
     }
 
     function applyTextStyle(x, y, text, style) {
@@ -313,8 +468,27 @@
 
     function applyRainbowText(x, y, text, phase, alpha = 1) {
       const hue = phase % 360;
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = hslToRgb(hue, 0.5, 0.7);
+      const intensity = Math.min(1, Math.max(0, RAINBOW_INTENSITY / 100));
+      const saturation = 0.15 + (0.85 * intensity);
+      ctx.fillStyle = hslToRgb(hue, saturation, 0.7);
+    }
+
+    function getRankTextAlign() {
+      if (RANK_ALIGN === 'left') return 'left';
+      if (RANK_ALIGN === 'center') return 'center';
+      return 'right';
+    }
+
+    function getRankTextX(colRank) {
+      if (RANK_ALIGN === 'left') return colRank;
+      if (RANK_ALIGN === 'center') return colRank + (fixedMaxRankW / 2);
+      return colRank + fixedMaxRankW;
+    }
+
+    function getRankIconX(colRank, iconWidth) {
+      if (RANK_ALIGN === 'left') return colRank;
+      if (RANK_ALIGN === 'center') return colRank + (fixedMaxRankW - iconWidth) / 2;
+      return colRank + fixedMaxRankW - iconWidth;
     }
 
     // === Draw ===
@@ -339,7 +513,11 @@
       for (let i = 0; i < allDisplay.length; i++) {
         const r = allDisplay[i];
         const y = startY + i * rowH;
+        // Reset font to base for each row
+        ctx.font = DRAW.FONT_BASE;
         const isTemporary = !!r.isTemporary;
+        const isRecent = isRunRecent(r.submitted);
+        const useRainbow = isTemporary || isRecent;
         const color = getRankColor(r.rank - 1);  // Use actual rank for color (supports ties)
 
         // Apply fade only to carousel rows (rows 3-7, indices 3-7)
@@ -354,7 +532,7 @@
           // Draw trophy icon for top 3 (centered in rank column)
           drawRoundedImage(
             r.trophyImg,
-            colRank + (fixedMaxRankW - DRAW.TROPHY.w) / 2,
+            getRankIconX(colRank, DRAW.TROPHY.w),
             y - DRAW.TROPHY.yOffset,
             DRAW.TROPHY.w,
             DRAW.TROPHY.h,
@@ -362,42 +540,64 @@
           );
         } else {
           // Draw number right-aligned
-          const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
-          ctx.textAlign = 'right';
-          if (isTemporary) {
-            applyRainbowText(colRank + fixedMaxRankW - ctx.measureText(rankText).width, y, rankText, phaseBase + i * 12);
+          let rankText = `${r.rank}`;
+          if (typeof r.rank === 'number' && r.rank > 0) {
+            rankText = (RANK_PREFIX_MODE === 'hash') ? `#${r.rank}` : `${r.rank}.`;
+          }
+          const rankX = getRankTextX(colRank);
+          ctx.textAlign = getRankTextAlign();
+          if (useRainbow) {
+            applyRainbowText(rankX, y, rankText, phaseBase + i * 12);
           } else {
             ctx.fillStyle = color;
           }
-          ctx.fillText(rankText, colRank + fixedMaxRankW, y);
+          ctx.fillText(rankText, rankX, y);
         }
 
         // Draw flag + name
-        let x = colRank + fixedMaxRankW + 3;
+        let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (r.flagImg) {
           drawRoundedImage(r.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-        }
-        x += DRAW.FLAG.w + 4; // Keep space even when there is no flag, to make names aligned.
-
-        const displayName = truncatePlayer(isTemporary ? `PB - ${r.player}` : r.player);
-        ctx.fillStyle = color;
-        
-        if (isTemporary) {
-          applyRainbowText(x, y, displayName, phaseBase + 40 + i * 12);
-          ctx.textAlign = 'left';
-          ctx.fillText(displayName, x, y);
         } else {
-          applyTextStyle(x, y, displayName, r.nameStyle);
-          ctx.textAlign = 'left';
-          ctx.fillText(displayName, x, y);
+           // Default flag (Globe)
+           ctx.save();
+           ctx.font = '16px sans-serif'; // Adapted size for the flag box
+           ctx.textAlign = 'center';
+           ctx.textBaseline = 'middle';
+           ctx.fillText('🌎', x + DRAW.FLAG.w / 2, y - 6);
+           ctx.restore();
         }
+        x += DRAW.FLAG.w + NAME_SPACING; // Keep space even when there is no flag, to make names aligned.
+
+        // Calculate available width for name using the configured maxNameWidthVisible
+        // Use fixedMaxNameBlock (which we calculated using MAX_PLAYER_NAME_CHARS) as the base constraint
+        // But also ensure we don't overlap time (responsive shrinking is still okay)
+        
+        ctx.save();
+        ctx.font = DRAW.FONT_MONO;
+        const timeWidth = ctx.measureText(r.time).width;
+        ctx.restore();
+
+        // The maximum standard width allowed by configuration (excluding flag width part of fixedMaxNameBlock)
+        // fixedMaxNameBlock includes flag width + name, so we subtract flag width to get "max configured name width"
+        const currentFlagW = DRAW.FLAG.w + NAME_SPACING;
+        const configuredMaxNameWidth = Math.max(50, fixedMaxNameBlock - currentFlagW);
+
+        // The absolute available space on screen before hitting the time
+        const screenSpaceAvailable = timeX - timeWidth - x - 12; // 12px padding
+
+        // Use the smaller of the two: respect config, but shrink if screen is too small
+        const availableWidth = Math.min(configuredMaxNameWidth, screenSpaceAvailable);
+
+        const rawName = isTemporary ? `PB - ${r.player}` : r.player;
+        drawScrollingText(ctx, rawName, x, y, availableWidth, r.nameStyle, useRainbow, phaseBase + 40 + i * 12, DRAW.FONT_BASE);
 
         // Draw time (right-aligned)
         ctx.font = DRAW.FONT_MONO;
         ctx.fillStyle = color;
         
         ctx.textAlign = 'right';
-        if (isTemporary) {
+        if (useRainbow) {
           applyRainbowText(timeX - ctx.measureText(r.time).width, y, r.time, phaseBase + 80 + i * 12);
           ctx.fillText(r.time, timeX, y);
         } else {
@@ -414,6 +614,8 @@
         const y = Math.min(desiredY, canvasH - rowH);
         const phase = (Date.now() / 30) % 360;
         const isTemporary = !!playerRow.isTemporary;
+        const isRecent = isRunRecent(playerRow.submitted);
+        const useRainbow = isTemporary || isRecent;
 
         // Separator line instead of an empty gap
         const lineY = startY + allDisplay.length * rowH - 4;
@@ -422,19 +624,31 @@
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        const lineStartX = padX + 6;
-        const lineEndX = Math.min(timeX - 6, canvas.clientWidth - padX);
+        const areaStartX = padX + 6;
+        const areaEndX = Math.min(timeX - 6, canvas.clientWidth - padX);
+        const maxBarWidth = Math.max(0, areaEndX - areaStartX);
+        let barWidth = Number.isFinite(PB_SEPARATOR_WIDTH) ? PB_SEPARATOR_WIDTH : maxBarWidth;
+        if (maxBarWidth < 50) {
+          barWidth = maxBarWidth;
+        } else {
+          barWidth = Math.min(Math.max(barWidth, 50), maxBarWidth);
+        }
+        const lineStartX = areaStartX + (maxBarWidth - barWidth) / 2;
+        const lineEndX = lineStartX + barWidth;
         ctx.moveTo(lineStartX, lineY);
         ctx.lineTo(lineEndX, lineY);
         ctx.stroke();
         ctx.restore();
+
+        // Reset font to base
+        ctx.font = DRAW.FONT_BASE;
 
         // Draw rank (trophy for top 3, # + number for others)
         if (USE_TROPHY_ICONS && playerRow.trophyImg && playerRow.rank >= 1 && playerRow.rank <= 3) {
           // Draw trophy icon for top 3 (centered in rank column)
           drawRoundedImage(
             playerRow.trophyImg,
-            colRank + (fixedMaxRankW - DRAW.TROPHY.w) / 2,
+            getRankIconX(colRank, DRAW.TROPHY.w),
             y - DRAW.TROPHY.yOffset,
             DRAW.TROPHY.w,
             DRAW.TROPHY.h,
@@ -442,37 +656,59 @@
           );
         } else {
           // Draw number right-aligned
-          const rankText = (typeof playerRow.rank === 'number' && playerRow.rank > 0) ? `${playerRow.rank}.` : `${playerRow.rank}`;
-          ctx.textAlign = 'right';
-          if (isTemporary) {
-            applyRainbowText(colRank + fixedMaxRankW - ctx.measureText(rankText).width, y, rankText, phase);
+          let rankText = `${playerRow.rank}`;
+          if (typeof playerRow.rank === 'number' && playerRow.rank > 0) {
+            rankText = (RANK_PREFIX_MODE === 'hash') ? `#${playerRow.rank}` : `${playerRow.rank}.`;
+          }
+          const rankX = getRankTextX(colRank);
+          ctx.textAlign = getRankTextAlign();
+          if (useRainbow) {
+            applyRainbowText(rankX, y, rankText, phase);
           } else {
             ctx.fillStyle = DRAW.COLORS.other;
           }
-          ctx.fillText(rankText, colRank + fixedMaxRankW, y);
+          ctx.fillText(rankText, rankX, y);
         }
 
-        let x = colRank + fixedMaxRankW + 3;
+        let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (playerRow.flagImg) {
           drawRoundedImage(playerRow.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-        }
-        x += DRAW.FLAG.w + 4; // Keep space even when there is no flag, to make names aligned.
-
-        const displayName = truncatePlayer(isTemporary ? `PB - ${playerRow.player}` : playerRow.player);
-        if (isTemporary) {
-          applyRainbowText(x, y, displayName, phase + 40);
-          ctx.textAlign = 'left';
-          ctx.fillText(displayName, x, y);
         } else {
-          ctx.fillStyle = DRAW.COLORS.other;
-          applyTextStyle(x, y, displayName, playerRow.nameStyle);
-          ctx.textAlign = 'left';
-          ctx.fillText(displayName, x, y);
+           // Default flag (Globe)
+           ctx.save();
+           ctx.font = '16px sans-serif'; 
+           ctx.textAlign = 'center';
+           ctx.textBaseline = 'middle';
+           ctx.fillText('🌎', x + DRAW.FLAG.w / 2, y - 6);
+           ctx.restore();
         }
+        x += DRAW.FLAG.w + NAME_SPACING; // Keep space even when there is no flag, to make names aligned.
+
+        // Calculate available width for name using the configured maxNameWidthVisible
+        // Use fixedMaxNameBlock (which we calculated using MAX_PLAYER_NAME_CHARS) as the base constraint
+        // But also ensure we don't overlap time (responsive shrinking is still okay)
+        
+        ctx.save();
+        ctx.font = DRAW.FONT_MONO;
+        const timeWidth = ctx.measureText(playerRow.time).width;
+        ctx.restore();
+
+        // The maximum standard width allowed by configuration
+        const currentFlagW = DRAW.FLAG.w + NAME_SPACING;
+        const configuredMaxNameWidth = Math.max(50, fixedMaxNameBlock - currentFlagW);
+
+        // The absolute available space on screen before hitting the time
+        const screenSpaceAvailable = timeX - timeWidth - x - 12; // 12px padding
+
+        // Use the smaller of the two
+        const availableWidth = Math.min(configuredMaxNameWidth, screenSpaceAvailable);
+
+        const rawName = isTemporary ? `PB - ${playerRow.player}` : playerRow.player;
+        drawScrollingText(ctx, rawName, x, y, availableWidth, playerRow.nameStyle, useRainbow, phase + 40, DRAW.FONT_BASE);
 
         ctx.font = DRAW.FONT_MONO;
         ctx.textAlign = 'right';
-        if (isTemporary) {
+        if (useRainbow) {
           applyRainbowText(timeX - ctx.measureText(playerRow.time).width, y, playerRow.time, phase + 80);
           ctx.fillText(playerRow.time, timeX, y);
         } else {
@@ -486,7 +722,7 @@
       ctx.shadowOffsetY = 0;
     }
 
-    // === Traitement des donnees ===
+    // === Data processing ===
     async function fetchJSON(url, timeout = 10000) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -516,7 +752,7 @@
       
       const vars = (cat.variables?.data) || [];
 
-      // Nouvelle structure: liste d'IDs des sous-categories
+      // New structure: list of subcategory IDs
       if (Array.isArray(SUBCATEGORIES) && SUBCATEGORIES.length > 0) {
         const usedVars = new Set();
         const variablePairs = [];
@@ -557,7 +793,7 @@
         }
       }
 
-      // Si pas de sous-categorie requis
+      // No subcategory required
       if (!SUBCATEGORY_LABEL) {
         return { categoryId: cat.id, variablePairs: [] };
       }
@@ -597,13 +833,16 @@
           maxRankW = Math.max(maxRankW, trophyWidth);
         } else {
           // Text width for rank 4+
-          const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
+          let rankText = `${r.rank}`;
+          if (typeof r.rank === 'number' && r.rank > 0) {
+            rankText = (RANK_PREFIX_MODE === 'hash') ? `#${r.rank}` : `${r.rank}.`;
+          }
           const numberW = ctx.measureText(rankText).width;
           maxRankW = Math.max(maxRankW, numberW);
         }
 
-        // Largeur du bloc nom (drapeau + nom tronque)
-        const flagW = r.flagImg ? DRAW.FLAG.w + 4 : 0;
+        // Name block width (flag + truncated name)
+        const flagW = r.flagImg ? DRAW.FLAG.w + NAME_SPACING : 0;
         const truncatedName = truncatePlayer(r.player);
         const nameW = ctx.measureText(truncatedName).width;
         maxNameBlock = Math.max(maxNameBlock, flagW + nameW);
@@ -645,7 +884,7 @@
           TROPHY_3RD_URL = assets['trophy-3rd']?.uri || null;
         }
 
-        // Construire la carte des joueurs
+        // Build player map
         const playerMap = new Map();
         if (lb.data.players?.data) {
           for (const player of lb.data.players.data) {
@@ -658,7 +897,7 @@
           }
         }
 
-        // Traiter les runs
+        // Process runs
         const allRuns = (lb.data.runs || []).map((entry) => {
           const run = entry.run;
           const players = (run.players || []).map((p) => {
@@ -701,8 +940,22 @@
               };
             }
           } else {
-            // Player not present in this category: ignore temporary PB for this load.
-            TEMPORARY_RUN = null;
+             // Player not found in loaded runs, but we have a temporary PB.
+             // Add them as a new entry so they appear in the ranking logic.
+             const tempSeconds = parseTimeString(TEMPORARY_RUN.time);
+             if (Number.isFinite(tempSeconds)) {
+                 allRuns.push({
+                     rank: 0, 
+                     player: PLAYER_NAME,
+                     players: [PLAYER_NAME],
+                     nameStyle: null,
+                     country: normalizeCountry(PLAYER_COUNTRY),
+                     time: formatTime(tempSeconds),
+                     timeSeconds: tempSeconds,
+                     submitted: new Date().toISOString(),
+                     isTemporary: true
+                 });
+             }
           }
         }
 
@@ -743,12 +996,12 @@
           }
         }
 
-        // Diviser en TOP N et carousel
+        // Split into top N and carousel
         const topRuns = sortedRuns.slice(0, TOP_COUNT);
         carouselRuns = sortedRuns.slice(TOP_COUNT, Math.max(TOP_COUNT, MAX_RUNS || 0));
         carouselPage = 0;
 
-        // Charger les images des drapeaux
+        // Load flag images
         const countryCodes = Array.from(new Set(sortedRuns.map(r => r.country).filter(Boolean)));
         await Promise.allSettled(countryCodes.map(loadFlagImage));
         
@@ -789,7 +1042,7 @@
           trophyImg: trophyMap[playerRow.rank] || null
         } : null;
 
-        // Stocker pour le carousel
+        // Store for carousel
         processedTopRuns = processedTop;
 
         // Calculate fixed widths
@@ -816,7 +1069,7 @@
             const batch = carouselRuns.slice(batchStart, batchStart + displayRunsPerBatch);
             
             if (carouselPhase === 'fadeIn') {
-              // Phase de transition d'arrivee (0 vers 1)
+              // Fade-in transition phase (0 to 1)
               if (elapsed < CAROUSEL_FADE_DURATION) {
                 const fadeProgress = elapsed / CAROUSEL_FADE_DURATION;
                 draw(processedTop, batch, fadeProgress, processedPlayerRow);
@@ -825,7 +1078,7 @@
                 carouselStartTime = Date.now();
               }
             } else if (carouselPhase === 'display') {
-              // Phase d'affichage stable (opacity = 1)
+              // Stable display phase (opacity = 1)
               if (elapsed < CAROUSEL_DISPLAY_DURATION) {
                 draw(processedTop, batch, 1, processedPlayerRow);
               } else {
@@ -833,12 +1086,12 @@
                 carouselStartTime = Date.now();
               }
             } else if (carouselPhase === 'fadeOut') {
-              // Phase de transition de depart (1 vers 0)
+              // Fade-out transition phase (1 to 0)
               if (elapsed < CAROUSEL_FADE_DURATION) {
                 const fadeProgress = 1 - (elapsed / CAROUSEL_FADE_DURATION);
                 draw(processedTop, batch, fadeProgress, processedPlayerRow);
               } else {
-                // Passage a la page suivante
+                // Move to the next page
                 carouselPage = (carouselPage + 1) % Math.ceil(carouselRuns.length / displayRunsPerBatch);
                 carouselPhase = 'fadeIn';
                 carouselStartTime = Date.now();

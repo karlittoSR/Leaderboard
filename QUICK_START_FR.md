@@ -44,4 +44,17 @@ Votre classement se mettra à jour automatiquement et affichera votre position e
 
 ---
 
+## Fonctionnalités supplémentaires
+- Menu d'ajustements visuels dans le gestionnaire de presets pour modifier le layout, les polices, les espacements, les effets, les drapeaux/trophées et le carrousel.
+- Nouvelle option `fontStyle` pour choisir la famille de police de l'overlay.
+- Alignement et préfixe du rang configurables (`rankAlign`, `rankPrefixMode`).
+- Gestion plus intelligente des noms avec `maxNameWidthVisible` et texte défilant pour les noms trop longs.
+- Le PB temporaire peut s'afficher même si votre compte n'est pas encore présent sur le leaderboard (via `playerName` / `playerCountry`).
+- Effet arc-en-ciel pour les nouveaux PB des 5 derniers jours, avec `rainbowIntensity` réglable.
+- Largeur de la barre de séparation sous votre ligne personnelle configurable (`pbSeparatorWidth`).
+- Format de temps optionnel `1h25m25s225ms` en plus de `1:25:25.255`.
+- Option dans le script pour réinitialiser facilement le fichier `config.json` aux valeurs par défaut en cas de problème.
+- Traductions entièrement revues pour FR/EN/ES/PT/ZH, incluant le nouveau menu paramètres/visuels.
+- Affichage des drapeaux amélioré : espacement cohérent, icône de globe par défaut et support de `flagOverrides`.
+
 **Besoin de plus de fonctionnalités ?** Consultez le README.md complet pour le système de PB temporaire, les présets multiples et la configuration avancée.
