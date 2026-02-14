@@ -14,7 +14,7 @@
     "runsPerBatch": 3
   },
   "flagOverrides": {
-    "TW": "CN"
+    "CR": "FR"
   },
   "presets": {
     "elde-twogods-glitchless": {
