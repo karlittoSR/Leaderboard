@@ -1,6 +1,6 @@
 # Speedrun Leaderboard Overlay
 
-**Version 1.30** - Overlay-based speedrun.com leaderboard display  
+**Version 1.31** - Overlay-based speedrun.com leaderboard display  
 **Multilingual preset manager with intelligent automation**  
 **Supports 5 languages**: Français, English, Español, Português, 中文
 
@@ -35,6 +35,8 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - **Animated Carousel**: Rotating display of additional leaderboard entries
 - **Country Flags**: Automatic flag display from flagcdn.com
 - **Ranking Colors**: Gold/Silver/Bronze for top 3, blue-grey for others
+- **Tie Handling**: Same time = same rank
+- **Trophy Icons (Optional)**: Show 1st/2nd/3rd icons instead of numbers
 - **Smart Text Management**: Configurable player name length limits
 - **Responsive Layout**: Adapts to different display sizes
 
@@ -125,7 +127,9 @@ Edit `config.json` for customization:
   "defaults": {
     "topCount": 3,                    // Number of top positions always shown
     "maxPlayerNameChars": 20,         // Character limit for player names
+      "maxRuns": 200,                   // Max runs fetched for carousel
     "carouselInterval": 5000,         // Carousel rotation speed (ms)
+      "useTrophyIcons": false,          // Use trophy icons for top 3
     "displayWidth": "900px",          // OBS Browser Source width
     "displayHeight": "274px",         // OBS Browser Source height
     "canvasWidth": 1200,              // Internal canvas resolution
