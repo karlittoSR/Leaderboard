@@ -139,7 +139,7 @@ Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instruc
 ## Configuration
 
 ### Basic Settings
-Edit `config.json` for customization:
+Edit `config.json` for customization (Edit it straight from the terminal):
 
 ```json
 {
