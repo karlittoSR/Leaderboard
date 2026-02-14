@@ -208,9 +208,11 @@
       
       if (hasMilliseconds) {
         // Format with milliseconds (up to 3 decimal places)
-        const sFormatted = s.toFixed(3).replace(/\.?0+$/, '');
+        const secondsInt = Math.floor(s);
+        const milliseconds = Math.round((s - secondsInt) * 1000);
+        const sFormatted = `${String(secondsInt).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
         const mm = String(m).padStart(2, '0');
-        return h > 0 ? `${h}:${mm}:${sFormatted.padStart(6, '0')}` : `${m}:${sFormatted.padStart(6, '0')}`;
+        return h > 0 ? `${h}:${mm}:${sFormatted}` : `${m}:${sFormatted}`;
       } else {
         // Format without milliseconds
         const sInt = Math.floor(s);
