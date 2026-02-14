@@ -44,17 +44,6 @@ Seu ranking será atualizado automaticamente e exibirá sua posição na parte i
 
 ---
 
-## Funcionalidades adicionais
-- Menu de ajustes visuais no gerenciador de presets para alterar layout, fontes, espaçamento, efeitos, bandeiras/troféus e carrossel.
-- Nova opção `fontStyle` para escolher a família de fonte do overlay.
-- Alinhamento e prefixo da colocação configuráveis (`rankAlign`, `rankPrefixMode`).
-- Tratamento mais inteligente de nomes com `maxNameWidthVisible` e texto rolando para nomes longos.
-- O PB temporário pode aparecer mesmo que sua conta ainda não esteja no leaderboard (usando `playerName` / `playerCountry`).
-- Efeito arco-íris para novos PB dos últimos 5 dias, com `rainbowIntensity` ajustável.
-- Largura da barra separadora sob sua linha pessoal configurável (`pbSeparatorWidth`).
-- Formato de tempo opcional `1h25m25s225ms` além de `1:25:25.255`.
-- Opção no script para redefinir facilmente o `config.json` para os valores padrão em caso de problema.
-- Traduções revisadas para FR/EN/ES/PT/ZH, incluindo o novo menu de parâmetros/visuais.
-- Exibição de bandeiras aprimorada: espaçamento consistente, ícone de globo padrão e suporte a `flagOverrides`.
+## Funcionalidades avançadas
 
-**Precisa de mais recursos?** Consulte o README.md completo para o sistema de PB temporário, múltiplos presets e configuração avançada.
+**Para conhecer todas as funcionalidades disponíveis** (ajustes visuais, fontes personalizadas, formatos de tempo, alinhamento de colocações, efeito arco-íris em PB recentes, etc.), consulte o **[README.md](README.md)** completo!

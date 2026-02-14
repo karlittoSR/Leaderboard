@@ -26,10 +26,11 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - Improved flag rendering: consistent spacing, fallback globe icon when no flag is available, and per-country overrides via `flagOverrides`.
 
 ### Personal Best Tracking
-- **Temporary PB Display**: Show your current attempt time with rainbow visual effects
-- **Real-time Updates**: Update manually your temporary PB during runs
-- **Intelligent Validation**: Only shows if you're in the selected category
-- **Visual Distinction**: Rainbow colors for temporary unvalidated PB, normal colors for official leaderboard positions
+- **Enhanced Temporary PB**: Show your run even when you're not on the loaded leaderboard (uses `playerName` and `playerCountry`)
+- **Rainbow Visual Effects**: Temporary PBs and recent official runs (< 5 days) display with rainbow colors
+- **Real-time Updates**: Manually update your temporary PB during runs via the PowerShell menu
+- **Smart Display**: Appears on a dedicated row at the bottom with your flag and name
+- **Easy Management**: Clear or update temp times anytime through the configuration script
 
 ### Game Support
 - **Full Games & Individual Levels**: Complete support for all game types
@@ -44,14 +45,17 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - **Global Accessibility**: Designed for the international speedrun community
 
 ### Display Features
-- **Overlay Rendering**: Smooth, simple graphics
-- **Animated Carousel**: Rotating display of additional leaderboard entries
-- **Country Flags**: Automatic flag display from flagcdn.com
+- **Overlay Rendering**: Smooth, high-quality graphics with canvas-based rendering
+- **Animated Carousel**: Rotating display of additional leaderboard entries with fade transitions
+- **Country Flags**: Automatic flag display from flagcdn.com with per-country override support
 - **Ranking Colors**: Gold/Silver/Bronze for top 3, blue-grey for others
+- **Recent PB Highlighting**: Rainbow effect for runs submitted in the last 5 days
 - **Tie Handling**: Same time = same rank
-- **Trophy Icons (Optional)**: Show 1st/2nd/3rd icons instead of numbers
-- **Smart Text Management**: Configurable player name length limits
-- **Responsive Layout**: Adapts to different display sizes
+- **Trophy Icons (Optional)**: Show 1st/2nd/3rd trophy icons instead of rank numbers
+- **Configurable Fonts**: Choose from 10 font families (Arial, Verdana, Times, etc.)
+- **Smart Name Display**: Marquee scrolling for long names with configurable width limits
+- **Flexible Rank Appearance**: Left/center/right alignment with dot (#) or hash (№) prefix
+- **Responsive Layout**: Adapts to different display sizes with configurable dimensions
 
 ### Intelligent Automation
 - **Player Validation**: Automatic verification against speedrun.com API
@@ -107,8 +111,9 @@ Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instruc
 1. Run `configure.ps1`
 2. Add your first preset
 3. Search for your game and select category
-4. (Optional) Set your player name - enables temporary PB feature
-5. (Optional) Change language anytime
+4. (Optional) Set your player name and country - enables enhanced temporary PB feature
+5. (Optional) Customize visual settings via "Set Visual Tweaks" menu
+6. (Optional) Change language anytime
 
 ### Managing Presets
 - **Create**: Add new presets for different games/categories
@@ -118,14 +123,15 @@ Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instruc
 - **Visual Indicator**: Green dot shows active preset
 
 ### Temporary PB System
-1. Access "My Temporary PB"
-2. Enter your current attempt time (e.g., `1:23.45`)
-3. Watch it display with rainbow effects on the leaderboard
-4. Clear when run is complete
+1. Set your `playerName` and `playerCountry` in the configuration (enables enhanced display)
+2. Access "My Temporary PB" menu
+3. Enter your current attempt time (e.g., `1:23.45`)
+4. Your PB displays with rainbow effects, even if you're not on the leaderboard
+5. Clear when run is complete or submit a new time
 
 ### OBS Integration
 - **Browser Source**: Local File → `leaderboard.html`
-- **Dimensions**: Width: 400px, Height: 250px
+- **Dimensions**: Configure in `config.json` (defaults: 700px × 300px)
 - **Refresh**: Not needed - updates automatically
 
 ---
@@ -138,16 +144,24 @@ Edit `config.json` for customization:
 ```json
 {
   "defaults": {
-    "topCount": 3,                    // Number of top positions always shown
-    "maxPlayerNameChars": 20,         // Character limit for player names
-      "maxRuns": 200,                   // Max runs fetched for carousel
-    "carouselInterval": 5000,         // Carousel rotation speed (ms)
-      "useTrophyIcons": false,          // Use trophy icons for top 3
-    "displayWidth": "900px",          // OBS Browser Source width
-    "displayHeight": "274px",         // OBS Browser Source height
-    "canvasWidth": 1200,              // Internal canvas resolution
-    "canvasHeight": 400,              // Internal canvas resolution
-    "runsPerBatch": 3                 // Carousel entries per rotation
+    "topCount": 3,                          // Number of top positions always shown
+    "timeFormat": "1:25:25.255",            // Time format: standard or "1h25m25s255ms"
+    "rankAlign": "center",                  // Rank alignment: "left", "center", or "right"
+    "rankPrefixMode": "dot",                // Rank prefix: "dot" (#) or "hash" (№)
+    "nameSpacing": 4,                       // Spacing between flag and player name
+    "pbSeparatorWidth": 320,                // Width of the PB separator line
+    "rainbowIntensity": 90,                 // Rainbow effect intensity for recent PBs (0-100)
+    "CAROUSEL_DISPLAY_DURATION": 1000,      // Display duration per carousel entry (ms)
+    "useTrophyIcons": true,                 // Use trophy icons for top 3 positions
+    "displayHeight": "300px",               // OBS Browser Source height
+    "canvasHeight": 300,                    // Internal canvas resolution height
+    "carouselInterval": 6000,               // Total carousel rotation cycle (ms)
+    "displayWidth": "700px",                // OBS Browser Source width
+    "canvasWidth": 300,                     // Internal canvas resolution width
+    "runsPerBatch": 4,                      // Carousel entries per rotation
+    "maxRuns": 200,                         // Max runs fetched for carousel
+    "fontStyle": "Arial",                   // Font family for all text
+    "maxNameWidthVisible": 18               // Max visible name width (characters) before marquee
   }
 }
 ```
@@ -166,11 +180,15 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 ```
 
 ### Display Customization
-- **Overlay Dimensions**: Adjust `canvasWidth`/`canvasHeight` for resolution
+- **Overlay Dimensions**: Adjust `canvasWidth`/`canvasHeight` for internal resolution
 - **OBS Dimensions**: Modify `displayWidth`/`displayHeight` for browser source
-- **Text Limits**: Change `maxPlayerNameChars` for name truncation
-- **Carousel Speed**: Adjust `carouselInterval` for rotation timing
+- **Name Display**: Change `maxNameWidthVisible` for name width before marquee scrolling
+- **Font Style**: Set `fontStyle` to choose from 10 available font families
+- **Rank Appearance**: Configure `rankAlign` (left/center/right) and `rankPrefixMode` (dot/hash)
+- **Carousel Speed**: Adjust `carouselInterval` for total rotation cycle
+- **Carousel Display**: Set `CAROUSEL_DISPLAY_DURATION` for per-entry duration
 - **Batch Size**: Modify `runsPerBatch` for entries per carousel page
+- **Visual Effects**: Adjust `rainbowIntensity` for recent PB highlighting (0-100)
 
 ### Color Scheme
 - **1st Place**: Gold (#FFD700)
@@ -190,16 +208,23 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 - **Mixed Formats**: Supports both timed categories and score-based
 
 ### Time Format Support
+**Display Formats** (configurable via `defaults.timeFormat`):
+- **Standard**: `1:25:25.255` (hours:minutes:seconds.milliseconds)
+- **Alternative**: `1h25m25s255ms` (with unit labels)
+
+**Input Formats** (for temporary PB entry):
 - **Standard**: `1:23:45` (hours:minutes:seconds)
 - **Short**: `1:23` (minutes:seconds)
 - **Decimal**: `82.5` (seconds with decimals)
 - **Millisecond**: `1:22.123` (with millisecond precision)
 
 ### Player Features
-- **Smart Validation**: Verifies usernames against speedrun.com
-- **Position Display**: Shows your rank at the bottom on a separate row when outside top 3
-- **Country Detection**: Automatic flag display
-- **Name Handling**: Intelligent truncation with visual indicators
+- **Enhanced Temporary PB**: Shows your run even when you're not on the loaded leaderboard (uses `playerName` and `playerCountry`)
+- **Recent PB Highlighting**: Runs submitted in the last 5 days get rainbow-colored highlighting
+- **Position Display**: Shows your official rank at the bottom on a separate row when outside top positions
+- **Smart Name Rendering**: Marquee scrolling for long names with configurable width limits
+- **Country Detection**: Automatic flag display with override support
+- **Player Validation**: Verifies usernames against speedrun.com API
 
 ---
 
@@ -220,10 +245,10 @@ Solution: Some games have complex structures, verify category exists on website
 Solution: Requires internet connection, flags load from flagcdn.com
 
 **Temporary PB not showing**  
-Solution: Ensure player name matches speedrun.com username exactly
+Solution: Ensure `playerName` and `playerCountry` are set in config.json for enhanced temporary PB display
 
 **Carousel not working**  
-Solution: Check if enough entries exist beyond top 3 positions
+Solution: Check if enough entries exist beyond the `topCount` setting (e.g., if topCount=3, need 4+ runs total)
 
 ### Error Messages
 
@@ -275,47 +300,54 @@ leaderboard/
 
 ---
 
-**Speedrun leaderboard solution by karlitto__**
-- **Configurable fetch limit** via defaults.maxRuns (default: 200)
-- **URL parameters** to override settings
-- **Responsive** and transparent (perfect for Twitch streams)
-- **Optional player line** at the bottom (your position)
-
 ## How it works
 
 The **"config.json"** file contains **presets** for different games/categories:
 
 ```json
-"playerName": "Karlitto",
-"presets": {
-   "elden-any-glitchless": {
+{
+  "playerName": "Xeill",
+  "playerCountry": "US",
+  "activePreset": "elde-any-glitchless",
+  "language": "en",
+  "presets": {
+    "elde-any-glitchless": {
+      "name": "Elden Ring - Any% Glitchless",
       "gameId": "nd28z0ed",
       "category": "Any%",
       "subcategory": "Glitchless",
-      "subcategories": [
-         { "variableId": "7891zr5n", "valueId": "qj740p3q", "label": "Glitchless" }
-      ]
-   },
-   "celeste-level": {
+      "subcategories": {
+        "variableId": "7891zr5n",
+        "valueId": "qj740p3q",
+        "label": "Glitchless"
+      }
+    },
+    "celeste-resort": {
+      "name": "Celeste - Celestial Resort",
       "gameId": "o1y9j9v6",
       "levelId": "r9g4k7p9",
       "levelName": "Celestial Resort",
-      "category": "Collectibles",
-      "subcategory": "Full Clear"
-   }
+      "category": "Any%",
+      "subcategory": ""
+    }
+  },
+  "temporaryRun": {
+    "active": true,
+    "time": "55:05"
+  },
+  "defaults": { /* visual settings */ },
+  "flagOverrides": { /* country code mappings */ }
 }
 ```
 
-You can access a preset like this:
-- **Default**: leaderboard.html (uses the first preset)
-- **With specific preset**: leaderboard.html?preset=elden-100
+The overlay automatically uses the `activePreset` from the configuration.
 
 ## Adding a Game
 
 **Recommended method**: Use the configure.ps1 script!
 
 1. **Double-click** on configure.ps1
-2. **Choose language** (Option 6) if needed
+2. **Choose language** if needed (via "Change Language" menu option)
 3. **Select** "Add new preset"
 4. **Follow** the automatic wizard
 
@@ -337,13 +369,21 @@ See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screen
 - **Chinese: How to add a game?** → [QUICK_START_ZH.md](QUICK_START_ZH.md)
 
 ### Configuration
-- **Detailed configuration?** → See comments in config.json
-- **Multilingual interface** → Option 6 in the script menu
+- **Visual customization** → Use "Set Visual Tweaks" menu in configure.ps1
+- **Multilingual interface** → "Change Language" menu option
+- **Advanced settings** → Edit defaults in config.json (see Basic Settings section)
 - **Runs fetched** → defaults.maxRuns (default: 200)
 
 ## Customizing Appearance
 
-Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them directly to match your branding!
+**Recommended method**: Use the **Visual Tweaks** menu in `configure.ps1`!
+
+1. **Run** configure.ps1
+2. **Select** "Set Visual Tweaks" from the menu
+3. **Configure** layout, fonts, spacing, effects, flags/trophies, and carousel settings
+4. **Changes** are saved automatically to `config.json`
+
+**Advanced method**: Edit the `DRAW` constants section in `leaderboard.html` directly for fine-tuned control over colors, spacing, and positioning.
 
 ## Help
 
@@ -360,7 +400,7 @@ Colors, fonts, and layout are defined in the DRAW section of the HTML. Edit them
 - Or: Open PowerShell 7 directly and run: `cd <folder>; .\configure.ps1`
 
 **The carousel doesn't scroll?**  
-→ Check that there are more runs than the topCount
+→ Check that there are more runs than the `topCount` setting (default: 3)
 
 **No runs appear?**  
 → Verify the gameId, category, and subcategory (case sensitive!)
