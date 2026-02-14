@@ -34,6 +34,12 @@
     let TOP_COUNT;
     let MAX_RUNS;
     let FLAG_OVERRIDES;
+    let USE_TROPHY_ICONS = false;
+
+    // Trophy icon URLs (loaded from game assets)
+    let TROPHY_1ST_URL = null;
+    let TROPHY_2ND_URL = null;
+    let TROPHY_3RD_URL = null;
 
     async function loadConfig() {
       try {
@@ -84,6 +90,7 @@
         TOP_COUNT = defaults.topCount;
         MAX_RUNS = Number.isFinite(defaults.maxRuns) ? defaults.maxRuns : 200;
         MAX_PLAYER_NAME_CHARS = defaults.maxPlayerNameChars || 14;
+        USE_TROPHY_ICONS = defaults.useTrophyIcons === true;
 
         // Mettre a jour le titre
         document.title = preset.name + ': Top ' + TOP_COUNT + ' (Overlay)';
@@ -108,8 +115,8 @@
 
     // Drawing constants
     const DRAW = {
-      FLAG: { w: 20, h: 15, yOffset: 14, radius: 5 },
-      MEDAL: { w: 15, h: 15, yOffset: 14, spacing: 2 },
+      FLAG: { w: 20, h: 15, yOffset: 13, radius: 5 },
+      TROPHY: { w: 20, h: 20, yOffset: 16, radius: 4 }, // Trophy icon dimensions
       LAYOUT: { padX: 12, startY: 30, rowH: 24 },
       FONT_BASE: '700 18px Arial, sans-serif',
       FONT_MONO: '700 18px Arial, sans-serif, SFMono-Regular, Menlo, Consolas, "Liberation Mono"',
@@ -119,7 +126,8 @@
 
     // Image caches
     const imageCache = {
-      flags: new Map()
+      flags: new Map(),
+      trophies: new Map()
     };
 
     // État du carousel
@@ -140,23 +148,22 @@
       
       return new Promise((resolve) => {
         const img = new Image();
-        img.crossOrigin = 'anonymous';
-        
+
         const timeoutId = setTimeout(() => {
           resolve(null);
         }, timeout);
-        
+
         img.onload = () => {
           clearTimeout(timeoutId);
           cache.set(url, img);
           resolve(img);
         };
-        
+
         img.onerror = () => {
           clearTimeout(timeoutId);
           resolve(null);
         };
-        
+
         img.src = url;
       });
     }
@@ -165,6 +172,11 @@
       if (!code) return Promise.resolve(null);
       const url = `https://flagcdn.com/w40/${code.toLowerCase()}.png`;
       return loadImage(url, imageCache.flags);
+    }
+
+    function loadTrophyImage(url) {
+      if (!url) return Promise.resolve(null);
+      return loadImage(url, imageCache.trophies);
     }
 
     function normalizeCountry(code) {
@@ -322,13 +334,13 @@
       const phaseBase = (Date.now() / 30) % 360;
       const { padX, startY, rowH } = DRAW.LAYOUT;
       const colRank = padX;
-      const timeX = 350; // Right aligned
+      const timeX = Math.min(350, canvas.clientWidth - padX); // Right aligned
 
       for (let i = 0; i < allDisplay.length; i++) {
         const r = allDisplay[i];
         const y = startY + i * rowH;
         const isTemporary = !!r.isTemporary;
-        const color = getRankColor(i);
+        const color = getRankColor(r.rank - 1);  // Use actual rank for color (supports ties)
 
         // Apply fade only to carousel rows (rows 3-7, indices 3-7)
         const isCarouselRow = i >= TOP_COUNT;
@@ -337,23 +349,35 @@
           ctx.globalAlpha = fadeProgress;
         }
 
-        // Draw rank number
-        ctx.fillStyle = color;
-        ctx.textAlign = 'left';
-        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
-        if (isTemporary) {
-          applyRainbowText(colRank, y, rankText, phaseBase + i * 12);
-          ctx.fillText(rankText, colRank, y);
+        // Draw rank (trophy for top 3, # + number for others)
+        if (USE_TROPHY_ICONS && r.trophyImg && r.rank >= 1 && r.rank <= 3) {
+          // Draw trophy icon for top 3 (centered in rank column)
+          drawRoundedImage(
+            r.trophyImg,
+            colRank + (fixedMaxRankW - DRAW.TROPHY.w) / 2,
+            y - DRAW.TROPHY.yOffset,
+            DRAW.TROPHY.w,
+            DRAW.TROPHY.h,
+            DRAW.TROPHY.radius  // slight rounding
+          );
         } else {
-          ctx.fillText(rankText, colRank, y);
+          // Draw number right-aligned
+          const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
+          ctx.textAlign = 'right';
+          if (isTemporary) {
+            applyRainbowText(colRank + fixedMaxRankW - ctx.measureText(rankText).width, y, rankText, phaseBase + i * 12);
+          } else {
+            ctx.fillStyle = color;
+          }
+          ctx.fillText(rankText, colRank + fixedMaxRankW, y);
         }
 
         // Draw flag + name
         let x = colRank + fixedMaxRankW + 3;
         if (r.flagImg) {
           drawRoundedImage(r.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-          x += DRAW.FLAG.w + 4;
         }
+        x += DRAW.FLAG.w + 4; // Keep space even when there is no flag, to make names aligned.
 
         const displayName = truncatePlayer(isTemporary ? `PB - ${r.player}` : r.player);
         ctx.fillStyle = color;
@@ -398,28 +422,41 @@
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        const lineStartX = padX;
+        const lineStartX = padX + 6;
         const lineEndX = Math.min(timeX - 6, canvas.clientWidth - padX);
         ctx.moveTo(lineStartX, lineY);
         ctx.lineTo(lineEndX, lineY);
         ctx.stroke();
         ctx.restore();
 
-        ctx.textAlign = 'left';
-        const rankText = (typeof playerRow.rank === 'number' && playerRow.rank > 0) ? `${playerRow.rank}.` : `${playerRow.rank}`;
-        if (isTemporary) {
-          applyRainbowText(colRank, y, rankText, phase);
-          ctx.fillText(rankText, colRank, y);
+        // Draw rank (trophy for top 3, # + number for others)
+        if (USE_TROPHY_ICONS && playerRow.trophyImg && playerRow.rank >= 1 && playerRow.rank <= 3) {
+          // Draw trophy icon for top 3 (centered in rank column)
+          drawRoundedImage(
+            playerRow.trophyImg,
+            colRank + (fixedMaxRankW - DRAW.TROPHY.w) / 2,
+            y - DRAW.TROPHY.yOffset,
+            DRAW.TROPHY.w,
+            DRAW.TROPHY.h,
+            4
+          );
         } else {
-          ctx.fillStyle = DRAW.COLORS.other;
-          ctx.fillText(rankText, colRank, y);
+          // Draw number right-aligned
+          const rankText = (typeof playerRow.rank === 'number' && playerRow.rank > 0) ? `${playerRow.rank}.` : `${playerRow.rank}`;
+          ctx.textAlign = 'right';
+          if (isTemporary) {
+            applyRainbowText(colRank + fixedMaxRankW - ctx.measureText(rankText).width, y, rankText, phase);
+          } else {
+            ctx.fillStyle = DRAW.COLORS.other;
+          }
+          ctx.fillText(rankText, colRank + fixedMaxRankW, y);
         }
 
         let x = colRank + fixedMaxRankW + 3;
         if (playerRow.flagImg) {
           drawRoundedImage(playerRow.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-          x += DRAW.FLAG.w + 4;
         }
+        x += DRAW.FLAG.w + 4; // Keep space even when there is no flag, to make names aligned.
 
         const displayName = truncatePlayer(isTemporary ? `PB - ${playerRow.player}` : playerRow.player);
         if (isTemporary) {
@@ -548,19 +585,22 @@
 
     function calculateColumnWidths(allRuns, playerRow) {
       ctx.font = DRAW.FONT_BASE;
-      
+
       let maxRankW = 0;
       let maxNameBlock = 0;
+      const trophyWidth = DRAW.TROPHY.w;  // Width for trophy icons
 
       const widthRuns = playerRow ? [...allRuns, playerRow] : allRuns;
       for (const r of widthRuns) {
-        // Largeur du numero de rang
-        const isNumericRank = typeof r.rank === 'number' && r.rank >= 1 && r.rank <= 3;
-        const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
-        const rankW = isNumericRank
-          ? (DRAW.MEDAL.w + DRAW.MEDAL.spacing)
-          : ctx.measureText(rankText).width;
-        maxRankW = Math.max(maxRankW, rankW);
+        // Trophy takes fixed width for top 3
+        if (r.rank >= 1 && r.rank <= 3 && USE_TROPHY_ICONS) {
+          maxRankW = Math.max(maxRankW, trophyWidth);
+        } else {
+          // Text width for rank 4+
+          const rankText = (typeof r.rank === 'number' && r.rank > 0) ? `${r.rank}.` : `${r.rank}`;
+          const numberW = ctx.measureText(rankText).width;
+          maxRankW = Math.max(maxRankW, numberW);
+        }
 
         // Largeur du bloc nom (drapeau + nom tronque)
         const flagW = r.flagImg ? DRAW.FLAG.w + 4 : 0;
@@ -569,7 +609,8 @@
         maxNameBlock = Math.max(maxNameBlock, flagW + nameW);
       }
 
-      fixedMaxRankW = maxRankW;
+      // Total rank width: max of trophy width OR number width
+      fixedMaxRankW = Math.max(trophyWidth, maxRankW);
       fixedMaxNameBlock = maxNameBlock;
     }
 
@@ -580,10 +621,11 @@
         // Build leaderboard URL
         let lbUrl;
         const limit = Math.max(TOP_COUNT, MAX_RUNS || 0);
+        const embedParams = USE_TROPHY_ICONS ? 'game,players' : 'players';
         if (LEVEL_ID) {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?top=${limit}&embed=players`;
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?top=${limit}&embed=${embedParams}`;
         } else {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=${limit}&embed=players`;
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=${limit}&embed=${embedParams}`;
         }
         if (Array.isArray(variablePairs) && variablePairs.length > 0) {
           for (const pair of variablePairs) {
@@ -594,6 +636,14 @@
         }
         
         const lb = await fetchJSON(lbUrl);
+
+        // Extract trophy URLs from embedded game data (only if trophy icons enabled)
+        if (USE_TROPHY_ICONS && lb.data.game?.data?.assets) {
+          const assets = lb.data.game.data.assets;
+          TROPHY_1ST_URL = assets['trophy-1st']?.uri || null;
+          TROPHY_2ND_URL = assets['trophy-2nd']?.uri || null;
+          TROPHY_3RD_URL = assets['trophy-3rd']?.uri || null;
+        }
 
         // Construire la carte des joueurs
         const playerMap = new Map();
@@ -656,19 +706,30 @@
           }
         }
 
-        const sortedRuns = allRuns
+        let sortedRuns = allRuns
           .map((r, idx) => ({ ...r, _idx: idx }))
           .sort((a, b) => {
             const aTime = Number.isFinite(a.timeSeconds) ? a.timeSeconds : Number.POSITIVE_INFINITY;
             const bTime = Number.isFinite(b.timeSeconds) ? b.timeSeconds : Number.POSITIVE_INFINITY;
             if (aTime !== bTime) return aTime - bTime;
             return a._idx - b._idx;
-          })
-          .map((r, idx) => {
-            const copy = { ...r, rank: idx + 1 };
-            delete copy._idx;
-            return copy;
           });
+
+        // Assign ranks with tie handling (same time = same rank)
+        let lastTime = null;
+        let lastRank = 0;
+        sortedRuns = sortedRuns.map((r, idx) => {
+          const copy = { ...r };
+          delete copy._idx;
+          if (r.timeSeconds === lastTime) {
+            copy.rank = lastRank;
+          } else {
+            copy.rank = idx + 1;
+            lastRank = copy.rank;
+            lastTime = r.timeSeconds;
+          }
+          return copy;
+        });
 
         let playerRow = null;
         if (PLAYER_NAME) {
@@ -699,16 +760,33 @@
         }
         console.log(`Drapeaux charges : ${countryCodes.length}`);
 
+        // Load trophy images (only if trophy icons enabled)
+        let trophyMap = { 1: null, 2: null, 3: null };
+        if (USE_TROPHY_ICONS) {
+          const trophyUrls = [TROPHY_1ST_URL, TROPHY_2ND_URL, TROPHY_3RD_URL].filter(Boolean);
+          await Promise.allSettled(trophyUrls.map(url => loadTrophyImage(url)));
+          console.log(`Trophy images loaded: ${trophyUrls.length}`);
+
+          // Build trophy image map
+          trophyMap = {
+            1: TROPHY_1ST_URL ? imageCache.trophies.get(TROPHY_1ST_URL) : null,
+            2: TROPHY_2ND_URL ? imageCache.trophies.get(TROPHY_2ND_URL) : null,
+            3: TROPHY_3RD_URL ? imageCache.trophies.get(TROPHY_3RD_URL) : null
+          };
+        }
+
         const processRuns = (runs) => runs.map(r => ({
           ...r,
-          flagImg: flagMap.get(r.country) || null
+          flagImg: flagMap.get(r.country) || null,
+          trophyImg: trophyMap[r.rank] || null  // Add trophy image for top 3
         }));
 
         const processedTop = processRuns(topRuns);
         carouselRuns = processRuns(carouselRuns);
         const processedPlayerRow = playerRow ? {
           ...playerRow,
-          flagImg: flagMap.get(playerRow.country) || null
+          flagImg: flagMap.get(playerRow.country) || null,
+          trophyImg: trophyMap[playerRow.rank] || null
         } : null;
 
         // Stocker pour le carousel

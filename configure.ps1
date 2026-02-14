@@ -898,19 +898,21 @@ function Initialize-Config {
   }
 
   if (-not $config.defaults) {
-      $defaults = @{
-        carouselInterval = 5000
-        runsPerBatch = 3
-        topCount = 3
-        canvasWidth = 1200
-        canvasHeight = 400
-        displayWidth = "900px"
-        displayHeight = "274px"
-        maxPlayerNameChars = 14
+    $defaults = @{
+      carouselInterval = 5000
+      runsPerBatch = 3
+      maxRuns = 200
+      topCount = 3
+      canvasWidth = 1200
+      canvasHeight = 400
+      displayWidth = "900px"
+      displayHeight = "274px"
+      maxPlayerNameChars = 14
       CAROUSEL_DISPLAY_DURATION = 10000
       API_CALL_INTERVAL = 30000
       FLAGS_API_ENABLED = $true
       DISPLAY_COUNTRY_FLAGS = $true
+      useTrophyIcons = $false
     }
     if ($config.GetType().Name -eq "PSCustomObject") {
       $config | Add-Member -MemberType NoteProperty -Name "defaults" -Value $defaults -Force
