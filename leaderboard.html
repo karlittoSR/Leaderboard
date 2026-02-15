@@ -114,6 +114,9 @@
         const rainbowValue = Number(defaults.rainbowIntensity);
         RAINBOW_INTENSITY = Number.isFinite(rainbowValue) ? Math.min(100, Math.max(0, rainbowValue)) : 50;
 
+        // Initialize rainbow colors table
+        initRainbowColors();
+
         // Apply Font Style
         const fontStyle = defaults.fontStyle || 'Arial';
         const fontMap = {
@@ -167,8 +170,14 @@
       const actualWidth = Math.min(PREFERRED_WIDTH, availableWidth);
       const actualHeight = Math.min(PREFERRED_HEIGHT, availableHeight);
 
+      // Set CSS size
       canvas.style.width = actualWidth + 'px';
       canvas.style.height = actualHeight + 'px';
+
+      // Set pixel size (considering device pixel ratio for crisp rendering)
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(actualWidth * dpr);
+      canvas.height = Math.floor(actualHeight * dpr);
     }
 
     // === Overlay Setup ===
@@ -191,6 +200,45 @@
       flags: new Map(),
       trophies: new Map()
     };
+
+    // Text measurement cache (array for fast access by row index)
+    const measureCache = [];
+
+    // Precomputed rainbow colors (360 hues)
+    let rainbowColors = [];
+    let rainbowSaturation = 0;
+
+    // HSL to RGB conversion (needed for rainbow colors)
+    function hslToRgb(h, s, l) {
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+
+      if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+      else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+      else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+      else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+      else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+      else { r = c; g = 0; b = x; }
+
+      const rr = Math.round((r + m) * 255);
+      const gg = Math.round((g + m) * 255);
+      const bb = Math.round((b + m) * 255);
+      return `rgb(${rr}, ${gg}, ${bb})`;
+    }
+
+    // Precompute rainbow colors table
+    function initRainbowColors() {
+      const intensity = Math.min(1, Math.max(0, RAINBOW_INTENSITY / 100));
+      const saturation = 0.15 + (0.85 * intensity);
+      rainbowSaturation = saturation;
+
+      rainbowColors = new Array(360);
+      for (let h = 0; h < 360; h++) {
+        rainbowColors[h] = hslToRgb(h, saturation, 0.7);
+      }
+    }
 
     // Carousel state
     let carouselPage = 0;
@@ -390,16 +438,15 @@
 
     function drawScrollingText(ctx, text, x, y, maxWidth, style, isTemporary, rainbowPhase, fontBase) {
       if (!text) return;
-      
-      ctx.save();
-      if (fontBase) ctx.font = fontBase;
+
+      // Measure text width
+      ctx.font = fontBase || DRAW.FONT_BASE;
       const textWidth = ctx.measureText(text).width;
-      ctx.restore();
-      
+
       // If text fits, draw normally
       if (textWidth <= maxWidth) {
         if (isTemporary) {
-          applyRainbowText(x, y, text, rainbowPhase);
+          applyRainbowText(rainbowPhase);
           ctx.textAlign = 'left';
           ctx.fillText(text, x, y);
         } else {
@@ -417,25 +464,24 @@
       const loopDist = textWidth + gap;
       const totalTime = (loopDist / speed) * 1000;
       const offset = (Date.now() % totalTime) / totalTime * loopDist;
-      
+
       ctx.save();
-      if (fontBase) ctx.font = fontBase;
       ctx.beginPath();
       // Clip rectangle: x, y-ascent, width, height
       // Assuming font size ~18px, baseline at y. extend up 18 and down 6
-      ctx.rect(x, y - 18, maxWidth, 26); 
+      ctx.rect(x, y - 18, maxWidth, 26);
       ctx.clip();
-      
+
       const drawInstance = (currentX) => {
          if (isTemporary) {
-             applyRainbowText(currentX, y, text, rainbowPhase);
+             applyRainbowText(rainbowPhase);
              ctx.textAlign = 'left';
              ctx.fillText(text, currentX, y);
          } else {
-             // For gradient, we need to regenerate execution relative to currentX if desired, 
+             // For gradient, we need to regenerate execution relative to currentX if desired,
              // but applyTextStyle uses ctx.createLinearGradient(x, ... x+width).
              // We should pass currentX to applyTextStyle.
-             
+
              ctx.fillStyle = DRAW.COLORS.other;
              applyTextStyle(currentX, y, text, style);
              ctx.textAlign = 'left';
@@ -448,7 +494,7 @@
       drawInstance(x - offset);
       // Instance 2
       drawInstance(x - offset + loopDist);
-      
+
       ctx.restore();
     }
 
@@ -470,30 +516,9 @@
       ctx.fillStyle = '#e2e8f0';
     }
 
-    function hslToRgb(h, s, l) {
-      const c = (1 - Math.abs(2 * l - 1)) * s;
-      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-      const m = l - c / 2;
-      let r = 0, g = 0, b = 0;
-
-      if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
-      else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
-      else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
-      else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
-      else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
-      else { r = c; g = 0; b = x; }
-
-      const rr = Math.round((r + m) * 255);
-      const gg = Math.round((g + m) * 255);
-      const bb = Math.round((b + m) * 255);
-      return `rgb(${rr}, ${gg}, ${bb})`;
-    }
-
-    function applyRainbowText(x, y, text, phase, alpha = 1) {
-      const hue = phase % 360;
-      const intensity = Math.min(1, Math.max(0, RAINBOW_INTENSITY / 100));
-      const saturation = 0.15 + (0.85 * intensity);
-      ctx.fillStyle = hslToRgb(hue, saturation, 0.7);
+    function applyRainbowText(phase) {
+      const hue = Math.floor(phase % 360);
+      ctx.fillStyle = rainbowColors[hue];
     }
 
     function getRankTextAlign() {
@@ -514,12 +539,47 @@
       return colRank + fixedMaxRankW - iconWidth;
     }
 
+    // Measure text and cache by index (row number)
+    function measureAndCache(text, font, cache, idx) {
+      ctx.font = font;
+      const width = ctx.measureText(text).width;
+      if (!cache[idx]) cache[idx] = {};
+      cache[idx][font] = width;
+      return width;
+    }
+
+    // Get cached measurement or compute if not exists
+    function getCachedMeasure(cache, idx, font) {
+      return cache[idx]?.[font];
+    }
+
+    // Precompute render properties for a run (called once when data loads)
+    function precomputeRunRenderProps(run, idx) {
+      const rankText = typeof run.rank === 'number' && run.rank > 0
+        ? (RANK_PREFIX_MODE === 'hash' ? `#${run.rank}` : `${run.rank}.`)
+        : `${run.rank}`;
+
+      // Measure and cache by row index
+      const rankTextWidth = measureAndCache(rankText, DRAW.FONT_BASE, measureCache, idx);
+      const timeWidth = measureAndCache(run.time, DRAW.FONT_MONO, measureCache, idx);
+
+      return {
+        ...run,
+        rankText,
+        rankTextWidth,
+        timeWidth,
+        rowIdx: idx,
+        isRecent: isRunRecent(run.submitted)
+      };
+    }
+
     // === Draw ===
     function draw(topRuns, carouselBatch, fadeProgress = 1, playerRow = null) {
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(canvas.clientWidth * dpr);
-      canvas.height = Math.floor(canvas.clientHeight * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Clear canvas for new frame
+      ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
       ctx.shadowColor = DRAW.SHADOW.color;
       ctx.shadowBlur = DRAW.SHADOW.blur;
@@ -539,7 +599,7 @@
         // Reset font to base for each row
         ctx.font = DRAW.FONT_BASE;
         const isTemporary = !!r.isTemporary;
-        const isRecent = isRunRecent(r.submitted);
+        const isRecent = r.isRecent;  // Use precomputed value
         const useRainbow = isTemporary || isRecent;
         const color = getRankColor(r.rank - 1);  // Use actual rank for color (supports ties)
 
@@ -562,11 +622,8 @@
             DRAW.TROPHY.radius  // slight rounding
           );
         } else {
-          // Draw number right-aligned
-          let rankText = `${r.rank}`;
-          if (typeof r.rank === 'number' && r.rank > 0) {
-            rankText = (RANK_PREFIX_MODE === 'hash') ? `#${r.rank}` : `${r.rank}.`;
-          }
+          // Draw number right-aligned - use precomputed rankText
+          const rankText = r.rankText;
           const rankX = getRankTextX(colRank);
           ctx.textAlign = getRankTextAlign();
           if (useRainbow) {
@@ -595,11 +652,9 @@
         // Calculate available width for name using the configured maxNameWidthVisible
         // Use fixedMaxNameBlock (which we calculated using MAX_PLAYER_NAME_CHARS) as the base constraint
         // But also ensure we don't overlap time (responsive shrinking is still okay)
-        
-        ctx.save();
-        ctx.font = DRAW.FONT_MONO;
-        const timeWidth = ctx.measureText(r.time).width;
-        ctx.restore();
+
+        // Use precomputed timeWidth instead of measuring each frame
+        const timeWidth = r.timeWidth;
 
         // The maximum standard width allowed by configuration (excluding flag width part of fixedMaxNameBlock)
         // fixedMaxNameBlock includes flag width + name, so we subtract flag width to get "max configured name width"
@@ -618,10 +673,10 @@
         // Draw time (right-aligned)
         ctx.font = DRAW.FONT_MONO;
         ctx.fillStyle = color;
-        
+
         ctx.textAlign = 'right';
         if (useRainbow) {
-          applyRainbowText(timeX - ctx.measureText(r.time).width, y, r.time, phaseBase + 80 + i * 12);
+          applyRainbowText(timeX - timeWidth, y, r.time, phaseBase + 80 + i * 12);
           ctx.fillText(r.time, timeX, y);
         } else {
           ctx.fillText(r.time, timeX, y);
@@ -635,9 +690,8 @@
         const canvasH = canvas.clientHeight;
         const desiredY = startY + allDisplay.length * rowH + gap;
         const y = Math.min(desiredY, canvasH - rowH);
-        const phase = (Date.now() / 30) % 360;
         const isTemporary = !!playerRow.isTemporary;
-        const isRecent = isRunRecent(playerRow.submitted);
+        const isRecent = playerRow.isRecent;  // Use precomputed value
         const useRainbow = isTemporary || isRecent;
 
         // Separator line instead of an empty gap
@@ -678,15 +732,12 @@
             4
           );
         } else {
-          // Draw number right-aligned
-          let rankText = `${playerRow.rank}`;
-          if (typeof playerRow.rank === 'number' && playerRow.rank > 0) {
-            rankText = (RANK_PREFIX_MODE === 'hash') ? `#${playerRow.rank}` : `${playerRow.rank}.`;
-          }
+          // Draw number right-aligned - use precomputed rankText
+          const rankText = playerRow.rankText;
           const rankX = getRankTextX(colRank);
           ctx.textAlign = getRankTextAlign();
           if (useRainbow) {
-            applyRainbowText(rankX, y, rankText, phase);
+            applyRainbowText(rankX, y, rankText, phaseBase);
           } else {
             ctx.fillStyle = DRAW.COLORS.other;
           }
@@ -699,7 +750,7 @@
         } else {
            // Default flag (Globe)
            ctx.save();
-           ctx.font = '16px sans-serif'; 
+           ctx.font = '16px sans-serif';
            ctx.textAlign = 'center';
            ctx.textBaseline = 'middle';
            ctx.fillText('🌎', x + DRAW.FLAG.w / 2, y - 6);
@@ -710,11 +761,9 @@
         // Calculate available width for name using the configured maxNameWidthVisible
         // Use fixedMaxNameBlock (which we calculated using MAX_PLAYER_NAME_CHARS) as the base constraint
         // But also ensure we don't overlap time (responsive shrinking is still okay)
-        
-        ctx.save();
-        ctx.font = DRAW.FONT_MONO;
-        const timeWidth = ctx.measureText(playerRow.time).width;
-        ctx.restore();
+
+        // Use precomputed timeWidth instead of measuring each frame
+        const timeWidth = playerRow.timeWidth;
 
         // The maximum standard width allowed by configuration
         const currentFlagW = DRAW.FLAG.w + NAME_SPACING;
@@ -727,12 +776,12 @@
         const availableWidth = Math.min(configuredMaxNameWidth, screenSpaceAvailable);
 
         const rawName = isTemporary ? `PB - ${playerRow.player}` : playerRow.player;
-        drawScrollingText(ctx, rawName, x, y, availableWidth, playerRow.nameStyle, useRainbow, phase + 40, DRAW.FONT_BASE);
+        drawScrollingText(ctx, rawName, x, y, availableWidth, playerRow.nameStyle, useRainbow, phaseBase + 40, DRAW.FONT_BASE);
 
         ctx.font = DRAW.FONT_MONO;
         ctx.textAlign = 'right';
         if (useRainbow) {
-          applyRainbowText(timeX - ctx.measureText(playerRow.time).width, y, playerRow.time, phase + 80);
+          applyRainbowText(timeX - timeWidth, y, playerRow.time, phaseBase + 80);
           ctx.fillText(playerRow.time, timeX, y);
         } else {
           ctx.fillStyle = DRAW.COLORS.other;
@@ -844,28 +893,31 @@
 
     function calculateColumnWidths(allRuns, playerRow) {
       ctx.font = DRAW.FONT_BASE;
-
       let maxRankW = 0;
       let maxNameBlock = 0;
       const trophyWidth = DRAW.TROPHY.w;  // Width for trophy icons
 
       const widthRuns = playerRow ? [...allRuns, playerRow] : allRuns;
-      for (const r of widthRuns) {
+      for (let i = 0; i < widthRuns.length; i++) {
+        const r = widthRuns[i];
         // Trophy takes fixed width for top 3
         if (r.rank >= 1 && r.rank <= 3 && USE_TROPHY_ICONS) {
           maxRankW = Math.max(maxRankW, trophyWidth);
         } else {
-          // Text width for rank 4+
-          let rankText = `${r.rank}`;
-          if (typeof r.rank === 'number' && r.rank > 0) {
-            rankText = (RANK_PREFIX_MODE === 'hash') ? `#${r.rank}` : `${r.rank}.`;
+          // Calculate rank text and width
+          const rankText = r.rankText || (typeof r.rank === 'number' && r.rank > 0
+            ? (RANK_PREFIX_MODE === 'hash' ? `#${r.rank}` : `${r.rank}.`)
+            : `${r.rank}`);
+          // Use cached value if available (for precomputed runs)
+          let numberW = getCachedMeasure(measureCache, r.rowIdx, DRAW.FONT_BASE);
+          if (numberW === undefined) {
+            numberW = ctx.measureText(rankText).width;
           }
-          const numberW = ctx.measureText(rankText).width;
           maxRankW = Math.max(maxRankW, numberW);
         }
 
         // Name block width (flag + truncated name)
-        const flagW = r.flagImg ? DRAW.FLAG.w + NAME_SPACING : 0;
+        const flagW = DRAW.FLAG.w + NAME_SPACING;  // Always account for flag space
         const truncatedName = truncatePlayer(r.player);
         const nameW = ctx.measureText(truncatedName).width;
         maxNameBlock = Math.max(maxNameBlock, flagW + nameW);
@@ -876,7 +928,7 @@
       const configuredMaxWidth = ctx.measureText(configuredMaxName).width;
       const maxFlagW = DRAW.FLAG.w + NAME_SPACING;
       const minConfiguredBlock = maxFlagW + configuredMaxWidth;
-      
+
       // Use the larger of actual data width or configured minimum width
       maxNameBlock = Math.max(maxNameBlock, minConfiguredBlock);
 
@@ -1060,19 +1112,26 @@
           };
         }
 
-        const processRuns = (runs) => runs.map(r => ({
-          ...r,
-          flagImg: flagMap.get(r.country) || null,
-          trophyImg: trophyMap[r.rank] || null  // Add trophy image for top 3
-        }));
+        // Clear measurement cache for new data
+        measureCache.length = 0;
 
-        const processedTop = processRuns(topRuns);
-        carouselRuns = processRuns(carouselRuns);
-        const processedPlayerRow = playerRow ? {
+        const processRuns = (runs, startIdx) => runs.map((r, i) => {
+          const idx = startIdx + i;
+          return precomputeRunRenderProps({
+            ...r,
+            flagImg: flagMap.get(r.country) || null,
+            trophyImg: trophyMap[r.rank] || null  // Add trophy image for top 3
+          }, idx);
+        });
+
+        const processedTop = processRuns(topRuns, 0);
+        carouselRuns = processRuns(carouselRuns, TOP_COUNT);
+        const playerRowIdx = TOP_COUNT + carouselRuns.length;
+        const processedPlayerRow = playerRow ? precomputeRunRenderProps({
           ...playerRow,
           flagImg: flagMap.get(playerRow.country) || null,
           trophyImg: trophyMap[playerRow.rank] || null
-        } : null;
+        }, playerRowIdx) : null;
 
         // Store for carousel
         processedTopRuns = processedTop;
