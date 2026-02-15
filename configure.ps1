@@ -1304,7 +1304,7 @@ function Set-Language {
         ) }
       @{ key = "textSpacing"; label = (Get-LocalizedString "parameters_visuals_section_text_spacing"); items = @(
           @{ key = "fontStyle"; label = "fontStyle"; type = "enum"; options = @("Arial", "Verdana", "TimesNewRoman", "Georgia", "CourierNew", "Impact", "TrebuchetMS", "Tahoma", "ComicSans", "SegoeUI") }
-          @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 30 }
+          @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 60 }
           @{ key = "nameSpacing"; label = "nameSpacing"; type = "int"; min = 0; max = 10 }
           @{ key = "timeFormat"; label = "timeFormat"; type = "enum"; options = @("1:25:25.255", "1h25m25s225ms") }
         ) }
@@ -1452,7 +1452,7 @@ function Initialize-Config {
       rankAlign = "right"
       rankPrefixMode = "dot"
       fontStyle = "Arial"
-      maxNameWidthVisible = 14
+      maxNameWidthVisible = 30
       timeFormat = "1:25:25.255"
       nameSpacing = 4
       pbSeparatorWidth = 326

@@ -848,6 +848,15 @@
         maxNameBlock = Math.max(maxNameBlock, flagW + nameW);
       }
 
+      // Ensure minimum width based on configured MAX_PLAYER_NAME_CHARS
+      const configuredMaxName = 'W'.repeat(MAX_PLAYER_NAME_CHARS || 14);
+      const configuredMaxWidth = ctx.measureText(configuredMaxName).width;
+      const maxFlagW = DRAW.FLAG.w + NAME_SPACING;
+      const minConfiguredBlock = maxFlagW + configuredMaxWidth;
+      
+      // Use the larger of actual data width or configured minimum width
+      maxNameBlock = Math.max(maxNameBlock, minConfiguredBlock);
+
       // Total rank width: max of trophy width OR number width
       fixedMaxRankW = Math.max(trophyWidth, maxRankW);
       fixedMaxNameBlock = maxNameBlock;
