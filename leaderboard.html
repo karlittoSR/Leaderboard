@@ -13,11 +13,11 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       display: grid; place-items: start; padding: 8px;
     }
-    canvas { display:block; width:900px; height:174px; }
+    canvas { display: block; max-width: 100%; max-height: 100%; }
   </style>
 </head>
 <body>
-  <canvas id="board" width="1200" height="400"></canvas>
+  <canvas id="board"></canvas>
   <script>
     // === Settings Loading ===
     // Variables loaded from settings file (config.json)
@@ -40,6 +40,8 @@
     let TIME_FORMAT = '1:25:25.255';
     let PB_SEPARATOR_WIDTH = null;
     let RAINBOW_INTENSITY = 50;
+    let PREFERRED_WIDTH = 400;
+    let PREFERRED_HEIGHT = 274;
 
     // Trophy icon URLs (loaded from game assets)
     let TROPHY_1ST_URL = null;
@@ -133,11 +135,14 @@
         // Update title
         document.title = preset.name + ': Top ' + TOP_COUNT + ' (Overlay)';
 
-        // Update overlay size from defaults
-        canvas.width = defaults.canvasWidth;
-        canvas.height = defaults.canvasHeight;
-        canvas.style.width = defaults.displayWidth;
-        canvas.style.height = defaults.displayHeight;
+        // Update overlay size from defaults (handle both old "900px" and new 900 format)
+        let dw = defaults.displayWidth;
+        let dh = defaults.displayHeight;
+        PREFERRED_WIDTH = typeof dw === 'string' ? parseInt(dw) : (Number.isFinite(dw) ? dw : 900);
+        PREFERRED_HEIGHT = typeof dh === 'string' ? parseInt(dh) : (Number.isFinite(dh) ? dh : 274);
+        // Legacy support: ignore canvasWidth/canvasHeight if present (no longer used)
+
+        updateCanvasSize();
 
         // Start data load
         loadTop();
@@ -145,6 +150,25 @@
         console.error('Erreur de configuration :', e);
         document.body.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">❌ Erreur : ${e.message}</div>`;
       }
+    }
+
+    // Responsive canvas sizing - adapts to container size
+    function updateCanvasSize() {
+      // Get body padding from computed style
+      const style = getComputedStyle(document.body);
+      const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+
+      // Calculate available space (viewport minus padding)
+      const availableWidth = window.innerWidth - padX;
+      const availableHeight = window.innerHeight - padY;
+
+      // Use available space if smaller than preferred
+      const actualWidth = Math.min(PREFERRED_WIDTH, availableWidth);
+      const actualHeight = Math.min(PREFERRED_HEIGHT, availableHeight);
+
+      canvas.style.width = actualWidth + 'px';
+      canvas.style.height = actualHeight + 'px';
     }
 
     // === Overlay Setup ===
@@ -1114,7 +1138,10 @@
     }
 
     loadConfig();
-    window.addEventListener('resize', loadTop);
+    window.addEventListener('resize', () => {
+      updateCanvasSize();
+      loadTop();
+    });
   </script>
 </body>
 </html>

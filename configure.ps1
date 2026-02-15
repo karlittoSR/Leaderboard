@@ -1444,10 +1444,8 @@ function Initialize-Config {
       runsPerBatch = 3
       maxRuns = 200
       topCount = 3
-      canvasWidth = 1200
-      canvasHeight = 400
-      displayWidth = "900px"
-      displayHeight = "274px"
+      displayWidth = 400
+      displayHeight = 274
       rankAlign = "right"
       rankPrefixMode = "dot"
       fontStyle = "Arial"
