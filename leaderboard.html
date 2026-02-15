@@ -29,7 +29,6 @@
     let LEVEL_NAME;
     let PLAYER_NAME;
     let TEMPORARY_RUN;
-    let CAROUSEL_INTERVAL;
     let RUNS_PER_BATCH;
     let TOP_COUNT;
     let MAX_RUNS;
@@ -93,8 +92,8 @@
 
         // Apply defaults from the settings file
         const defaults = config.defaults;
-        CAROUSEL_INTERVAL = defaults.carouselInterval;
-        CAROUSEL_DISPLAY_DURATION = CAROUSEL_INTERVAL - CAROUSEL_FADE_DURATION - CAROUSEL_FADE_DURATION;
+        CAROUSEL_DISPLAY_DURATION = defaults.CAROUSEL_DISPLAY_DURATION || 3000;
+        CAROUSEL_FADE_DURATION = defaults.CAROUSEL_FADE_DURATION || 500;
         RUNS_PER_BATCH = defaults.runsPerBatch;
         TOP_COUNT = defaults.topCount;
         MAX_RUNS = Number.isFinite(defaults.maxRuns) ? defaults.maxRuns : 200;
@@ -175,8 +174,8 @@
     let carouselInterval = null;
     let carouselStartTime = 0;
     let carouselPhase = 'display'; // 'display', 'fadeOut', 'fadeIn'
-    let CAROUSEL_FADE_DURATION = 500; // Fade transition duration (ms)
-    let CAROUSEL_DISPLAY_DURATION = 3000; // Display duration (computed in loadConfig)
+    let CAROUSEL_FADE_DURATION = 500; // Fade transition duration (ms) - loaded from config
+    let CAROUSEL_DISPLAY_DURATION = 3000; // Display duration (ms) - loaded from config
 
     let fixedMaxRankW = 0;
     let fixedMaxNameBlock = 0;

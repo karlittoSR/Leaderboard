@@ -47,11 +47,11 @@ $Global:DefaultConfigJSON = @'
     "nameSpacing": 4,
     "pbSeparatorWidth": 320,
     "rainbowIntensity": 90,
-    "CAROUSEL_DISPLAY_DURATION": 1000,
+    "CAROUSEL_DISPLAY_DURATION": 5000,
+    "CAROUSEL_FADE_DURATION": 500,
     "useTrophyIcons": true,
     "displayHeight": "300px",
     "canvasHeight": 300,
-    "carouselInterval": 6000,
     "displayWidth": "700px",
     "canvasWidth": 300,
     "runsPerBatch": 4,
@@ -1319,8 +1319,8 @@ function Set-Language {
           @{ key = "flagOverrides"; label = "flagOverrides"; type = "flagOverride" }
         ) }
       @{ key = "carousel"; label = (Get-LocalizedString "parameters_visuals_section_carousel"); items = @(
-          @{ key = "carouselInterval"; label = "carouselInterval"; type = "int"; min = 1000; max = 100000 }
-          @{ key = "CAROUSEL_DISPLAY_DURATION"; label = "CAROUSEL_DISPLAY_DURATION"; type = "int"; min = 1000; max = 100000 }
+          @{ key = "CAROUSEL_DISPLAY_DURATION"; label = "CAROUSEL_DISPLAY_DURATION"; type = "int"; min = 1000; max = 10000 }
+          @{ key = "CAROUSEL_FADE_DURATION"; label = "CAROUSEL_FADE_DURATION"; type = "int"; min = 50; max = 1000 }
         ) }
     )
 
@@ -1441,7 +1441,6 @@ function Initialize-Config {
 
   if (-not $config.defaults) {
     $defaults = @{
-      carouselInterval = 5000
       runsPerBatch = 3
       maxRuns = 200
       topCount = 3
@@ -1457,7 +1456,8 @@ function Initialize-Config {
       nameSpacing = 4
       pbSeparatorWidth = 326
       rainbowIntensity = 50
-      CAROUSEL_DISPLAY_DURATION = 10000
+      CAROUSEL_DISPLAY_DURATION = 3000
+      CAROUSEL_FADE_DURATION = 500
       useTrophyIcons = $false
     }
     if ($config.GetType().Name -eq "PSCustomObject") {
@@ -1503,6 +1503,28 @@ function Initialize-Config {
       $defaultsObj | Add-Member -MemberType NoteProperty -Name "maxNameWidthVisible" -Value $oldValue -Force
     } else {
       $defaultsObj["maxNameWidthVisible"] = $oldValue
+    }
+  }
+
+  # Ensure CAROUSEL_FADE_DURATION exists in defaults (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "CAROUSEL_FADE_DURATION")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "CAROUSEL_FADE_DURATION" -Value 500 -Force
+    } else {
+      $config.defaults.CAROUSEL_FADE_DURATION = 500
+    }
+  }
+
+  # Remove deprecated carouselInterval if it exists (migration)
+  if ($config.defaults) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      if ($config.defaults.PSObject.Properties.Name -contains "carouselInterval") {
+        $config.defaults.PSObject.Properties.Remove("carouselInterval")
+      }
+    } elseif ($config.defaults -is [System.Collections.Hashtable]) {
+      if ($config.defaults.ContainsKey("carouselInterval")) {
+        $config.defaults.Remove("carouselInterval")
+      }
     }
   }
 

@@ -42,6 +42,17 @@
 
 Tu clasificación se actualizará automáticamente y mostrará tu posición en la parte inferior en una fila separada cuando estés fuera del top 3.
 
+## Paso 6: Añadir Filtro de Sombra (Muy Recomendado)
+
+**Para mejor legibilidad del texto y aspecto profesional:**
+
+1. Instala el plugin **OBS Stroke Glow Shadow**: https://github.com/FiniteSingularity/obs-stroke-glow-shadow
+2. Haz clic derecho en tu fuente del navegador de clasificación en OBS
+3. Selecciona **Filtros** → **Añadir** → **Shadow**
+4. Ajusta la configuración de sombra según tus preferencias
+
+¡Esto mejora enormemente la visibilidad del texto sobre cualquier fondo!
+
 ---
 
 ## Funciones avanzadas

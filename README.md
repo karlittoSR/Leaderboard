@@ -134,6 +134,14 @@ Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instruc
 - **Dimensions**: Configure in `config.json` (defaults: 700px × 300px)
 - **Refresh**: Not needed - updates automatically
 
+### Recommended: Shadow Filter Plugin
+**Highly recommended** for enhanced visual quality and better text readability on any background.
+
+- **Plugin**: OBS Stroke Glow Shadow
+- **Download**: https://github.com/FiniteSingularity/obs-stroke-glow-shadow
+- **Benefits**: Adds professional drop shadow effects to the overlay text
+- **Usage**: After installing, right-click your browser source → Filters → Add "Stroke Glow Shadow"
+
 ---
 
 ## Configuration
@@ -151,11 +159,11 @@ Edit `config.json` for customization (Edit it straight from the terminal):
     "nameSpacing": 4,                       // Spacing between flag and player name
     "pbSeparatorWidth": 320,                // Width of the PB separator line
     "rainbowIntensity": 90,                 // Rainbow effect intensity for recent PBs (0-100)
-    "CAROUSEL_DISPLAY_DURATION": 1000,      // Display duration per carousel entry (ms)
+    "CAROUSEL_DISPLAY_DURATION": 3000,      // Carousel: stable display duration per page (ms)
+    "CAROUSEL_FADE_DURATION": 500,          // Carousel: fade in/out transition duration (ms)
     "useTrophyIcons": true,                 // Use trophy icons for top 3 positions
     "displayHeight": "300px",               // OBS Browser Source height
     "canvasHeight": 300,                    // Internal canvas resolution height
-    "carouselInterval": 6000,               // Total carousel rotation cycle (ms)
     "displayWidth": "700px",                // OBS Browser Source width
     "canvasWidth": 300,                     // Internal canvas resolution width
     "runsPerBatch": 4,                      // Carousel entries per rotation
@@ -185,8 +193,8 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 - **Name Display**: Change `maxNameWidthVisible` for name width before marquee scrolling
 - **Font Style**: Set `fontStyle` to choose from 10 available font families
 - **Rank Appearance**: Configure `rankAlign` (left/center/right) and `rankPrefixMode` (dot/hash)
-- **Carousel Speed**: Adjust `carouselInterval` for total rotation cycle
-- **Carousel Display**: Set `CAROUSEL_DISPLAY_DURATION` for per-entry duration
+- **Carousel Timing**: Set `CAROUSEL_DISPLAY_DURATION` for stable display time per page (ms)
+- **Carousel Transitions**: Adjust `CAROUSEL_FADE_DURATION` for fade in/out speed (ms)
 - **Batch Size**: Modify `runsPerBatch` for entries per carousel page
 - **Visual Effects**: Adjust `rainbowIntensity` for recent PB highlighting (0-100)
 

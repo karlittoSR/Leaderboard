@@ -42,6 +42,17 @@
 
 Your leaderboard will update automatically and display your position at the bottom on a separate row when you're outside the top 3.
 
+## Step 6: Add Shadow Filter (Highly Recommended)
+
+**For better text readability and professional look:**
+
+1. Install the **OBS Stroke Glow Shadow** plugin: https://github.com/FiniteSingularity/obs-stroke-glow-shadow
+2. Right-click your leaderboard browser source in OBS
+3. Select **Filters** → **Add** → **Shadow**
+4. Adjust shadow settings to your preference
+
+This greatly improves text visibility on any background!
+
 ---
 
 ## Advanced Features

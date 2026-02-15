@@ -42,6 +42,17 @@
 
 Votre classement se mettra à jour automatiquement et affichera votre position en bas sur une ligne séparée quand vous serez en dehors du top 3.
 
+## Étape 6 : Ajouter un Filtre Ombre (Fortement Recommandé)
+
+**Pour une meilleure lisibilité du texte et un rendu professionnel :**
+
+1. Installez le plugin **OBS Stroke Glow Shadow** : https://github.com/FiniteSingularity/obs-stroke-glow-shadow
+2. Clic-droit sur votre source navigateur du classement dans OBS
+3. Sélectionnez **Filtres** → **Ajouter** → **Shadow**
+4. Ajustez les paramètres d'ombre selon vos préférences
+
+Cela améliore grandement la visibilité du texte sur n'importe quel fond !
+
 ---
 
 ## Fonctionnalités avancées
