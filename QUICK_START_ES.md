@@ -36,8 +36,8 @@
 
 1. Añade una **Fuente del Navegador**
 2. **Archivo Local** → busca `leaderboard.html`
-3. **Ancho**: 400px
-4. **Alto**: 250px
+3. **Ancho**: 343px
+4. **Alto**: 350px
 5. **¡Listo!**
 
 Tu clasificación se actualizará automáticamente y mostrará tu posición en la parte inferior en una fila separada cuando estés fuera del top 3.

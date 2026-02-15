@@ -3,7 +3,7 @@
 
 # PowerShell script to manage speedrun.com presets easily
 # Manages multiple games and categories for streamers
-# Version 1.40 - Parameters menu + visual tweaks editor
+# Version 1.41 - PB color customization + improved translations
 # By karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
@@ -42,27 +42,33 @@ $Global:DefaultConfigJSON = @'
   "defaults": {
     "topCount": 3,
     "timeFormat": "1:25:25.255",
-    "rankAlign": "center",
+    "rankAlign": "left",
     "rankPrefixMode": "dot",
-    "nameSpacing": 4,
+    "nameSpacing": 5,
     "pbSeparatorWidth": 320,
+    "pbPrefix": "PB",
+    "pbColor": "fffff1",
+    "pbUseRainbow": true,
+    "customFont": "",
     "rainbowIntensity": 90,
     "CAROUSEL_DISPLAY_DURATION": 5000,
     "CAROUSEL_FADE_DURATION": 500,
     "useTrophyIcons": true,
-    "displayHeight": "300px",
-    "canvasHeight": 300,
-    "displayWidth": "700px",
-    "canvasWidth": 300,
+    "displayWidth": 500,
+    "displayHeight": 450,
     "runsPerBatch": 4,
     "maxRuns": 200,
     "fontStyle": "Arial", 
-    "maxNameWidthVisible": 18
+    "maxNameWidthVisible": 18,
+    "categoryNameVisible": true,
+    "categoryNameFontSize": 18,
+    "categoryNameColor": "#ffffff",
+    "categoryNameSpacing": 35
   },
   "flagOverrides": {
     "TW": "CN"
   },
-  "presets": {
+  "categories": {
     "elde-any-glitchless": {
       "name": "Elden Ring - Any% Glitchless",
       "gameId": "nd28z0ed",
@@ -77,7 +83,7 @@ $Global:DefaultConfigJSON = @'
   },
   "language": "en",
   "playerName": "Xeill",
-  "activePreset": "elde-any-glitchless",
+  "activeCategory": "elde-any-glitchless",
   "temporaryRun": {
     "active": true,
     "time": "55:05"
@@ -89,11 +95,11 @@ $Global:DefaultConfigJSON = @'
 $Global:Languages = @{
     fr = @{
         # Main menu
-        menu_title = "Gestionnaire de presets SRC by karlitto__ v1.40"
-        menu_add_preset = "Ajouter un nouveau preset"
-        menu_view_details = "Voir les détails d'un preset existant"
-        menu_change_active = "Changer le preset actif"
-        menu_remove_preset = "Supprimer un preset"
+        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v1.41"
+        menu_add_category = "Ajouter une nouvelle catégorie"
+        menu_view_details = "Voir les détails d'une catégorie existante"
+        menu_change_active = "Changer la catégorie active"
+        menu_remove_category = "Supprimer une catégorie"
         menu_language_settings = "Paramètres de langue / 语言设置"
         menu_parameters = "Paramètres"
         menu_player_name = "Définir mon nom"
@@ -105,26 +111,26 @@ $Global:Languages = @{
         nav_instructions = "Utilisez flèches HAUT/BAS pour naviguer, Entrée pour sélectionner"
         nav_instructions_cancel = "Utilisez flèches HAUT/BAS pour naviguer, Entrée pour sélectionner, Backspace pour annuler"
         
-        # Existing presets
-        existing_presets = "Presets existants :"
-        active_preset = "Preset actuellement actif :"
+        # Existing categories
+        existing_categories = "Catégories existantes :"
+        active_category = "Catégorie actuellement active :"
         not_defined = "Non défini"
         
-        # Preset details
-        details_title = "=== DETAILS D'UN PRESET ==="
-        details_choose = "Choisissez un preset à voir :"
+        # Category details
+        details_title = "=== DETAILS D'UNE CATÉGORIE ==="
+        details_choose = "Choisissez une catégorie à voir :"
         details_name = "Nom :"
-        details_preset_id = "Preset ID :"
+        details_category_id = "ID Catégorie :"
         details_game_id = "Game ID :"
         details_category = "Category :"
         details_subcategory = "Subcategory :"
         details_active_obs = "Actif dans OBS :"
         details_actions = "Actions :"
-        details_edit_name = "Editer le nom du preset"
-        details_delete_preset = "Supprimer ce preset"
-        details_edit_prompt = "Nouveau nom du preset (Echap pour annuler) :"
+        details_edit_name = "Editer le nom de la catégorie"
+        details_delete_category = "Supprimer cette catégorie"
+        details_edit_prompt = "Nouveau nom de la catégorie (Echap pour annuler) :"
         details_edit_empty = "Erreur : le nom ne peut pas etre vide."
-        details_edit_saved = "Nom du preset mis a jour :"
+        details_edit_saved = "Nom de la catégorie mis a jour :"
         details_edit_cancelled = "Modification annulee."
         details_back = "Retour"
         
@@ -136,8 +142,8 @@ $Global:Languages = @{
         cancelled = "Annulé."
         success = "[OK]"
         
-        # New preset
-        add_title = "=== AJOUT D'UN NOUVEAU PRESET ==="
+        # New category
+        add_title = "=== AJOUT D'UNE NOUVELLE CATÉGORIE ==="
         add_game_name = "Nom du jeu :"
         add_game_name_hint = "Appuyez sur ESC pour annuler et revenir au menu principal"
         add_error_empty_name = "Erreur : Vous devez entrer un nom de jeu!"
@@ -157,41 +163,41 @@ $Global:Languages = @{
         final_game_id = "Game ID  :"
         final_category = "Category :"
         final_subcategory = "Subcategory :"
-        final_preset_id = "Entrez un ID unique pour ce preset :"
+        final_category_id = "Entrez un ID unique pour cette catégorie :"
         final_suggestion = "Suggestion :"
-        final_preset_id_prompt = "ID du preset (ou Entrée pour suggestion) "
-        final_id_exists = "ATTENTION : Un preset avec l'ID '%s' existe déjà !"
+        final_category_id_prompt = "ID de la catégorie (ou Entrée pour suggestion) "
+        final_id_exists = "ATTENTION : Une catégorie avec l'ID '%s' existe déjà !"
         final_overwrite = "Voulez-vous l'écraser ? (o/N)"
         final_operation_cancelled = "Opération annulée."
-        final_activate_now = "Voulez-vous activer ce preset maintenant ? (o/N)"
-        final_saved = "Preset '%s' sauvegardé avec succès !"
+        final_activate_now = "Voulez-vous activer cette catégorie maintenant ? (o/N)"
+        final_saved = "Catégorie '%s' sauvegardée avec succès !"
         final_status = "Status :"
-        final_auto_active = "Activé automatiquement (premier preset)"
-        final_active_now = "Activé comme preset principal"
+        final_auto_active = "Activé automatiquement (première catégorie)"
+        final_active_now = "Activé comme catégorie principale"
         final_saved_inactive = "Sauvegardé sans activation"
-        final_obs_will_show = "[OK] OBS affichera automatiquement ce preset !"
-        final_activate_later = "Pour activer ce preset plus tard, utilisez l'option de changement de preset actif."
+        final_obs_will_show = "[OK] OBS affichera automatiquement cette catégorie !"
+        final_activate_later = "Pour activer cette catégorie plus tard, utilisez l'option de changement de catégorie active."
         
-        # Change active preset
-        change_active_title = "=== CHANGER LE PRESET ACTIF ==="
-        change_active_available = "Presets disponibles :"
-        change_active_changed = "[OK] Preset actif changé vers :"
-        change_active_obs_info = "OBS va automatiquement utiliser ce preset !"
+        # Change active category
+        change_active_title = "=== CHANGER LA CATÉGORIE ACTIVE ==="
+        change_active_available = "Catégories disponibles :"
+        change_active_changed = "[OK] Catégorie active changée vers :"
+        change_active_obs_info = "OBS va automatiquement utiliser cette catégorie !"
         
-        # Delete preset
-        remove_title = "=== SUPPRIMER UN PRESET ==="
+        # Delete category
+        remove_title = "=== SUPPRIMER UNE CATÉGORIE ==="
         remove_impossible_title = "=== IMPOSSIBLE DE SUPPRIMER ==="
-        remove_impossible_last = "Impossible de supprimer le dernier preset !"
-        remove_impossible_rule = "Vous devez avoir au moins un preset configuré."
+        remove_impossible_last = "Impossible de supprimer la dernière catégorie !"
+        remove_impossible_rule = "Vous devez avoir au moins une catégorie configurée."
         remove_warning = "ATTENTION : Vous allez supprimer définitivement :"
-        remove_confirm = "Êtes-vous sûr de vouloir supprimer ce preset ? (o/N)"
+        remove_confirm = "Êtes-vous sûr de vouloir supprimer cette catégorie ? (o/N)"
         remove_cancelled = "Suppression annulée."
-        remove_active_deleted = "Le preset actif a été supprimé. Choisissez le nouveau preset actif :"
-        remove_success = "[OK] Preset '%s' supprimé avec succès !"
-        remove_new_active = "Nouveau preset actif :"
+        remove_active_deleted = "La catégorie active a été supprimée. Choisissez la nouvelle catégorie active :"
+        remove_success = "[OK] Catégorie '%s' supprimée avec succès !"
+        remove_new_active = "Nouvelle catégorie active :"
         
         # First launch
-        first_launch_no_preset = "Aucun preset trouvé. Création du premier preset..."
+        first_launch_no_category = "Aucune catégorie trouvée. Création de la première catégorie..."
         
         # Language
         language_title = "=== PARAMÈTRES DE LANGUE ==="
@@ -213,12 +219,40 @@ $Global:Languages = @{
         parameters_flag_override_prompt = "Entrer un override (AA BB, ex: CR FR) :"
         parameters_visuals_section_layout = "Mise en page"
         parameters_visuals_section_list_ranks = "Liste et rangs"
+        parameters_visuals_section_category_name = "Nom de catégorie"
         parameters_visuals_section_text_spacing = "Typo et espacement"
         parameters_visuals_max_name_chars = "Largeur Nom (visible)"
         parameters_visuals_section_pb = "PB"
         parameters_visuals_section_effects = "Effets"
         parameters_visuals_section_flags_trophies = "Drapeaux et trophées"
         parameters_visuals_section_carousel = "Carrousel"
+
+        # Parameter descriptions
+        param_desc_displayWidth = "Largeur du canevas de l'overlay en pixels"
+        param_desc_displayHeight = "Hauteur du canevas de l'overlay en pixels"
+        param_desc_topCount = "Nombre de runs fixes en haut du classement"
+        param_desc_runsPerBatch = "Nombre de runs affichées par cycle de carrousel"
+        param_desc_maxRuns = "Nombre maximum de runs récupérées depuis l'API"
+        param_desc_rankAlign = "Alignement des numéros de rang (gauche, centre, droite)"
+        param_desc_rankPrefixMode = "Symbole visuel du rang (point, dièse ou rien)"
+        param_desc_fontStyle = "Police utilisée pour tout le texte"
+        param_desc_customFont = "Nom d'une police personnalisée installée sur votre système (laissez vide pour utiliser fontStyle)"
+        param_desc_categoryNameVisible = "Afficher le nom de catégorie en haut de l'overlay ?"
+        param_desc_categoryNameFontSize = "Taille de la police du nom de catégorie (petit=16px, moyen=18px, grand=20px)"
+        param_desc_categoryNameColor = "Couleur du nom de catégorie (6 caractères hexadécimaux, ex: 84c8ff)"
+        param_desc_categoryNameSpacing = "Espace vertical entre le nom de catégorie et le classement (12-50px)"
+        param_desc_maxNameWidthVisible = "Nombre maximum de caractères pour les noms des joueurs"
+        param_desc_nameSpacing = "Espacement horizontal du nom du joueur"
+        param_desc_timeFormat = "Format d'affichage des temps de run"
+        param_desc_pbSeparatorWidth = "Largeur de la ligne séparatrice avant le PB"
+        param_desc_pbPrefix = "Texte de préfixe personnalisé avant le PB (1-3 lettres)"
+        param_desc_pbColor = "Couleur du rang PB (6 caractères hexadécimaux, ex: 9fb4ca)"
+        param_desc_pbUseRainbow = "Utiliser l'effet arc-en-ciel pour le PB au lieu de la couleur fixe ?"
+        param_desc_rainbowIntensity = "Intensité de l'effet arc-en-ciel (0-100%)"
+        param_desc_useTrophyIcons = "Afficher les icônes de trophée pour le top 3 ?"
+        param_desc_flagOverrides = "Remplacer les codes de drapeau de pays (ex: HR FR)"
+        param_desc_CAROUSEL_DISPLAY_DURATION = "Temps d'affichage du carrousel (millisecondes)"
+        param_desc_CAROUSEL_FADE_DURATION = "Durée de la transition en fondu (millisecondes)"
 
         # Player name
         player_name_title = "=== NOM DU JOUEUR ==="
@@ -235,18 +269,18 @@ $Global:Languages = @{
         # Temporary time
         temp_time_title = "=== TEMPS TEMPORAIRE ==="
         temp_time_current = "Temps temporaire actuel :"
-        temp_time_action_set = "Definir/modifier le temps temporaire"
+        temp_time_action_set = "Définir/modifier le temps temporaire"
         temp_time_action_clear = "Supprimer le temps temporaire"
         temp_time_action_back = "Retour"
         temp_time_prompt = "Entrez le temps temporaire (hh:mm:ss.ms) (Echap pour annuler) :"
         temp_time_invalid = "Format invalide. Exemples : 1:23, 12:34, 1:02:03, 1:18.268"
-        temp_time_saved = "[OK] Temps temporaire enregistre :"
-        temp_time_cleared = "Temps temporaire supprime."
-        temp_time_cancelled = "Operation annulee."
+        temp_time_saved = "[OK] Temps temporaire enregistré :"
+        temp_time_cleared = "Temps temporaire supprimé."
+        temp_time_cancelled = "Opération annulée."
         temp_time_no_player = "Impossible sans nom du joueur."
-        temp_time_check_title = "Verification du joueur..."
-        temp_time_check_status = "Recherche dans le preset selectionne"
-        temp_time_disabled = "PB temporaire desactive (joueur introuvable dans ce preset)."
+        temp_time_check_title = "Vérification du joueur..."
+        temp_time_check_status = "Recherche dans la catégorie sélectionnée"
+        temp_time_disabled = "PB temporaire désactivé (joueur introuvable dans cette catégorie)."
         
         # Reset
         reset_confirm = "Êtes-vous sûr de vouloir réinitialiser la configuration ? (o/N)"
@@ -264,11 +298,11 @@ $Global:Languages = @{
     }
     en = @{
         # Main menu
-        menu_title = "SRC Preset Manager by karlitto__ v1.40"
-        menu_add_preset = "Add a new preset"
-        menu_view_details = "View details of an existing preset"
-        menu_change_active = "Change active preset"
-        menu_remove_preset = "Delete a preset"
+        menu_title = "SRC Leaderboard Manager by karlitto__ v1.41"
+        menu_add_category = "Add a new category"
+        menu_view_details = "View details of an existing category"
+        menu_change_active = "Change active category"
+        menu_remove_category = "Delete a category"
         menu_language_settings = "Language settings / 语言设置"
         menu_parameters = "Parameters"
         menu_player_name = "Set my name"
@@ -280,26 +314,26 @@ $Global:Languages = @{
         nav_instructions = "Use UP/DOWN arrows to navigate, Enter to select"
         nav_instructions_cancel = "Use UP/DOWN arrows to navigate, Enter to select, Backspace to cancel"
         
-        # Existing presets
-        existing_presets = "Existing presets:"
-        active_preset = "Currently active preset:"
+        # Existing categories
+        existing_categories = "Existing categories:"
+        active_category = "Currently active category:"
         not_defined = "Not defined"
         
-        # Preset details
-        details_title = "=== PRESET DETAILS ==="
-        details_choose = "Choose a preset to view:"
+        # Category details
+        details_title = "=== CATEGORY DETAILS ==="
+        details_choose = "Choose a category to view:"
         details_name = "Name:"
-        details_preset_id = "Preset ID:"
+        details_category_id = "Category ID:"
         details_game_id = "Game ID:"
         details_category = "Category:"
         details_subcategory = "Subcategory:"
         details_active_obs = "Active in OBS:"
         details_actions = "Actions:"
-        details_edit_name = "Edit preset name"
-        details_delete_preset = "Delete this preset"
-        details_edit_prompt = "New preset name (Esc to cancel):"
+        details_edit_name = "Edit category name"
+        details_delete_category = "Delete this category"
+        details_edit_prompt = "New category name (Esc to cancel):"
         details_edit_empty = "Error: name cannot be empty."
-        details_edit_saved = "Preset name updated:"
+        details_edit_saved = "Category name updated:"
         details_edit_cancelled = "Edit cancelled."
         details_back = "Back"
         
@@ -311,8 +345,8 @@ $Global:Languages = @{
         cancelled = "Cancelled."
         success = "[OK]"
         
-        # New preset
-        add_title = "=== ADD NEW PRESET ==="
+        # New category
+        add_title = "=== ADD NEW CATEGORY ==="
         add_game_name = "Game name:"
         add_game_name_hint = "Press ESC to cancel and return to the main menu"
         add_error_empty_name = "Error: You must enter a game name!"
@@ -332,41 +366,41 @@ $Global:Languages = @{
         final_game_id = "Game ID  :"
         final_category = "Category :"
         final_subcategory = "Subcategory :"
-        final_preset_id = "Enter a unique ID for this preset:"
+        final_category_id = "Enter a unique ID for this category:"
         final_suggestion = "Suggestion:"
-        final_preset_id_prompt = "Preset ID (or Enter for suggestion)"
-        final_id_exists = "WARNING: A preset with ID '%s' already exists!"
+        final_category_id_prompt = "Category ID (or Enter for suggestion)"
+        final_id_exists = "WARNING: A category with ID '%s' already exists!"
         final_overwrite = "Do you want to overwrite it? (y/N)"
         final_operation_cancelled = "Operation cancelled."
-        final_activate_now = "Do you want to activate this preset now? (y/N)"
-        final_saved = "Preset '%s' saved successfully!"
+        final_activate_now = "Do you want to activate this category now? (y/N)"
+        final_saved = "Category '%s' saved successfully!"
         final_status = "Status:"
-        final_auto_active = "Automatically activated (first preset)"
-        final_active_now = "Activated as main preset"
+        final_auto_active = "Automatically activated (first category)"
+        final_active_now = "Activated as main category"
         final_saved_inactive = "Saved without activation"
-        final_obs_will_show = "[OK] OBS will automatically display this preset!"
-        final_activate_later = "To activate this preset later, use the active preset change option."
+        final_obs_will_show = "[OK] OBS will automatically display this category!"
+        final_activate_later = "To activate this category later, use the active category change option."
         
-        # Change active preset
-        change_active_title = "=== CHANGE ACTIVE PRESET ==="
-        change_active_available = "Available presets:"
-        change_active_changed = "[OK] Active preset changed to:"
-        change_active_obs_info = "OBS will automatically use this preset!"
+        # Change active category
+        change_active_title = "=== CHANGE ACTIVE CATEGORY ==="
+        change_active_available = "Available categories:"
+        change_active_changed = "[OK] Active category changed to:"
+        change_active_obs_info = "OBS will automatically use this category!"
         
-        # Delete preset
-        remove_title = "=== DELETE PRESET ==="
+        # Delete category
+        remove_title = "=== DELETE CATEGORY ==="
         remove_impossible_title = "=== CANNOT DELETE ==="
-        remove_impossible_last = "Cannot delete the last preset!"
-        remove_impossible_rule = "You must have at least one configured preset."
+        remove_impossible_last = "Cannot delete the last category!"
+        remove_impossible_rule = "You must have at least one configured category."
         remove_warning = "WARNING: You are going to permanently delete:"
-        remove_confirm = "Are you sure you want to delete this preset? (y/N)"
+        remove_confirm = "Are you sure you want to delete this category? (y/N)"
         remove_cancelled = "Deletion cancelled."
-        remove_active_deleted = "The active preset was deleted. Choose the new active preset:"
-        remove_success = "[OK] Preset '%s' deleted successfully!"
-        remove_new_active = "New active preset:"
+        remove_active_deleted = "The active category was deleted. Choose the new active category:"
+        remove_success = "[OK] Category '%s' deleted successfully!"
+        remove_new_active = "New active category:"
         
         # First launch
-        first_launch_no_preset = "No preset found. Creating first preset..."
+        first_launch_no_category = "No category found. Creating first category..."
         
         # Language
         language_title = "=== LANGUAGE SETTINGS ==="
@@ -388,12 +422,40 @@ $Global:Languages = @{
         parameters_flag_override_prompt = "Enter override (AA BB, e.g. CR FR):"
         parameters_visuals_section_layout = "Layout"
         parameters_visuals_section_list_ranks = "List and ranks"
+        parameters_visuals_section_category_name = "Category Name"
         parameters_visuals_section_text_spacing = "Typography and spacing"
         parameters_visuals_max_name_chars = "Name width (visible)"
         parameters_visuals_section_pb = "PB"
         parameters_visuals_section_effects = "Effects"
         parameters_visuals_section_flags_trophies = "Flags and trophies"
         parameters_visuals_section_carousel = "Carousel"
+
+        # Parameter descriptions
+        param_desc_displayWidth = "Width of the overlay canvas in pixels"
+        param_desc_displayHeight = "Height of the overlay canvas in pixels"
+        param_desc_topCount = "Number of fixed runs at the top of leaderboard"
+        param_desc_runsPerBatch = "Number of runs displayed per carousel cycle"
+        param_desc_maxRuns = "Maximum total runs fetched from API"
+        param_desc_rankAlign = "Alignment of rank numbers (left, center, right)"
+        param_desc_rankPrefixMode = "Visual symbol of rank (dot, hash or none)"
+        param_desc_fontStyle = "Font family used for all text"
+        param_desc_customFont = "Name of a custom font installed on your system (leave empty to use fontStyle)"
+        param_desc_categoryNameVisible = "Display category name at the top of the overlay?"
+        param_desc_categoryNameFontSize = "Category name font size (small=16px, medium=18px, large=20px)"
+        param_desc_categoryNameColor = "Category name color (6 hex characters, ex: 84c8ff)"
+        param_desc_categoryNameSpacing = "Vertical space between category name and leaderboard (12-50px)"
+        param_desc_maxNameWidthVisible = "Maximum characters for player names"
+        param_desc_nameSpacing = "Horizontal spacing of player name"
+        param_desc_timeFormat = "Format for displaying run times"
+        param_desc_pbSeparatorWidth = "Width of the separator line before PB"
+        param_desc_pbPrefix = "Custom prefix text before player's PB (1-3 letters)"
+        param_desc_pbColor = "PB rank color (6 hex characters, ex: 9fb4ca)"
+        param_desc_pbUseRainbow = "Use rainbow effect for PB instead of fixed color?"
+        param_desc_rainbowIntensity = "Intensity of rainbow effect (0-100%)"
+        param_desc_useTrophyIcons = "Show trophy icons for top 3?"
+        param_desc_flagOverrides = "Replace country flag codes (e.g., HR FR)"
+        param_desc_CAROUSEL_DISPLAY_DURATION = "Carousel display time (milliseconds)"
+        param_desc_CAROUSEL_FADE_DURATION = "Duration of fade transition (milliseconds)"
 
         # Player name
         player_name_title = "=== PLAYER NAME ==="
@@ -420,8 +482,8 @@ $Global:Languages = @{
         temp_time_cancelled = "Operation cancelled."
         temp_time_no_player = "Unavailable without player name."
         temp_time_check_title = "Checking player..."
-        temp_time_check_status = "Searching in selected preset"
-        temp_time_disabled = "Temporary PB disabled (player not found in this preset)."
+        temp_time_check_status = "Searching in selected category"
+        temp_time_disabled = "Temporary PB disabled (player not found in this category)."
         
         # Reset
         reset_confirm = "Are you sure you want to reset the configuration? (y/N)"
@@ -439,11 +501,11 @@ $Global:Languages = @{
     }
     es = @{
         # Main menu
-        menu_title = "Gestor de Presets SRC by karlitto__ v1.40"
-        menu_add_preset = "Añadir un nuevo preset"
-        menu_view_details = "Ver detalles de un preset existente"
-        menu_change_active = "Cambiar preset activo"
-        menu_remove_preset = "Eliminar un preset"
+        menu_title = "Gestor de Leaderboard SRC by karlitto__ v1.41"
+        menu_add_category = "Añadir una nueva categoría"
+        menu_view_details = "Ver detalles de una categoría existente"
+        menu_change_active = "Cambiar categoría activa"
+        menu_remove_category = "Eliminar una categoría"
         menu_language_settings = "Configuración de idioma / 语言设置"
         menu_parameters = "Parametros"
         menu_player_name = "Definir mi nombre"
@@ -455,26 +517,26 @@ $Global:Languages = @{
         nav_instructions = "Usa flechas ARRIBA/ABAJO para navegar, Enter para seleccionar"
         nav_instructions_cancel = "Usa flechas ARRIBA/ABAJO para navegar, Enter para seleccionar, Backspace para cancelar"
         
-        # Existing presets
-        existing_presets = "Presets existentes:"
-        active_preset = "Preset actualmente activo:"
+        # Existing categories
+        existing_categories = "Categorías existentes:"
+        active_category = "Categoría actualmente activa:"
         not_defined = "No definido"
         
-        # Preset details
-        details_title = "=== DETALLES DEL PRESET ==="
-        details_choose = "Elige un preset para ver:"
+        # Category details
+        details_title = "=== DETALLES DE LA CATEGORÍA ==="
+        details_choose = "Elige una categoría para ver:"
         details_name = "Nombre:"
-        details_preset_id = "ID del Preset:"
+        details_category_id = "ID de Categoría:"
         details_game_id = "ID del Juego:"
         details_category = "Categoría:"
         details_subcategory = "Subcategoría:"
         details_active_obs = "Activo en OBS:"
         details_actions = "Acciones:"
-        details_edit_name = "Editar nombre del preset"
-        details_delete_preset = "Eliminar este preset"
-        details_edit_prompt = "Nuevo nombre del preset (Esc para cancelar):"
+        details_edit_name = "Editar nombre de la categoría"
+        details_delete_category = "Eliminar esta categoría"
+        details_edit_prompt = "Nuevo nombre de la categoría (Esc para cancelar):"
         details_edit_empty = "Error: el nombre no puede estar vacio."
-        details_edit_saved = "Nombre del preset actualizado:"
+        details_edit_saved = "Nombre de la categoría actualizado:"
         details_edit_cancelled = "Edicion cancelada."
         details_back = "Volver"
         
@@ -486,8 +548,8 @@ $Global:Languages = @{
         cancelled = "Cancelado."
         success = "[OK]"
         
-        # New preset
-        add_title = "=== AÑADIR NUEVO PRESET ==="
+        # New category
+        add_title = "=== AÑADIR NUEVA CATEGORÍA ==="
         add_game_name = "Nombre del juego:"
         add_game_name_hint = "Presiona ESC para cancelar y volver al menu principal"
         add_error_empty_name = "Error: ¡Debes introducir un nombre de juego!"
@@ -507,41 +569,41 @@ $Global:Languages = @{
         final_game_id = "ID Juego :"
         final_category = "Categoría :"
         final_subcategory = "Subcategoría :"
-        final_preset_id = "Introduce un ID único para este preset:"
+        final_category_id = "Introduce un ID único para esta categoría:"
         final_suggestion = "Sugerencia:"
-        final_preset_id_prompt = "ID del preset (o Enter para sugerencia)"
-        final_id_exists = "ATENCIÓN: ¡Ya existe un preset con ID '%s'!"
+        final_category_id_prompt = "ID de la categoría (o Enter para sugerencia)"
+        final_id_exists = "ATENCIÓN: ¡Ya existe una categoría con ID '%s'!"
         final_overwrite = "¿Quieres sobrescribirlo? (s/N)"
         final_operation_cancelled = "Operación cancelada."
-        final_activate_now = "¿Quieres activar este preset ahora? (s/N)"
-        final_saved = "¡Preset '%s' guardado con éxito!"
+        final_activate_now = "¿Quieres activar esta categoría ahora? (s/N)"
+        final_saved = "¡Categoría '%s' guardada con éxito!"
         final_status = "Estado:"
-        final_auto_active = "Activado automáticamente (primer preset)"
-        final_active_now = "Activado como preset principal"
+        final_auto_active = "Activado automáticamente (primera categoría)"
+        final_active_now = "Activado como categoría principal"
         final_saved_inactive = "Guardado sin activar"
-        final_obs_will_show = "¡[OK] OBS mostrará automáticamente este preset!"
-        final_activate_later = "Para activar este preset más tarde, usa la opción de cambio de preset activo."
+        final_obs_will_show = "¡[OK] OBS mostrará automáticamente esta categoría!"
+        final_activate_later = "Para activar esta categoría más tarde, usa la opción de cambio de categoría activa."
         
-        # Change active preset
-        change_active_title = "=== CAMBIAR PRESET ACTIVO ==="
-        change_active_available = "Presets disponibles:"
-        change_active_changed = "[OK] Preset activo cambiado a:"
-        change_active_obs_info = "¡OBS usará automáticamente este preset!"
+        # Change active category
+        change_active_title = "=== CAMBIAR CATEGORÍA ACTIVA ==="
+        change_active_available = "Categorías disponibles:"
+        change_active_changed = "[OK] Categoría activa cambiada a:"
+        change_active_obs_info = "¡OBS usará automáticamente esta categoría!"
         
-        # Delete preset
-        remove_title = "=== ELIMINAR PRESET ==="
+        # Delete category
+        remove_title = "=== ELIMINAR CATEGORÍA ==="
         remove_impossible_title = "=== NO ES POSIBLE ELIMINAR ==="
-        remove_impossible_last = "¡No es posible eliminar el último preset!"
-        remove_impossible_rule = "Debes tener al menos un preset configurado."
+        remove_impossible_last = "¡No es posible eliminar la última categoría!"
+        remove_impossible_rule = "Debes tener al menos una categoría configurada."
         remove_warning = "ATENCIÓN: Vas a eliminar permanentemente:"
-        remove_confirm = "¿Seguro que quieres eliminar este preset? (s/N)"
+        remove_confirm = "¿Seguro que quieres eliminar esta categoría? (s/N)"
         remove_cancelled = "Eliminación cancelada."
-        remove_active_deleted = "El preset activo ha sido eliminado. Elige el nuevo preset activo:"
-        remove_success = "[OK] Preset '%s' eliminado con éxito!"
-        remove_new_active = "Nuevo preset activo:"
+        remove_active_deleted = "La categoría activa ha sido eliminada. Elige la nueva categoría activa:"
+        remove_success = "[OK] Categoría '%s' eliminada con éxito!"
+        remove_new_active = "Nueva categoría activa:"
         
         # First launch
-        first_launch_no_preset = "No se encontró ningún preset. Creando el primer preset..."
+        first_launch_no_category = "No se encontró ninguna categoría. Creando la primera categoría..."
         
         # Language
         language_title = "=== CONFIGURACIÓN DE IDIOMA ==="
@@ -563,6 +625,7 @@ $Global:Languages = @{
         parameters_flag_override_prompt = "Introduce override (AA BB, ej.: CR FR):"
         parameters_visuals_section_layout = "Diseño"
         parameters_visuals_section_list_ranks = "Lista y rankings"
+        parameters_visuals_section_category_name = "Nombre de categoría"
         parameters_visuals_section_text_spacing = "Tipografía y espaciado"
         parameters_visuals_max_name_chars = "Ancho del nombre (visible)"
         parameters_visuals_section_pb = "PB"
@@ -570,13 +633,40 @@ $Global:Languages = @{
         parameters_visuals_section_flags_trophies = "Banderas y trofeos"
         parameters_visuals_section_carousel = "Carrusel"
 
+        # Parameter descriptions
+        param_desc_displayWidth = "Ancho del lienzo del overlay en píxeles"
+        param_desc_displayHeight = "Altura del lienzo del overlay en píxeles"
+        param_desc_topCount = "Número de runs fijas en la parte superior de la clasificación"
+        param_desc_runsPerBatch = "Número de runs mostradas por ciclo de carrusel"
+        param_desc_maxRuns = "Número máximo de runs obtenidas de la API"
+        param_desc_rankAlign = "Alineación de los números de rango (izquierda, centro, derecha)"
+        param_desc_rankPrefixMode = "Símbolo visual del rango (punto, almohadilla o nada)"
+        param_desc_fontStyle = "Familia de fuente utilizada para todo el texto"
+        param_desc_customFont = "Nombre de una fuente personalizada instalada en su sistema (dejar vacío para usar fontStyle)"
+        param_desc_categoryNameVisible = "¿Mostrar el nombre de categoría en la parte superior?"
+        param_desc_categoryNameFontSize = "Tamaño de fuente del nombre de categoría (pequeño=16px, mediano=18px, grande=20px)"
+        param_desc_categoryNameColor = "Color del nombre de categoría (6 caracteres hexadecimales, ej: 84c8ff)"
+        param_desc_categoryNameSpacing = "Espacio vertical entre nombre de categoría y clasificación (12-50px)"
+        param_desc_maxNameWidthVisible = "Máximo de caracteres para nombres de jugadores"
+        param_desc_nameSpacing = "Espaciado horizontal del nombre del jugador"
+        param_desc_timeFormat = "Formato para mostrar los tiempos de run"
+        param_desc_pbSeparatorWidth = "Ancho de la línea separadora antes del PB"
+        param_desc_pbPrefix = "Texto de prefijo personalizado antes del PB (1-3 letras)"
+        param_desc_pbColor = "Color del rango PB (6 caracteres hexadecimales, ej: 9fb4ca)"
+        param_desc_pbUseRainbow = "¿Usar efecto arcoíris para el PB en lugar de color fijo?"
+        param_desc_rainbowIntensity = "Intensidad del efecto arcoíris (0-100%)"
+        param_desc_useTrophyIcons = "¿Mostrar iconos de trofeo para el top 3?"
+        param_desc_flagOverrides = "Reemplazar códigos de bandera de país (ej: HR FR)"
+        param_desc_CAROUSEL_DISPLAY_DURATION = "Tiempo de visualización del carrusel (milisegundos)"
+        param_desc_CAROUSEL_FADE_DURATION = "Duración de la transición de desvanecimiento (milisegundos)"
+
         # Player name
         player_name_title = "=== NOMBRE DEL JUGADOR ==="
         player_name_current = "Nombre actual:"
-        player_name_prompt = "Introduce el nombre del jugador (vacio para desactivar, Esc para cancelar):"
+        player_name_prompt = "Introduce el nombre del jugador (vacío para desactivar, Esc para cancelar):"
         player_name_saved = "[OK] Nombre del jugador guardado:"
         player_name_cleared = "Nombre del jugador desactivado."
-        player_name_cancelled = "Operacion cancelada."
+        player_name_cancelled = "Operación cancelada."
         player_country_current = "País actual:"
         player_country_prompt = "Introduce el código del país (2 letras, ex: FR):"
         player_country_invalid = "Inválido. Debe tener 2 letras."
@@ -595,8 +685,8 @@ $Global:Languages = @{
         temp_time_cancelled = "Operación cancelada."
         temp_time_no_player = "No disponible sin nombre de jugador."
         temp_time_check_title = "Verificando jugador..."
-        temp_time_check_status = "Buscando en el preset seleccionado"
-        temp_time_disabled = "PB temporal desactivado (jugador no encontrado en este preset)."
+        temp_time_check_status = "Buscando en la categoría seleccionada"
+        temp_time_disabled = "PB temporal desactivado (jugador no encontrado en esta categoría)."
         
         # Reset
         reset_confirm = "¿Seguro que quieres restablecer la configuración? (s/N)"
@@ -614,11 +704,11 @@ $Global:Languages = @{
     }
     pt = @{
         # Main menu
-        menu_title = "Gerenciador de Presets SRC by karlitto__ v1.40"
-        menu_add_preset = "Adicionar um novo preset"
-        menu_view_details = "Ver detalhes de um preset existente"
-        menu_change_active = "Alterar preset ativo"
-        menu_remove_preset = "Remover um preset"
+        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v1.41"
+        menu_add_category = "Adicionar uma nova categoria"
+        menu_view_details = "Ver detalhes de uma categoria existente"
+        menu_change_active = "Alterar categoria ativa"
+        menu_remove_category = "Remover uma categoria"
         menu_language_settings = "Configurações de idioma / 语言设置"
         menu_parameters = "Parâmetros"
         menu_player_name = "Definir meu nome"
@@ -630,26 +720,26 @@ $Global:Languages = @{
         nav_instructions = "Use setas CIMA/BAIXO para navegar, Enter para selecionar"
         nav_instructions_cancel = "Use setas CIMA/BAIXO para navegar, Enter para selecionar, Backspace para cancelar"
         
-        # Existing presets
-        existing_presets = "Presets existentes:"
-        active_preset = "Preset atualmente ativo:"
+        # Existing categories
+        existing_categories = "Categorias existentes:"
+        active_category = "Categoria atualmente ativa:"
         not_defined = "Não definido"
         
-        # Preset details
-        details_title = "=== DETALHES DO PRESET ==="
-        details_choose = "Escolha um preset para ver:"
+        # Category details
+        details_title = "=== DETALHES DA CATEGORIA ==="
+        details_choose = "Escolha uma categoria para ver:"
         details_name = "Nome:"
-        details_preset_id = "ID do Preset:"
+        details_category_id = "ID da Categoria:"
         details_game_id = "ID do Jogo:"
         details_category = "Categoria:"
         details_subcategory = "Subcategoria:"
         details_active_obs = "Ativo no OBS:"
         details_actions = "Acoes:"
-        details_edit_name = "Editar nome do preset"
-        details_delete_preset = "Remover este preset"
-        details_edit_prompt = "Novo nome do preset (Esc para cancelar):"
+        details_edit_name = "Editar nome da categoria"
+        details_delete_category = "Remover esta categoria"
+        details_edit_prompt = "Novo nome da categoria (Esc para cancelar):"
         details_edit_empty = "Erro: o nome nao pode ficar vazio."
-        details_edit_saved = "Nome do preset atualizado:"
+        details_edit_saved = "Nome da categoria atualizado:"
         details_edit_cancelled = "Edicao cancelada."
         details_back = "Voltar"
         
@@ -661,8 +751,8 @@ $Global:Languages = @{
         cancelled = "Cancelado."
         success = "[OK]"
         
-        # New preset
-        add_title = "=== ADICIONAR NOVO PRESET ==="
+        # New category
+        add_title = "=== ADICIONAR NOVA CATEGORIA ==="
         add_game_name = "Nome do jogo:"
         add_game_name_hint = "Pressione ESC para cancelar e voltar ao menu principal"
         add_error_empty_name = "Erro: Você deve inserir um nome de jogo!"
@@ -682,41 +772,41 @@ $Global:Languages = @{
         final_game_id = "ID Jogo  :"
         final_category = "Categoria :"
         final_subcategory = "Subcategoria :"
-        final_preset_id = "Digite um ID único para este preset:"
+        final_category_id = "Digite um ID único para esta categoria:"
         final_suggestion = "Sugestão:"
-        final_preset_id_prompt = "ID do preset (ou Enter para sugestão)"
-        final_id_exists = "ATENÇÃO: Já existe um preset com ID '%s'!"
+        final_category_id_prompt = "ID da categoria (ou Enter para sugestão)"
+        final_id_exists = "ATENÇÃO: Já existe uma categoria com ID '%s'!"
         final_overwrite = "Você quer sobrescrever? (s/N)"
         final_operation_cancelled = "Operação cancelada."
-        final_activate_now = "Você quer ativar este preset agora? (s/N)"
-        final_saved = "Preset '%s' salvo com sucesso!"
+        final_activate_now = "Você quer ativar esta categoria agora? (s/N)"
+        final_saved = "Categoria '%s' salva com sucesso!"
         final_status = "Estado:"
-        final_auto_active = "Ativado automaticamente (primeiro preset)"
-        final_active_now = "Ativado como preset principal"
+        final_auto_active = "Ativado automaticamente (primeira categoria)"
+        final_active_now = "Ativado como categoria principal"
         final_saved_inactive = "Guardado sem ativar"
-        final_obs_will_show = "[OK] O OBS mostrará automaticamente este preset!"
-        final_activate_later = "Para ativar este preset mais tarde, use a opção de mudança de preset ativo."
+        final_obs_will_show = "[OK] O OBS mostrará automaticamente esta categoria!"
+        final_activate_later = "Para ativar esta categoria mais tarde, use a opção de mudança de categoria ativa."
         
-        # Change active preset
-        change_active_title = "=== ALTERAR PRESET ATIVO ==="
-        change_active_available = "Presets disponíveis:"
-        change_active_changed = "[OK] Preset ativo alterado para:"
-        change_active_obs_info = "OBS usará automaticamente este preset!"
+        # Change active category
+        change_active_title = "=== ALTERAR CATEGORIA ATIVA ==="
+        change_active_available = "Categorias disponíveis:"
+        change_active_changed = "[OK] Categoria ativa alterada para:"
+        change_active_obs_info = "OBS usará automaticamente esta categoria!"
         
-        # Delete preset
-        remove_title = "=== REMOVER PRESET ==="
+        # Delete category
+        remove_title = "=== REMOVER CATEGORIA ==="
         remove_impossible_title = "=== NÃO É POSSÍVEL REMOVER ==="
-        remove_impossible_last = "Não é possível remover o último preset!"
-        remove_impossible_rule = "Você deve ter pelo menos um preset configurado."
+        remove_impossible_last = "Não é possível remover a última categoria!"
+        remove_impossible_rule = "Você deve ter pelo menos uma categoria configurada."
         remove_warning = "ATENÇÃO: Você vai remover permanentemente:"
-        remove_confirm = "Tem certeza de que quer remover este preset? (s/N)"
+        remove_confirm = "Tem certeza de que quer remover esta categoria? (s/N)"
         remove_cancelled = "Remoção cancelada."
-        remove_active_deleted = "O preset ativo foi removido. Escolha o novo preset ativo:"
-        remove_success = "[OK] Preset '%s' removido com sucesso!"
-        remove_new_active = "Novo preset ativo:"
+        remove_active_deleted = "A categoria ativa foi removida. Escolha a nova categoria ativa:"
+        remove_success = "[OK] Categoria '%s' removida com sucesso!"
+        remove_new_active = "Nova categoria ativa:"
         
         # First launch
-        first_launch_no_preset = "Nenhum preset encontrado. Criando o primeiro preset..."
+        first_launch_no_category = "Nenhuma categoria encontrada. Criando a primeira categoria..."
         
         # Language
         language_title = "=== CONFIGURAÇÕES DE IDIOMA ==="
@@ -738,6 +828,7 @@ $Global:Languages = @{
         parameters_flag_override_prompt = "Digite override (AA BB, ex.: CR FR):"
         parameters_visuals_section_layout = "Layout"
         parameters_visuals_section_list_ranks = "Lista e rankings"
+        parameters_visuals_section_category_name = "Nome da categoria"
         parameters_visuals_section_text_spacing = "Tipografia e espaçamento"
         parameters_visuals_max_name_chars = "Largura do nome (visível)"
         parameters_visuals_section_pb = "PB"
@@ -745,13 +836,40 @@ $Global:Languages = @{
         parameters_visuals_section_flags_trophies = "Bandeiras e trofeus"
         parameters_visuals_section_carousel = "Carrossel"
 
+        # Parameter descriptions
+        param_desc_displayWidth = "Largura da tela do overlay em pixels"
+        param_desc_displayHeight = "Altura da tela do overlay em pixels"
+        param_desc_topCount = "Número de runs fixas no topo da classificação"
+        param_desc_runsPerBatch = "Número de runs exibidas por ciclo de carrossel"
+        param_desc_maxRuns = "Número máximo de runs obtidas da API"
+        param_desc_rankAlign = "Alinhamento dos números de classificação (esquerda, centro, direita)"
+        param_desc_rankPrefixMode = "Símbolo visual da classificação (ponto, cerquilha ou nada)"
+        param_desc_fontStyle = "Família de fonte usada para todo o texto"
+        param_desc_customFont = "Nome de uma fonte personalizada instalada no seu sistema (deixe vazio para usar fontStyle)"
+        param_desc_categoryNameVisible = "Exibir o nome da categoria no topo do overlay?"
+        param_desc_categoryNameFontSize = "Tamanho da fonte do nome da categoria (pequeno=16px, médio=18px, grande=20px)"
+        param_desc_categoryNameColor = "Cor do nome da categoria (6 caracteres hexadecimais, ex: 84c8ff)"
+        param_desc_categoryNameSpacing = "Espaço vertical entre nome da categoria e classificação (12-50px)"
+        param_desc_maxNameWidthVisible = "Máximo de caracteres para nomes de jogadores"
+        param_desc_nameSpacing = "Espaçamento horizontal do nome do jogador"
+        param_desc_timeFormat = "Formato para exibir os tempos de run"
+        param_desc_pbSeparatorWidth = "Largura da linha separadora antes do PB"
+        param_desc_pbPrefix = "Texto de prefixo personalizado antes do PB (1-3 letras)"
+        param_desc_pbColor = "Cor do ranking PB (6 caracteres hexadecimais, ex: 9fb4ca)"
+        param_desc_pbUseRainbow = "Usar efeito arco-íris para o PB em vez de cor fixa?"
+        param_desc_rainbowIntensity = "Intensidade do efeito arco-íris (0-100%)"
+        param_desc_useTrophyIcons = "Mostrar ícones de troféu para o top 3?"
+        param_desc_flagOverrides = "Substituir códigos de bandeira de país (ex: HR FR)"
+        param_desc_CAROUSEL_DISPLAY_DURATION = "Tempo de exibição do carrossel (milissegundos)"
+        param_desc_CAROUSEL_FADE_DURATION = "Duração da transição de esmaecimento (milissegundos)"
+
         # Player name
         player_name_title = "=== NOME DO JOGADOR ==="
         player_name_current = "Nome atual:"
         player_name_prompt = "Introduza o nome do jogador (vazio para desativar, Esc para cancelar):"
         player_name_saved = "[OK] Nome do jogador guardado:"
         player_name_cleared = "Nome do jogador desativado."
-        player_name_cancelled = "Operacao cancelada."
+        player_name_cancelled = "Operação cancelada."
         player_country_current = "País atual:"
         player_country_prompt = "Introduza o código do país (2 letras, ex: FR):"
         player_country_invalid = "Inválido. Deve ter 2 letras."
@@ -768,10 +886,10 @@ $Global:Languages = @{
         temp_time_saved = "[OK] Tempo temporário guardado:"
         temp_time_cleared = "Tempo temporário eliminado."
         temp_time_cancelled = "Operação cancelada."
-        temp_time_no_player = "Indisponivel sem nome do jogador."
+        temp_time_no_player = "Indisponível sem nome do jogador."
         temp_time_check_title = "Verificando jogador..."
-        temp_time_check_status = "Buscando no preset seleccionado"
-        temp_time_disabled = "PB temporario desativado (jogador nao encontrado neste preset)."
+        temp_time_check_status = "Buscando na categoria selecionada"
+        temp_time_disabled = "PB temporário desativado (jogador não encontrado nesta categoria)."
         
         # Reset
         reset_confirm = "Tem certeza que deseja redefinir a configuração? (s/N)"
@@ -789,11 +907,11 @@ $Global:Languages = @{
     }
     zh = @{
         # Main menu
-        menu_title = "SRC 预设管理器 by karlitto__ v1.40 卡里托"
-        menu_add_preset = "添加新预设"
-        menu_view_details = "查看现有预设详情"
-        menu_change_active = "更改活动预设"
-        menu_remove_preset = "删除预设"
+        menu_title = "SRC 排行榜管理器 by karlitto__ v1.41 卡里托"
+        menu_add_category = "添加新类别"
+        menu_view_details = "查看现有类别详情"
+        menu_change_active = "更改活动类别"
+        menu_remove_category = "删除类别"
         menu_language_settings = "语言设置 / Language settings"
         menu_parameters = "参数"
         menu_player_name = "设置我的名字"
@@ -805,26 +923,26 @@ $Global:Languages = @{
         nav_instructions = "使用上/下箭头导航，回车选择"
         nav_instructions_cancel = "使用上/下箭头导航，回车选择，Backspace取消"
         
-        # Existing presets
-        existing_presets = "现有预设："
-        active_preset = "当前活动预设："
+        # Existing categories
+        existing_categories = "现有类别："
+        active_category = "当前活动类别："
         not_defined = "未定义"
         
-        # Preset details
-        details_title = "=== 预设详情 ==="
-        details_choose = "选择要查看的预设："
+        # Category details
+        details_title = "=== 类别详情 ==="
+        details_choose = "选择要查看的类别："
         details_name = "名称："
-        details_preset_id = "预设ID："
+        details_category_id = "类别ID："
         details_game_id = "游戏ID："
         details_category = "类别："
         details_subcategory = "子类别："
         details_active_obs = "在OBS中活动："
         details_actions = "操作："
-        details_edit_name = "编辑预设名称"
-        details_delete_preset = "删除此预设"
-        details_edit_prompt = "新的预设名称（Esc 取消）："
+        details_edit_name = "编辑类别名称"
+        details_delete_category = "删除此类别"
+        details_edit_prompt = "新的类别名称（Esc 取消）："
         details_edit_empty = "错误：名称不能为空。"
-        details_edit_saved = "预设名称已更新："
+        details_edit_saved = "类别名称已更新："
         details_edit_cancelled = "已取消编辑。"
         details_back = "返回"
         
@@ -836,8 +954,8 @@ $Global:Languages = @{
         cancelled = "已取消。"
         success = "[OK]"
         
-        # New preset
-        add_title = "=== 添加新预设 ==="
+        # New category
+        add_title = "=== 添加新类别 ==="
         add_game_name = "游戏名称"
         add_game_name_hint = "按 ESC 取消并返回主菜单"
         add_error_empty_name = "错误：您必须输入游戏名称！"
@@ -856,42 +974,42 @@ $Global:Languages = @{
         final_game = "游戏     ："
         final_game_id = "游戏ID   ："
         final_category = "类别     ："
-        final_subcategory = "子类别   ："
-        final_preset_id = "为此预设输入唯一ID："
+        final_subcategory = "子类别   :"
+        final_category_id = "为此类别输入唯一ID："
         final_suggestion = "建议："
-        final_preset_id_prompt = "预设ID（或回车使用建议）"
-        final_id_exists = "警告：ID '%s' 的预设已存在！"
+        final_category_id_prompt = "类别ID（或回车使用建议）"
+        final_id_exists = "警告：ID '%s' 的类别已存在！"
         final_overwrite = "您要覆盖它吗？（y/N）"
         final_operation_cancelled = "操作已取消。"
-        final_activate_now = "您现在要激活此预设吗？（y/N）"
-        final_saved = "预设 '%s' 保存成功！"
+        final_activate_now = "您现在要激活此类别吗？（y/N）"
+        final_saved = "类别 '%s' 保存成功！"
         final_status = "状态："
-        final_auto_active = "自动激活（第一个预设）"
-        final_active_now = "激活为主要预设"
+        final_auto_active = "自动激活（第一个类别）"
+        final_active_now = "激活为主要类别"
         final_saved_inactive = "保存而不激活"
-        final_obs_will_show = "[OK] OBS将自动显示此预设！"
-        final_activate_later = "要稍后激活此预设，请使用活动预设更改选项。"
+        final_obs_will_show = "[OK] OBS将自动显示此类别！"
+        final_activate_later = "要稍后激活此类别，请使用活动类别更改选项。"
         
-        # Change active preset
-        change_active_title = "=== 更改活动预设 ==="
-        change_active_available = "可用预设："
-        change_active_changed = "[OK] 活动预设已更改为："
-        change_active_obs_info = "OBS将自动使用此预设！"
+        # Change active category
+        change_active_title = "=== 更改活动类别 ==="
+        change_active_available = "可用类别："
+        change_active_changed = "[OK] 活动类别已更改为："
+        change_active_obs_info = "OBS将自动使用此类别！"
         
-        # Delete preset
-        remove_title = "=== 删除预设 ==="
+        # Delete category
+        remove_title = "=== 删除类别 ==="
         remove_impossible_title = "=== 无法删除 ==="
-        remove_impossible_last = "无法删除最后一个预设！"
-        remove_impossible_rule = "您必须至少配置一个预设。"
+        remove_impossible_last = "无法删除最后一个类别！"
+        remove_impossible_rule = "您必须至少配置一个类别。"
         remove_warning = "警告：您将永久删除："
-        remove_confirm = "您确定要删除此预设吗？(y/N)"
+        remove_confirm = "您确定要删除此类别吗？(y/N)"
         remove_cancelled = "删除已取消。"
-        remove_active_deleted = "活动预设已删除。选择新的活动预设："
-        remove_success = "[OK] 预设 '%s' 删除成功！"
-        remove_new_active = "新活动预设："
+        remove_active_deleted = "活动类别已删除。选择新的活动类别："
+        remove_success = "[OK] 类别 '%s' 删除成功！"
+        remove_new_active = "新活动类别："
         
         # First launch
-        first_launch_no_preset = "未找到预设。正在创建第一个预设..."
+        first_launch_no_category = "未找到类别。正在创建第一个类别..."
         
         # Language
         language_title = "=== 语言设置 ==="
@@ -913,12 +1031,40 @@ $Global:Languages = @{
         parameters_flag_override_prompt = "输入覆写代码（AA BB，例如：CR FR）："
         parameters_visuals_section_layout = "布局"
         parameters_visuals_section_list_ranks = "列表和名次"
+        parameters_visuals_section_category_name = "类别名称"
         parameters_visuals_section_text_spacing = "字体与间距"
         parameters_visuals_max_name_chars = "名称宽度（可见）"
         parameters_visuals_section_pb = "PB"
         parameters_visuals_section_effects = "特效"
         parameters_visuals_section_flags_trophies = "旗帜与奖杯"
         parameters_visuals_section_carousel = "轮播"
+
+        # Parameter descriptions
+        param_desc_displayWidth = "覆盖层画布的宽度（像素）"
+        param_desc_displayHeight = "覆盖层画布的高度（像素）"
+        param_desc_topCount = "排行榜顶部固定记录数量"
+        param_desc_runsPerBatch = "每个轮播周期显示的记录数"
+        param_desc_maxRuns = "从API获取的最大记录数"
+        param_desc_rankAlign = "排名数字的对齐方式（左、中、右）"
+        param_desc_rankPrefixMode = "排名的视觉符号（点、井号或无）"
+        param_desc_fontStyle = "所有文本使用的字体系列"
+        param_desc_customFont = "系统中安装的自定义字体名称（留空则使用fontStyle）"
+        param_desc_categoryNameVisible = "在覆盖层顶部显示类别名称？"
+        param_desc_categoryNameFontSize = "类别名称字体大小（小=16px，中=18px，大=20px）"
+        param_desc_categoryNameColor = "类别名称颜色（6位十六进制字符，例：84c8ff）"
+        param_desc_categoryNameSpacing = "类别名称和排行榜之间的垂直间距（12-50px）"
+        param_desc_maxNameWidthVisible = "玩家名称的最大字符数"
+        param_desc_nameSpacing = "玩家名称的水平间距"
+        param_desc_timeFormat = "显示记录时间的格式"
+        param_desc_pbSeparatorWidth = "PB前的分隔线宽度"
+        param_desc_pbPrefix = "玩家PB前的自定义前缀文本（1-3个字母）"
+        param_desc_pbColor = "PB排名颜色（6位十六进制字符，例：9fb4ca）"
+        param_desc_pbUseRainbow = "为PB使用彩虹效果而不是固定颜色？"
+        param_desc_rainbowIntensity = "彩虹效果强度（0-100%）"
+        param_desc_useTrophyIcons = "为前3名显示奖杯图标？"
+        param_desc_flagOverrides = "替换国家旗帜代码（例如：HR FR）"
+        param_desc_CAROUSEL_DISPLAY_DURATION = "轮播显示时间（毫秒）"
+        param_desc_CAROUSEL_FADE_DURATION = "淡入淡出过渡的持续时间（毫秒）"
 
         # Player name
         player_name_title = "=== 玩家名称 ==="
@@ -945,8 +1091,8 @@ $Global:Languages = @{
         temp_time_cancelled = "操作已取消。"
         temp_time_no_player = "未设置玩家名称，无法使用。"
         temp_time_check_title = "正在检查玩家..."
-        temp_time_check_status = "在所选预设中查找"
-        temp_time_disabled = "临时PB已禁用（该预设中未找到玩家）。"
+        temp_time_check_status = "在所选类别中查找"
+        temp_time_disabled = "临时PB已禁用（该类别中未找到玩家）。"
         
         # Reset
         reset_confirm = "您确定要重置配置吗？(y/N)"
@@ -1106,6 +1252,32 @@ function Set-Language {
     return "$clamped`px"
   }
 
+  function Test-FontInstalled {
+    param(
+      [string]$FontName
+    )
+    
+    if ([string]::IsNullOrWhiteSpace($FontName)) {
+      return $true  # Empty is valid (means use fontStyle instead)
+    }
+    
+    try {
+      # Load System.Drawing assembly to access font families
+      Add-Type -AssemblyName System.Drawing -ErrorAction SilentlyContinue
+      
+      # Get all installed font families
+      $installedFonts = [System.Drawing.FontFamily]::Families | ForEach-Object { $_.Name }
+      
+      # Check if the font name matches any installed font (case-insensitive)
+      $found = $installedFonts | Where-Object { $_ -like $FontName }
+      
+      return ($null -ne $found)
+    } catch {
+      # If we can't check, assume it's okay (fail-open)
+      return $true
+    }
+  }
+
   function Save-Config {
     param($Config)
 
@@ -1126,18 +1298,14 @@ function Set-Language {
         $displayWidthValue = [int]$Matches[1]
       }
     }
-    $canvasWidthValue = $null
-    if ([int]::TryParse("$($config.defaults.canvasWidth)", [ref]$canvasWidthValue)) {
-      # parsed
-    } else {
-      $canvasWidthValue = $null
+    # Fallback for old configs that might have canvasWidth
+    if ($displayWidthValue -eq $null -and $config.defaults.canvasWidth) {
+      if ([int]::TryParse("$($config.defaults.canvasWidth)", [ref]$displayWidthValue)) {
+        # Use canvasWidth as fallback
+      }
     }
-    $baseWidthValue = 350.0
-    if ($displayWidthValue -ne $null) {
-      [void][double]::TryParse("$displayWidthValue", [ref]$baseWidthValue)
-    } elseif ($canvasWidthValue -ne $null) {
-      [void][double]::TryParse("$canvasWidthValue", [ref]$baseWidthValue)
-    }
+    
+    $baseWidthValue = if ($displayWidthValue -ne $null) { [double]$displayWidthValue } else { 350.0 }
 
     $timeXValue = [Math]::Min(350.0, $baseWidthValue - $padX)
     if ([double]::IsNaN($timeXValue) -or [double]::IsInfinity($timeXValue)) {
@@ -1156,6 +1324,7 @@ function Set-Language {
       $lastIndex = $SelectedIndex
       while ($true) {
         $options = @()
+        $descriptions = @()
         $maxLabel = 0
         foreach ($item in $Items) {
           if ($item.label.Length -gt $maxLabel) {
@@ -1184,10 +1353,18 @@ function Set-Language {
           }
           $labelPad = $item.label.PadRight($maxLabel)
           $options += "$labelPad : $currentValue"
+          
+          # Add description if available
+          if ($item.desc) {
+            $descriptions += (Get-LocalizedString $item.desc)
+          } else {
+            $descriptions += ""
+          }
         }
         $options += (Get-LocalizedString "parameters_back")
+        $descriptions += ""
 
-        $selectedIndex = Show-ArrowMenu -Title $Title -Options $options -AllowCancel -SelectedIndex $lastIndex
+        $selectedIndex = Show-ArrowMenu -Title $Title -Options $options -AllowCancel -SelectedIndex $lastIndex -Descriptions $descriptions
         if ($selectedIndex -eq -1 -or $selectedIndex -eq ($options.Count - 1)) {
           return $lastIndex
         }
@@ -1219,8 +1396,7 @@ function Set-Language {
             Clear-Host
             Write-Host (Get-LocalizedString "parameters_invalid_format") -ForegroundColor Red
             Write-Host ""
-            Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-            $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+            Start-Sleep -Milliseconds 800
           }
           continue
         }
@@ -1255,7 +1431,15 @@ function Set-Language {
           continue
         }
 
-        $prompt = "$(Get-LocalizedString 'parameters_select_value') [$($selected.min)-$($selected.max)] (current: $currentValue)"
+        $prompt = if ($selected.type -eq "text") {
+          if ($selected.key -eq "customFont") {
+            "$(Get-LocalizedString 'parameters_select_value') [0-$($selected.maxLength) chars] (current: $currentValue)"
+          } else {
+            "$(Get-LocalizedString 'parameters_select_value') [$($selected.minLength)-$($selected.maxLength) letters] (current: $currentValue)"
+          }
+        } else {
+          "$(Get-LocalizedString 'parameters_select_value') [$($selected.min)-$($selected.max)] (current: $currentValue)"
+        }
         $inputResult = Read-InputWithEscape $prompt
         if ($inputResult.Cancelled) {
           continue
@@ -1269,14 +1453,57 @@ function Set-Language {
           }
         } elseif ($selected.type -eq "px") {
           $newValue = Convert-SizeToPx -Text $inputResult.Text -Min $selected.min -Max $selected.max
+        } elseif ($selected.type -eq "text") {
+          $text = $inputResult.Text.Trim()
+          
+          # Different validation for customFont vs pbPrefix vs categoryNameColor
+          if ($selected.key -eq "customFont") {
+            # Custom font: allow any printable characters, spaces, preserve case
+            # Allow empty string (minLength = 0)
+            if ($text.Length -eq 0 -or ($text.Length -ge $selected.minLength -and $text.Length -le $selected.maxLength)) {
+              $newValue = $text  # Keep original case and spaces
+              
+              # Check if font is installed (warning only, not blocking)
+              if ($text.Length -gt 0) {
+                $fontExists = Test-FontInstalled -FontName $text
+                if (-not $fontExists) {
+                  Clear-Host
+                  Write-Host "⚠️  WARNING: Font '$text' not found on your system!" -ForegroundColor Yellow
+                  Write-Host "   The overlay will fall back to a default font." -ForegroundColor Yellow
+                  Write-Host ""
+                  Write-Host "   Do you want to save it anyway? (y/N)" -ForegroundColor Cyan
+                  $confirmation = Read-Host
+                  if ($confirmation -notmatch '^[yYoO]') {
+                    $newValue = $null  # Cancel save
+                  }
+                }
+              }
+            }
+          } elseif ($selected.key -eq "categoryNameColor" -or $selected.key -eq "pbColor") {
+            # Hex color: accept 6 hex characters, prepend # automatically
+            if ($text -match '^[0-9A-Fa-f]{6}$') {
+              $newValue = "#" + $text.ToLower()  # Prepend # and normalize to lowercase
+            } else {
+              Clear-Host
+              Write-Host "❌ Invalid hex color format!" -ForegroundColor Red
+              Write-Host "   Expected: 6 hex characters (e.g., 84c8ff or e2e8f0)" -ForegroundColor Yellow
+              Write-Host ""
+              Start-Sleep -Milliseconds 800
+              $newValue = $null
+            }
+          } else {
+            # pbPrefix: letters only, uppercase
+            if ($text -match '^[A-Za-z]+$' -and $text.Length -ge $selected.minLength -and $text.Length -le $selected.maxLength) {
+              $newValue = $text.ToUpper()
+            }
+          }
         }
 
         if ($null -eq $newValue) {
           Clear-Host
           Write-Host (Get-LocalizedString "parameters_invalid_number") -ForegroundColor Red
           Write-Host ""
-          Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-          $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+          Start-Sleep -Milliseconds 800
           continue
         }
 
@@ -1290,37 +1517,45 @@ function Set-Language {
 
     $categories = @(
       @{ key = "layout"; label = (Get-LocalizedString "parameters_visuals_section_layout"); items = @(
-          @{ key = "canvasWidth"; label = "canvasWidth"; type = "int"; min = 300; max = 4000 }
-          @{ key = "canvasHeight"; label = "canvasHeight"; type = "int"; min = 200; max = 3000 }
-          @{ key = "displayWidth"; label = "displayWidth"; type = "px"; min = 200; max = 4000 }
-          @{ key = "displayHeight"; label = "displayHeight"; type = "px"; min = 100; max = 3000 }
+          @{ key = "displayWidth"; label = "displayWidth"; type = "int"; min = 200; max = 4000; desc = "param_desc_displayWidth" }
+          @{ key = "displayHeight"; label = "displayHeight"; type = "int"; min = 100; max = 3000; desc = "param_desc_displayHeight" }
         ) }
       @{ key = "listRanks"; label = (Get-LocalizedString "parameters_visuals_section_list_ranks"); items = @(
-          @{ key = "topCount"; label = "topCount"; type = "int"; min = 1; max = 5 }
-          @{ key = "runsPerBatch"; label = "runsPerBatch"; type = "int"; min = 1; max = 5 }
-          @{ key = "maxRuns"; label = "maxRuns"; type = "int"; min = 10; max = 200 }
-          @{ key = "rankAlign"; label = "rankAlign"; type = "enum"; options = @("left", "center", "right") }
-          @{ key = "rankPrefixMode"; label = "rankPrefixMode"; type = "enum"; options = @("dot", "hash") }
+          @{ key = "topCount"; label = "topCount"; type = "int"; min = 1; max = 5; desc = "param_desc_topCount" }
+          @{ key = "runsPerBatch"; label = "runsPerBatch"; type = "int"; min = 1; max = 5; desc = "param_desc_runsPerBatch" }
+          @{ key = "maxRuns"; label = "maxRuns"; type = "int"; min = 10; max = 200; desc = "param_desc_maxRuns" }
+          @{ key = "rankAlign"; label = "rankAlign"; type = "enum"; options = @("left", "center", "right"); desc = "param_desc_rankAlign" }
+          @{ key = "rankPrefixMode"; label = "rankPrefixMode"; type = "enum"; options = @("dot", "hash", "none"); desc = "param_desc_rankPrefixMode" }
+        ) }
+      @{ key = "categoryName"; label = (Get-LocalizedString "parameters_visuals_section_category_name"); items = @(
+          @{ key = "categoryNameVisible"; label = "categoryNameVisible"; type = "bool"; desc = "param_desc_categoryNameVisible" }
+          @{ key = "categoryNameFontSize"; label = "categoryNameFontSize"; type = "enum"; options = @("16", "18", "20"); desc = "param_desc_categoryNameFontSize" }
+          @{ key = "categoryNameColor"; label = "categoryNameColor"; type = "text"; minLength = 6; maxLength = 6; desc = "param_desc_categoryNameColor" }
+          @{ key = "categoryNameSpacing"; label = "categoryNameSpacing"; type = "int"; min = 12; max = 50; desc = "param_desc_categoryNameSpacing" }
         ) }
       @{ key = "textSpacing"; label = (Get-LocalizedString "parameters_visuals_section_text_spacing"); items = @(
-          @{ key = "fontStyle"; label = "fontStyle"; type = "enum"; options = @("Arial", "Verdana", "TimesNewRoman", "Georgia", "CourierNew", "Impact", "TrebuchetMS", "Tahoma", "ComicSans", "SegoeUI") }
-          @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 60 }
-          @{ key = "nameSpacing"; label = "nameSpacing"; type = "int"; min = 0; max = 10 }
-          @{ key = "timeFormat"; label = "timeFormat"; type = "enum"; options = @("1:25:25.255", "1h25m25s225ms") }
+          @{ key = "fontStyle"; label = "fontStyle"; type = "enum"; options = @("Arial", "Verdana", "TimesNewRoman", "Georgia", "CourierNew", "Impact", "TrebuchetMS", "Tahoma", "ComicSans", "SegoeUI"); desc = "param_desc_fontStyle" }
+          @{ key = "customFont"; label = "customFont"; type = "text"; minLength = 0; maxLength = 30; desc = "param_desc_customFont" }
+          @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 60; desc = "param_desc_maxNameWidthVisible" }
+          @{ key = "nameSpacing"; label = "nameSpacing"; type = "int"; min = 0; max = 10; desc = "param_desc_nameSpacing" }
+          @{ key = "timeFormat"; label = "timeFormat"; type = "enum"; options = @("1:25:25.255", "1h25m25s225ms"); desc = "param_desc_timeFormat" }
         ) }
       @{ key = "pb"; label = (Get-LocalizedString "parameters_visuals_section_pb"); items = @(
-          @{ key = "pbSeparatorWidth"; label = "pbSeparatorWidth"; type = "int"; min = 50; max = $pbSeparatorMax }
+          @{ key = "pbSeparatorWidth"; label = "pbSeparatorWidth"; type = "int"; min = 50; max = $pbSeparatorMax; desc = "param_desc_pbSeparatorWidth" }
+          @{ key = "pbPrefix"; label = "pbPrefix"; type = "text"; minLength = 1; maxLength = 3; desc = "param_desc_pbPrefix" }
+          @{ key = "pbColor"; label = "pbColor"; type = "text"; minLength = 6; maxLength = 6; desc = "param_desc_pbColor" }
+          @{ key = "pbUseRainbow"; label = "pbUseRainbow"; type = "bool"; desc = "param_desc_pbUseRainbow" }
         ) }
       @{ key = "effects"; label = (Get-LocalizedString "parameters_visuals_section_effects"); items = @(
-          @{ key = "rainbowIntensity"; label = "rainbowIntensity"; type = "int"; min = 0; max = 100 }
+          @{ key = "rainbowIntensity"; label = "rainbowIntensity"; type = "int"; min = 0; max = 100; desc = "param_desc_rainbowIntensity" }
         ) }
       @{ key = "flagsTrophies"; label = (Get-LocalizedString "parameters_visuals_section_flags_trophies"); items = @(
-          @{ key = "useTrophyIcons"; label = "useTrophyIcons"; type = "bool" }
-          @{ key = "flagOverrides"; label = "flagOverrides"; type = "flagOverride" }
+          @{ key = "useTrophyIcons"; label = "useTrophyIcons"; type = "bool"; desc = "param_desc_useTrophyIcons" }
+          @{ key = "flagOverrides"; label = "flagOverrides"; type = "flagOverride"; desc = "param_desc_flagOverrides" }
         ) }
       @{ key = "carousel"; label = (Get-LocalizedString "parameters_visuals_section_carousel"); items = @(
-          @{ key = "CAROUSEL_DISPLAY_DURATION"; label = "CAROUSEL_DISPLAY_DURATION"; type = "int"; min = 1000; max = 10000 }
-          @{ key = "CAROUSEL_FADE_DURATION"; label = "CAROUSEL_FADE_DURATION"; type = "int"; min = 50; max = 1000 }
+          @{ key = "CAROUSEL_DISPLAY_DURATION"; label = "CAROUSEL_DISPLAY_DURATION"; type = "int"; min = 1000; max = 10000; desc = "param_desc_CAROUSEL_DISPLAY_DURATION" }
+          @{ key = "CAROUSEL_FADE_DURATION"; label = "CAROUSEL_FADE_DURATION"; type = "int"; min = 50; max = 1000; desc = "param_desc_CAROUSEL_FADE_DURATION" }
         ) }
     )
 
@@ -1415,6 +1650,30 @@ function Initialize-Config {
 
   if (-not $config) { $config = @{} }
 
+  # === MIGRATION: Rename presets → categories (backward compatibility) ===
+  if ($config.PSObject.Properties.Name -contains "presets") {
+    $presetsValue = $config.presets
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "categories" -Value $presetsValue -Force
+      $config.PSObject.Properties.Remove("presets")
+    } else {
+      $config.categories = $presetsValue
+      $config.Remove("presets")
+    }
+  }
+
+  if ($config.PSObject.Properties.Name -contains "activePreset") {
+    $activeValue = $config.activePreset
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "activeCategory" -Value $activeValue -Force
+      $config.PSObject.Properties.Remove("activePreset")
+    } else {
+      $config.activeCategory = $activeValue
+      $config.Remove("activePreset")
+    }
+  }
+  # === END MIGRATION ===
+
   if (-not $config.language) {
     if ($config.GetType().Name -eq "PSCustomObject") {
       $config | Add-Member -MemberType NoteProperty -Name "language" -Value "fr" -Force
@@ -1423,19 +1682,19 @@ function Initialize-Config {
     }
   }
 
-  if (-not $config.activePreset) {
+  if (-not $config.activeCategory) {
     if ($config.GetType().Name -eq "PSCustomObject") {
-      $config | Add-Member -MemberType NoteProperty -Name "activePreset" -Value $null -Force
+      $config | Add-Member -MemberType NoteProperty -Name "activeCategory" -Value $null -Force
     } else {
-      $config.activePreset = $null
+      $config.activeCategory = $null
     }
   }
 
-  if (-not $config.presets) {
+  if (-not $config.categories) {
     if ($config.GetType().Name -eq "PSCustomObject") {
-      $config | Add-Member -MemberType NoteProperty -Name "presets" -Value @{} -Force
+      $config | Add-Member -MemberType NoteProperty -Name "categories" -Value @{} -Force
     } else {
-      $config.presets = @{}
+      $config.categories = @{}
     }
   }
 
@@ -1449,10 +1708,12 @@ function Initialize-Config {
       rankAlign = "right"
       rankPrefixMode = "dot"
       fontStyle = "Arial"
+      customFont = ""
       maxNameWidthVisible = 30
       timeFormat = "1:25:25.255"
       nameSpacing = 4
       pbSeparatorWidth = 326
+      pbPrefix = "PB"
       rainbowIntensity = 50
       CAROUSEL_DISPLAY_DURATION = 3000
       CAROUSEL_FADE_DURATION = 500
@@ -1513,6 +1774,42 @@ function Initialize-Config {
     }
   }
 
+  # Ensure pbPrefix exists in defaults (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "pbPrefix")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "pbPrefix" -Value "PB" -Force
+    } else {
+      $config.defaults.pbPrefix = "PB"
+    }
+  }
+
+  # Ensure pbColor exists in defaults (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "pbColor")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "pbColor" -Value "9fb4ca" -Force
+    } else {
+      $config.defaults.pbColor = "9fb4ca"
+    }
+  }
+
+  # Ensure pbUseRainbow exists in defaults (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "pbUseRainbow")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "pbUseRainbow" -Value $false -Force
+    } else {
+      $config.defaults.pbUseRainbow = $false
+    }
+  }
+
+  # Ensure customFont exists in defaults (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "customFont")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "customFont" -Value "" -Force
+    } else {
+      $config.defaults.customFont = ""
+    }
+  }
+
   # Remove deprecated carouselInterval if it exists (migration)
   if ($config.defaults) {
     if ($config.defaults.GetType().Name -eq "PSCustomObject") {
@@ -1523,6 +1820,42 @@ function Initialize-Config {
       if ($config.defaults.ContainsKey("carouselInterval")) {
         $config.defaults.Remove("carouselInterval")
       }
+    }
+  }
+
+  # Ensure categoryNameFontSize exists (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "categoryNameFontSize")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "categoryNameFontSize" -Value 16 -Force
+    } else {
+      $config.defaults.categoryNameFontSize = 16
+    }
+  }
+
+  # Ensure categoryNameColor exists (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "categoryNameColor")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "categoryNameColor" -Value "#84c8ff" -Force
+    } else {
+      $config.defaults.categoryNameColor = "#84c8ff"
+    }
+  }
+
+  # Ensure categoryNameSpacing exists (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "categoryNameSpacing")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "categoryNameSpacing" -Value 14 -Force
+    } else {
+      $config.defaults.categoryNameSpacing = 14
+    }
+  }
+
+  # Ensure categoryNameVisible exists (backward compatibility)
+  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "categoryNameVisible")) {
+    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
+      $config.defaults | Add-Member -MemberType NoteProperty -Name "categoryNameVisible" -Value $true -Force
+    } else {
+      $config.defaults.categoryNameVisible = $true
     }
   }
 
@@ -1835,7 +2168,7 @@ function Select-SubcategorySelections {
   }
 }
 
-function Resolve-PresetCategoryAndVariables {
+function Resolve-CategoryDetailsAndVariables {
   param($preset)
 
   $gameId = $preset.gameId
@@ -1902,7 +2235,7 @@ function Resolve-PresetCategoryAndVariables {
   return @{ CategoryId = $cat.id; VariablePairs = $variablePairs }
 }
 
-function Test-PlayerInPreset {
+function Test-PlayerInCategory {
   param($config, $preset)
 
   $playerName = if ($config.playerName) { $config.playerName.Trim() } else { "" }
@@ -1910,7 +2243,7 @@ function Test-PlayerInPreset {
     return $false
   }
 
-  $resolved = Resolve-PresetCategoryAndVariables $preset
+  $resolved = Resolve-CategoryDetailsAndVariables $preset
   $categoryId = $resolved.CategoryId
   $variablePairs = $resolved.VariablePairs
 
@@ -1976,8 +2309,7 @@ function Set-PlayerName {
     Clear-Host
     Write-Host (Get-LocalizedString "player_name_cancelled") -ForegroundColor Yellow
     Write-Host ""
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    Start-Sleep -Milliseconds 800
     return
   }
 
@@ -2001,8 +2333,7 @@ function Set-PlayerName {
     Clear-Host
     Write-Host (Get-LocalizedString "player_name_cancelled") -ForegroundColor Yellow
     Write-Host ""
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    Start-Sleep -Milliseconds 800
     return
   }
 
@@ -2081,8 +2412,7 @@ function Set-TemporaryRun {
     Clear-Host
     Write-Host (Get-LocalizedString "temp_time_no_player") -ForegroundColor Yellow
     Write-Host ""
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    Start-Sleep -Milliseconds 800
     return
   }
 
@@ -2134,8 +2464,7 @@ function Set-TemporaryRun {
     Clear-Host
     Write-Host (Get-LocalizedString "temp_time_cancelled") -ForegroundColor Yellow
     Write-Host ""
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    Start-Sleep -Milliseconds 800
     return
   }
 
@@ -2145,8 +2474,7 @@ function Set-TemporaryRun {
     Clear-Host
     Write-Host (Get-LocalizedString "temp_time_invalid") -ForegroundColor Red
     Write-Host ""
-    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
-    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    Start-Sleep -Milliseconds 800
     return
   }
 
@@ -2175,7 +2503,8 @@ function Show-ArrowMenu {
     [int]$SelectedIndex = 0,
     [switch]$AllowCancel = $false,
     [string]$ContextText = "",
-    [array]$ColoredOptions = @()
+    [array]$ColoredOptions = @(),
+    [array]$Descriptions = @()
   )
   
   $currentIndex = $SelectedIndex
@@ -2199,8 +2528,8 @@ function Show-ArrowMenu {
       Write-Host ""
     }
     
-    $removeLabel = Get-LocalizedString "menu_remove_preset"
-    $deleteLabel = Get-LocalizedString "details_delete_preset"
+    $removeLabel = Get-LocalizedString "menu_remove_category"
+    $deleteLabel = Get-LocalizedString "details_delete_category"
     for ($i = 0; $i -lt $Options.Count; $i++) {
       $isRemove = $Options[$i] -eq $removeLabel -or $Options[$i] -eq $deleteLabel -or $i -in $ColoredOptions
       if ($i -eq $currentIndex) {
@@ -2213,6 +2542,13 @@ function Show-ArrowMenu {
     }
     
     Write-Host ""
+    
+    # Show description for currently selected item if available
+    if ($Descriptions.Count -gt 0 -and $currentIndex -lt $Descriptions.Count -and $Descriptions[$currentIndex]) {
+      Write-Host $Descriptions[$currentIndex] -ForegroundColor DarkGray
+      Write-Host ""
+    }
+    
     if ($AllowCancel) {
       Write-Host (Get-LocalizedString "nav_instructions_cancel") -ForegroundColor Gray
     } else {
@@ -2247,8 +2583,8 @@ function Show-ArrowMenu {
 function Write-MainMenu {
   param($currentConfig)
   
-  if ($currentConfig -and $currentConfig.presets -and $currentConfig.presets.PSObject.Properties.Count -gt 0) {
-    $existingPresets = $currentConfig.presets.PSObject.Properties
+  if ($currentConfig -and $currentConfig.categories -and $currentConfig.categories.PSObject.Properties.Count -gt 0) {
+    $existingPresets = $currentConfig.categories.PSObject.Properties
     $presetList = @()
     foreach ($preset in $existingPresets) {
       $presetList += $preset
@@ -2282,16 +2618,16 @@ function Write-PresetDetails($presetList, $currentConfig) {
   Clear-Host
   Write-Host (Get-LocalizedString "details_title") -ForegroundColor Cyan
   Write-Host "$(Get-LocalizedString 'details_name') $($selectedPreset.Value.name)" -ForegroundColor White
-  Write-Host "$(Get-LocalizedString 'details_preset_id') $($selectedPreset.Name)" -ForegroundColor Cyan
+  Write-Host "$(Get-LocalizedString 'details_category_id') $($selectedPreset.Name)" -ForegroundColor Cyan
   Write-Host "$(Get-LocalizedString 'details_game_id') $($selectedPreset.Value.gameId)" -ForegroundColor Cyan
   Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
   $subcat = if ($selectedPreset.Value.subcategory) { $selectedPreset.Value.subcategory } else { (Get-LocalizedString "null_value") }
   Write-Host "$(Get-LocalizedString 'details_subcategory') $subcat" -ForegroundColor Cyan
-  $isActive = if ($currentConfig.activePreset -eq $selectedPreset.Name) { (Get-LocalizedString "yes") } else { (Get-LocalizedString "no") }
+  $isActive = if ($currentConfig.activeCategory -eq $selectedPreset.Name) { (Get-LocalizedString "yes") } else { (Get-LocalizedString "no") }
   Write-Host "$(Get-LocalizedString 'details_active_obs') $isActive" -ForegroundColor $(if ($isActive -eq (Get-LocalizedString "yes")) { "Green" } else { "Yellow" })
   $actionOptions = @(
     (Get-LocalizedString "details_edit_name"),
-    (Get-LocalizedString "details_delete_preset"),
+    (Get-LocalizedString "details_delete_category"),
     (Get-LocalizedString "details_back")
   )
   $actionContext = "$(Get-LocalizedString 'details_name') $($selectedPreset.Value.name)"
@@ -2324,14 +2660,14 @@ function Write-PresetDetails($presetList, $currentConfig) {
 
     $trimmedName = $newName.Trim()
     $presetId = $selectedPreset.Name
-    if ($currentConfig.presets.GetType().Name -eq "PSCustomObject") {
-      if ($currentConfig.presets.$presetId.PSObject.Properties.Name -contains "name") {
-        $currentConfig.presets.$presetId.name = $trimmedName
+    if ($currentConfig.categories.GetType().Name -eq "PSCustomObject") {
+      if ($currentConfig.categories.$presetId.PSObject.Properties.Name -contains "name") {
+        $currentConfig.categories.$presetId.name = $trimmedName
       } else {
-        $currentConfig.presets.$presetId | Add-Member -MemberType NoteProperty -Name "name" -Value $trimmedName -Force
+        $currentConfig.categories.$presetId | Add-Member -MemberType NoteProperty -Name "name" -Value $trimmedName -Force
       }
     } else {
-      $currentConfig.presets[$presetId].name = $trimmedName
+      $currentConfig.categories[$presetId].name = $trimmedName
     }
 
     $selectedPreset.Value.name = $trimmedName
@@ -2372,7 +2708,7 @@ function Update-ActivePreset($presetList, $currentConfig) {
   if ($selectedIndex -eq -1) { return }
   
   $newActivePreset = $presetList[$selectedIndex]
-  $currentConfig.activePreset = $newActivePreset.Name
+  $currentConfig.activeCategory = $newActivePreset.Name
 
   $tempDisabled = $false
   $playerNameValue = if ($currentConfig.playerName) { $currentConfig.playerName.Trim() } else { "" }
@@ -2380,7 +2716,7 @@ function Update-ActivePreset($presetList, $currentConfig) {
   if (-not [string]::IsNullOrWhiteSpace($playerNameValue) -and $tempRun -and $tempRun.active -and $tempRun.time) {
     try {
       Show-ProgressStep -Activity (Get-LocalizedString "temp_time_check_title") -Status (Get-LocalizedString "temp_time_check_status") -PercentComplete 60
-      $exists = Test-PlayerInPreset $currentConfig $newActivePreset.Value
+      $exists = Test-PlayerInCategory $currentConfig $newActivePreset.Value
       Clear-Progress
       if (-not $exists) {
         $currentConfig.temporaryRun.active = $false
@@ -2411,7 +2747,7 @@ function Update-ActivePreset($presetList, $currentConfig) {
 function Remove-PresetSingle($selectedPreset, $currentConfig) {
   # Check if there's only one preset left
   $presetCount = 0
-  foreach ($preset in $currentConfig.presets.PSObject.Properties) {
+  foreach ($preset in $currentConfig.categories.PSObject.Properties) {
     $presetCount++
   }
   
@@ -2436,11 +2772,11 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
   
   # Delete the preset
   $deletedPresetId = $selectedPreset.Name
-  $currentConfig.presets.PSObject.Properties.Remove($deletedPresetId)
+  $currentConfig.categories.PSObject.Properties.Remove($deletedPresetId)
   
   # Handle the case where the deleted preset was active
-  if ($currentConfig.activePreset -eq $deletedPresetId) {
-    $remainingPresets = $currentConfig.presets.PSObject.Properties
+  if ($currentConfig.activeCategory -eq $deletedPresetId) {
+    $remainingPresets = $currentConfig.categories.PSObject.Properties
     if ($remainingPresets.Count -gt 1) {
       # Multiple presets remaining: ask the user to choose
       $newOptions = @()
@@ -2451,12 +2787,12 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
       }
       
       $newActiveIndex = Show-ArrowMenu -Title (Get-LocalizedString "remove_active_deleted") -Options $newOptions
-      $currentConfig.activePreset = $newPresetList[$newActiveIndex].Name
+      $currentConfig.activeCategory = $newPresetList[$newActiveIndex].Name
     } elseif ($remainingPresets.Count -eq 1) {
       # One preset remaining: activate automatically
-      $currentConfig.activePreset = $remainingPresets[0].Name
+      $currentConfig.activeCategory = $remainingPresets[0].Name
     } else {
-      $currentConfig.activePreset = $null
+      $currentConfig.activeCategory = $null
     }
   }
   
@@ -2466,8 +2802,8 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
   
   Clear-Host
   Write-Host (Get-LocalizedString "remove_success" -f $selectedPreset.Value.name) -ForegroundColor Green
-  if ($currentConfig.activePreset) {
-    $newActiveName = $currentConfig.presets.($currentConfig.activePreset).name
+  if ($currentConfig.activeCategory) {
+    $newActiveName = $currentConfig.categories.($currentConfig.activeCategory).name
     Write-Host "$(Get-LocalizedString 'remove_new_active') $newActiveName" -ForegroundColor Cyan
   }
   Write-Host ""
@@ -2519,11 +2855,11 @@ function Remove-Preset($presetList, $currentConfig) {
   
   # Delete the preset
   $deletedPresetId = $presetToDelete.Name
-  $currentConfig.presets.PSObject.Properties.Remove($deletedPresetId)
+  $currentConfig.categories.PSObject.Properties.Remove($deletedPresetId)
   
   # Handle the case where the deleted preset was active
-  if ($currentConfig.activePreset -eq $deletedPresetId) {
-    $remainingPresets = $currentConfig.presets.PSObject.Properties
+  if ($currentConfig.activeCategory -eq $deletedPresetId) {
+    $remainingPresets = $currentConfig.categories.PSObject.Properties
     if ($remainingPresets.Count -gt 1) {
       # Multiple presets remaining: ask the user to choose
       $newOptions = @()
@@ -2534,12 +2870,12 @@ function Remove-Preset($presetList, $currentConfig) {
       }
       
       $newActiveIndex = Show-ArrowMenu -Title (Get-LocalizedString "remove_active_deleted") -Options $newOptions
-      $currentConfig.activePreset = $newPresetList[$newActiveIndex].Name
+      $currentConfig.activeCategory = $newPresetList[$newActiveIndex].Name
     } elseif ($remainingPresets.Count -eq 1) {
       # One preset remaining: activate automatically
-      $currentConfig.activePreset = $remainingPresets[0].Name
+      $currentConfig.activeCategory = $remainingPresets[0].Name
     } else {
-      $currentConfig.activePreset = $null
+      $currentConfig.activeCategory = $null
     }
   }
   
@@ -2549,8 +2885,8 @@ function Remove-Preset($presetList, $currentConfig) {
   
   Clear-Host
   Write-Host (Get-LocalizedString "remove_success" -f $presetToDelete.Value.name) -ForegroundColor Green
-  if ($currentConfig.activePreset) {
-    $newActiveName = $currentConfig.presets.($currentConfig.activePreset).name
+  if ($currentConfig.activeCategory) {
+    $newActiveName = $currentConfig.categories.($currentConfig.activeCategory).name
     Write-Host "$(Get-LocalizedString 'remove_new_active') $newActiveName" -ForegroundColor Cyan
   }
   Write-Host ""
@@ -2629,26 +2965,44 @@ function New-Preset($currentConfig) {
         $selectedGame = $games[0]
       }
 
-      Show-ProgressStep -Activity (Get-LocalizedString "add_loading_levels") -Status $selectedGame.names.international -PercentComplete 40
+      Show-ProgressStep -Activity (Get-LocalizedString "add_loading_categories") -Status $selectedGame.names.international -PercentComplete 40
       Start-Sleep -Milliseconds 50
+      
+      # Fetch categories first to determine what types are available
+      $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
+      $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
+      $allCategories = $categoriesData.data.categories.data
+      
+      # Check if game has per-level categories
+      $hasPerLevelCategories = ($allCategories | Where-Object { $_.type -eq "per-level" }).Count -gt 0
+      
       Clear-Progress
       
       # === STEP 2: Full game or levels ===
       $selectedLevel = $null
       $levels = @()
-      try {
-        $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
-        $levelsData = $levelsResponse.Content | ConvertFrom-Json
-        $levels = $levelsData.data
-      } catch {
-        $levels = @()
+      
+      # Only fetch and show levels if game actually has per-level categories
+      if ($hasPerLevelCategories) {
+        Show-ProgressStep -Activity (Get-LocalizedString "add_loading_levels") -Status $selectedGame.names.international -PercentComplete 50
+        Start-Sleep -Milliseconds 50
+        
+        try {
+          $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
+          $levelsData = $levelsResponse.Content | ConvertFrom-Json
+          $levels = $levelsData.data
+        } catch {
+          $levels = @()
+        }
+        
+        Clear-Progress
       }
-
-      Clear-Progress
 
       :ModeCategoryLoop while ($true) {
         $selectedLevel = $null
-        if ($levels.Count -gt 0) {
+        
+        # Only show prompt if game has both levels AND per-level categories
+        if ($levels.Count -gt 0 -and $hasPerLevelCategories) {
           while ($true) {
             $modeTitle = switch ($Global:CurrentLanguage) {
               "en" { "Choose leaderboard type:" }
@@ -2694,15 +3048,9 @@ function New-Preset($currentConfig) {
           }
         }
 
-        # === STEP 3: Fetch categories ===
-        Show-ProgressStep -Activity (Get-LocalizedString "add_loading_categories") -Status $selectedGame.names.international -PercentComplete 70
-        Start-Sleep -Milliseconds 50
-        
-        $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
-        $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
-        
+        # === STEP 3: Filter categories by type ===
         $categoryType = if ($selectedLevel) { "per-level" } else { "per-game" }
-        $categories = $categoriesData.data.categories.data | Where-Object { $_.type -eq $categoryType }
+        $categories = $allCategories | Where-Object { $_.type -eq $categoryType }
         
         Clear-Progress
 
@@ -2937,16 +3285,16 @@ function New-Preset($currentConfig) {
     $idParts = @($gamePart, $catPart, $levelPart, $subcatPart) | Where-Object { $_ -and $_.Length -gt 0 }
     $defaultPresetId = ($idParts -join "-").ToLower() -replace '--+', '-'
     
-    Write-Host (Get-LocalizedString "final_preset_id") -ForegroundColor Yellow
+    Write-Host (Get-LocalizedString "final_category_id") -ForegroundColor Yellow
     Write-Host "$(Get-LocalizedString 'final_suggestion') $defaultPresetId" -ForegroundColor Gray
-    $presetId = Read-Host (Get-LocalizedString "final_preset_id_prompt")
+    $presetId = Read-Host (Get-LocalizedString "final_category_id_prompt")
     
     if ([string]::IsNullOrWhiteSpace($presetId)) {
       $presetId = $defaultPresetId
     }
     
     # Check that the ID does not already exist
-    if ($currentConfig -and $currentConfig.presets -and $currentConfig.presets.$presetId) {
+    if ($currentConfig -and $currentConfig.categories -and $currentConfig.categories.$presetId) {
       Write-Host (Get-LocalizedString "final_id_exists" -f $presetId) -ForegroundColor Red
       $overwritePrompt = switch ($Global:CurrentLanguage) {
         "en" { "Do you want to overwrite it? (y/N)" }
@@ -2998,7 +3346,7 @@ function New-Preset($currentConfig) {
     if (-not [string]::IsNullOrWhiteSpace($playerNameValue) -and $tempRun -and $tempRun.active -and $tempRun.time) {
       try {
         Show-ProgressStep -Activity (Get-LocalizedString "temp_time_check_title") -Status (Get-LocalizedString "temp_time_check_status") -PercentComplete 60
-        $exists = Test-PlayerInPreset $config $newPreset
+        $exists = Test-PlayerInCategory $config $newPreset
         Clear-Progress
         if (-not $exists) {
           $config.temporaryRun.active = $false
@@ -3012,18 +3360,18 @@ function New-Preset($currentConfig) {
     
     # Add the new preset
     # If it's a PSCustomObject (loaded from JSON), use Add-Member
-    if ($config.presets.GetType().Name -eq "PSCustomObject") {
-      $config.presets | Add-Member -MemberType NoteProperty -Name $presetId -Value $newPreset -Force
+    if ($config.categories.GetType().Name -eq "PSCustomObject") {
+      $config.categories | Add-Member -MemberType NoteProperty -Name $presetId -Value $newPreset -Force
     } else {
       # If it's a hashtable (new settings), use normal assignment
-      $config.presets.$presetId = $newPreset
+      $config.categories.$presetId = $newPreset
     }
     
     # Ask whether to activate it (or auto-activate if first)
-    $isFirstPreset = $config.presets.Count -eq 1 -or -not $config.activePreset
+    $isFirstPreset = $config.categories.Count -eq 1 -or -not $config.activeCategory
     
     if ($isFirstPreset) {
-      $config.activePreset = $presetId
+      $config.activeCategory = $presetId
       $activationMessage = (Get-LocalizedString "final_auto_active")
     } else {
       Write-Host ""
@@ -3043,7 +3391,7 @@ function New-Preset($currentConfig) {
       }
       $activate = Read-Host $activatePrompt
       if ($activate.ToLower() -eq $expectedAnswer) {
-        $config.activePreset = $presetId
+        $config.activeCategory = $presetId
         $activationMessage = (Get-LocalizedString "final_active_now")
       } else {
         $activationMessage = (Get-LocalizedString "final_saved_inactive")
@@ -3061,7 +3409,7 @@ function New-Preset($currentConfig) {
       Write-Host (Get-LocalizedString "temp_time_disabled") -ForegroundColor Yellow
     }
     
-    if ($config.activePreset -eq $presetId) {
+    if ($config.activeCategory -eq $presetId) {
       Write-Host (Get-LocalizedString "final_obs_will_show") -ForegroundColor Green
     } else {
       Write-Host (Get-LocalizedString "final_activate_later") -ForegroundColor Cyan
@@ -3118,11 +3466,11 @@ function Start-MainLoop {
         $contextLines += "  $(Get-LocalizedString 'menu_title')"
         $contextLines += "================================================"
         $contextLines += ""
-        $contextLines += "$(Get-LocalizedString 'existing_presets')"
+        $contextLines += "$(Get-LocalizedString 'existing_categories')"
         $contextLines += ""
         
         foreach ($preset in $presetList) {
-          $marker = if ($preset.Name -eq $currentConfig.activePreset) { "🟢 " } else { "   " }
+          $marker = if ($preset.Name -eq $currentConfig.activeCategory) { "🟢 " } else { "   " }
           $contextLines += "$marker$($preset.Value.name)"
         }
         $contextLines += ""
@@ -3130,7 +3478,7 @@ function Start-MainLoop {
         $contextText = $contextLines -join "`n"
         
         $menuItems = @()
-        $menuItems += @{ Label = (Get-LocalizedString "menu_add_preset"); Action = { param($cfg) New-Preset $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_add_category"); Action = { param($cfg) New-Preset $cfg } }
         $menuItems += @{ Label = (Get-LocalizedString "menu_view_details"); Action = { param($cfg) Write-PresetDetails $presetList $cfg } }
         $menuItems += @{ Label = (Get-LocalizedString "menu_change_active"); Action = { param($cfg) Update-ActivePreset $presetList $cfg } }
 
@@ -3157,13 +3505,13 @@ function Start-MainLoop {
           return
         }
       } else {
-        # First preset - direct display
+        # First category - direct display
         Clear-Host
         Write-Host "================================================" -ForegroundColor Cyan
         Write-Host "  $(Get-LocalizedString 'menu_title')" -ForegroundColor Cyan
         Write-Host "================================================" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host (Get-LocalizedString "first_launch_no_preset") -ForegroundColor Yellow
+        Write-Host (Get-LocalizedString "first_launch_no_category") -ForegroundColor Yellow
         Write-Host ""
         New-Preset $currentConfig
       }

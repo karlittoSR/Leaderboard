@@ -36,8 +36,8 @@
 
 1. Add **Browser Source**
 2. **Local File** → browse to `leaderboard.html`
-3. **Width**: 400px
-4. **Height**: 250px
+3. **Width**: 343px
+4. **Height**: 350px
 5. **Done!**
 
 Your leaderboard will update automatically and display your position at the bottom on a separate row when you're outside the top 3.

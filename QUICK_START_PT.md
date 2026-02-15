@@ -36,8 +36,8 @@
 
 1. Adicione uma **Fonte do Navegador**
 2. **Arquivo Local** → navegue até `leaderboard.html`
-3. **Largura**: 400px
-4. **Altura**: 250px
+3. **Largura**: 343px
+4. **Altura**: 350px
 5. **Pronto!**
 
 Seu ranking será atualizado automaticamente e exibirá sua posição na parte inferior em uma linha separada quando estiver fora do top 3.

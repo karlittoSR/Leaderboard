@@ -23,6 +23,7 @@
     // Variables loaded from settings file (config.json)
     let GAME_ID;
     let CATEGORY_NAME;
+    let CATEGORY_DISPLAY_NAME; // Full category name for display
     let SUBCATEGORY_LABEL;
     let SUBCATEGORIES;
     let LEVEL_ID;
@@ -39,6 +40,9 @@
     let NAME_SPACING = 4;
     let TIME_FORMAT = '1:25:25.255';
     let PB_SEPARATOR_WIDTH = null;
+    let PB_PREFIX = 'PB';
+    let PB_COLOR = '#9fb4ca';
+    let PB_USE_RAINBOW = false;
     let RAINBOW_INTENSITY = 50;
     let PREFERRED_WIDTH = 400;
     let PREFERRED_HEIGHT = 274;
@@ -57,28 +61,29 @@
         }
         const config = await configRes.json();
         
-        // Get the active preset from the settings file (no URL parameter needed)
-        const presetName = config.activePreset;
-        if (!presetName) {
-          throw new Error('Aucun preset actif défini dans config.json. Utilisez le script PowerShell pour en définir un.');
+        // Get the active category from the settings file (no URL parameter needed)
+        const categoryName = config.activeCategory;
+        if (!categoryName) {
+          throw new Error('Aucune catégorie active définie dans config.json. Utilisez le script PowerShell pour en définir une.');
         }
         
-        const preset = config.presets[presetName];
-        if (!preset) {
-          const availablePresets = Object.keys(config.presets);
-          throw new Error(`Preset actif "${presetName}" non trouvé. Options disponibles : ${availablePresets.join(', ')}`);
+        const category = config.categories[categoryName];
+        if (!category) {
+          const availableCategories = Object.keys(config.categories);
+          throw new Error(`Catégorie active "${categoryName}" non trouvée. Options disponibles : ${availableCategories.join(', ')}`);
         }
 
-        // Apply preset settings
-        GAME_ID = preset.gameId;
-        CATEGORY_NAME = preset.category;
-        SUBCATEGORY_LABEL = preset.subcategory;
-        SUBCATEGORIES = preset.subcategories || null;
+        // Apply category settings
+        GAME_ID = category.gameId;
+        CATEGORY_NAME = category.category;
+        CATEGORY_DISPLAY_NAME = category.name; // Store full display name
+        SUBCATEGORY_LABEL = category.subcategory;
+        SUBCATEGORIES = category.subcategories || null;
         if (SUBCATEGORIES && !Array.isArray(SUBCATEGORIES)) {
           SUBCATEGORIES = [SUBCATEGORIES];
         }
-        LEVEL_ID = preset.levelId || null;
-        LEVEL_NAME = preset.levelName || null;
+        LEVEL_ID = category.levelId || null;
+        LEVEL_NAME = category.levelName || null;
         PLAYER_NAME = (config.playerName || '').trim();
         if (PLAYER_NAME === '') PLAYER_NAME = null;
         PLAYER_COUNTRY = (config.playerCountry || 'FR').trim().toUpperCase();
@@ -104,13 +109,18 @@
         const rankAlign = (defaults.rankAlign || 'right').toLowerCase();
         RANK_ALIGN = ['left', 'center', 'right'].includes(rankAlign) ? rankAlign : 'right';
         const rankPrefixMode = (defaults.rankPrefixMode || 'dot').toLowerCase();
-        RANK_PREFIX_MODE = ['dot', 'hash'].includes(rankPrefixMode) ? rankPrefixMode : 'dot';
+        RANK_PREFIX_MODE = ['dot', 'hash', 'none'].includes(rankPrefixMode) ? rankPrefixMode : 'dot';
         const spacingValue = Number(defaults.nameSpacing);
         NAME_SPACING = Number.isFinite(spacingValue) ? Math.min(10, Math.max(0, spacingValue)) : 4;
         const timeFormatValue = String(defaults.timeFormat || '1:25:25.255').trim();
         TIME_FORMAT = (timeFormatValue === '1h25m25s225ms' || timeFormatValue === '1:25:25.255') ? timeFormatValue : '1:25:25.255';
         const pbSeparatorValue = Number(defaults.pbSeparatorWidth);
         PB_SEPARATOR_WIDTH = Number.isFinite(pbSeparatorValue) ? pbSeparatorValue : null;
+        const pbPrefixValue = String(defaults.pbPrefix || 'PB').trim().toUpperCase();
+        PB_PREFIX = (pbPrefixValue.length >= 1 && pbPrefixValue.length <= 3 && /^[A-Z]+$/.test(pbPrefixValue)) ? pbPrefixValue : 'PB';
+        const pbColorValue = String(defaults.pbColor || '9fb4ca').trim();
+        PB_COLOR = pbColorValue.startsWith('#') ? pbColorValue : '#' + pbColorValue;
+        PB_USE_RAINBOW = defaults.pbUseRainbow === true;
         const rainbowValue = Number(defaults.rainbowIntensity);
         RAINBOW_INTENSITY = Number.isFinite(rainbowValue) ? Math.min(100, Math.max(0, rainbowValue)) : 50;
 
@@ -118,25 +128,47 @@
         initRainbowColors();
 
         // Apply Font Style
+        const customFont = defaults.customFont || '';
         const fontStyle = defaults.fontStyle || 'Arial';
-        const fontMap = {
-            'Arial': 'Arial, sans-serif',
-            'Verdana': 'Verdana, Geneva, sans-serif',
-            'TimesNewRoman': '"Times New Roman", Times, serif',
-            'Georgia': 'Georgia, serif',
-            'CourierNew': '"Courier New", Courier, monospace',
-            'Impact': 'Impact, Charcoal, sans-serif',
-            'TrebuchetMS': '"Trebuchet MS", Helvetica, sans-serif',
-            'Tahoma': 'Tahoma, Geneva, sans-serif',
-            'ComicSans': '"Comic Sans MS", "Comic Sans", cursive, sans-serif',
-            'SegoeUI': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
-        };
-        const selectedFontFamily = fontMap[fontStyle] || fontMap['Arial'];
+        
+        let selectedFontFamily;
+        
+        // If customFont is set, use it directly, otherwise use the predefined fontStyle
+        if (customFont.trim()) {
+          // User provided custom font name - use it with generic fallback
+          selectedFontFamily = `"${customFont}", sans-serif`;
+        } else {
+          // Use predefined font from dropdown
+          const fontMap = {
+              'Arial': 'Arial, sans-serif',
+              'Verdana': 'Verdana, Geneva, sans-serif',
+              'TimesNewRoman': '"Times New Roman", Times, serif',
+              'Georgia': 'Georgia, serif',
+              'CourierNew': '"Courier New", Courier, monospace',
+              'Impact': 'Impact, Charcoal, sans-serif',
+              'TrebuchetMS': '"Trebuchet MS", Helvetica, sans-serif',
+              'Tahoma': 'Tahoma, Geneva, sans-serif',
+              'ComicSans': '"Comic Sans MS", "Comic Sans", cursive, sans-serif',
+              'SegoeUI': '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
+          };
+          selectedFontFamily = fontMap[fontStyle] || fontMap['Arial'];
+        }
+        
         DRAW.FONT_BASE = '700 18px ' + selectedFontFamily;
         DRAW.FONT_MONO = '700 18px ' + selectedFontFamily;
 
+        // Category name display settings with backward compatibility
+        const categoryNameVisible = defaults.categoryNameVisible !== false; // Default to true
+        const categoryNameFontSize = defaults.categoryNameFontSize || 16;
+        const categoryNameColor = defaults.categoryNameColor || '#84c8ff';
+        const categoryNameSpacing = defaults.categoryNameSpacing || 14;
+        DRAW.CATEGORY_TITLE_FONT = `700 ${categoryNameFontSize}px ` + selectedFontFamily;
+        DRAW.CATEGORY_TITLE_COLOR = categoryNameVisible ? categoryNameColor : 'transparent';
+        DRAW.CATEGORY_TITLE_Y = Math.round(categoryNameFontSize * 0.75); // Position relative to font size
+        DRAW.LAYOUT.startY = DRAW.CATEGORY_TITLE_Y + categoryNameSpacing;
+
         // Update title
-        document.title = preset.name + ': Top ' + TOP_COUNT + ' (Overlay)';
+        document.title = category.name + ': Top ' + TOP_COUNT + ' (Overlay)';
 
         // Update overlay size from defaults (handle both old "900px" and new 900 format)
         let dw = defaults.displayWidth;
@@ -188,11 +220,14 @@
     const DRAW = {
       FLAG: { w: 20, h: 15, yOffset: 14, radius: 5 },
       TROPHY: { w: 20, h: 20, yOffset: 16, radius: 4 }, // Trophy icon dimensions
-      LAYOUT: { padX: 12, startY: 30, rowH: 24 },
+      LAYOUT: { padX: 12, startY: 38, rowH: 24 },
       FONT_BASE: '700 18px Arial, sans-serif',
       FONT_MONO: '700 18px Arial, sans-serif, SFMono-Regular, Menlo, Consolas, "Liberation Mono"',
       SHADOW: { color: 'rgba(0,0,0,0.6)', blur: 6, offsetY: 2 },
-      COLORS: { top1: '#ffd700', top2: '#c0c0c0', top3: '#cd7f32', other: '#9fb4ca' }
+      COLORS: { top1: '#ffd700', top2: '#c0c0c0', top3: '#cd7f32', other: '#9fb4ca' },
+      CATEGORY_TITLE_FONT: '700 16px Arial, sans-serif',
+      CATEGORY_TITLE_COLOR: '#84c8ff',
+      CATEGORY_TITLE_Y: 12
     };
 
     // Image caches
@@ -436,8 +471,9 @@
       return name.length > maxChars ? 'W'.repeat(maxChars) : name;
     }
 
-    function drawScrollingText(ctx, text, x, y, maxWidth, style, isTemporary, rainbowPhase, fontBase) {
+    function drawScrollingText(ctx, text, x, y, maxWidth, style, isTemporary, rainbowPhase, fontBase, baseColor = null) {
       if (!text) return;
+      const color = baseColor || DRAW.COLORS.other;
 
       // Measure text width
       ctx.font = fontBase || DRAW.FONT_BASE;
@@ -450,8 +486,10 @@
           ctx.textAlign = 'left';
           ctx.fillText(text, x, y);
         } else {
-          ctx.fillStyle = DRAW.COLORS.other;
-          applyTextStyle(x, y, text, style);
+          ctx.fillStyle = color;
+          if (!baseColor) {
+            applyTextStyle(x, y, text, style);
+          }
           ctx.textAlign = 'left';
           ctx.fillText(text, x, y);
         }
@@ -482,8 +520,10 @@
              // but applyTextStyle uses ctx.createLinearGradient(x, ... x+width).
              // We should pass currentX to applyTextStyle.
 
-             ctx.fillStyle = DRAW.COLORS.other;
-             applyTextStyle(currentX, y, text, style);
+             ctx.fillStyle = color;
+             if (!baseColor) {
+               applyTextStyle(currentX, y, text, style);
+             }
              ctx.textAlign = 'left';
              ctx.fillText(text, currentX, y);
          }
@@ -556,7 +596,7 @@
     // Precompute render properties for a run (called once when data loads)
     function precomputeRunRenderProps(run, idx) {
       const rankText = typeof run.rank === 'number' && run.rank > 0
-        ? (RANK_PREFIX_MODE === 'hash' ? `#${run.rank}` : `${run.rank}.`)
+        ? (RANK_PREFIX_MODE === 'hash' ? `#${run.rank}` : RANK_PREFIX_MODE === 'none' ? `${run.rank}` : `${run.rank}.`)
         : `${run.rank}`;
 
       // Measure and cache by row index
@@ -593,6 +633,31 @@
       const colRank = padX;
       const timeX = Math.min(350, canvas.clientWidth - padX); // Right aligned
 
+      // Draw category name at the top
+      if (CATEGORY_DISPLAY_NAME) {
+        const titleY = DRAW.CATEGORY_TITLE_Y;
+        const titleText = CATEGORY_DISPLAY_NAME;
+        const titleFont = DRAW.CATEGORY_TITLE_FONT;
+        const titleColor = DRAW.CATEGORY_TITLE_COLOR;
+        ctx.font = titleFont;
+        const titleWidth = ctx.measureText(titleText).width;
+        const canvasCenter = canvas.clientWidth / 2;
+        const maxTitleWidth = canvas.clientWidth - (padX * 2);
+        
+        if (titleWidth <= maxTitleWidth) {
+          // Title fits - center it
+          ctx.textAlign = 'center';
+          ctx.fillStyle = titleColor;
+          ctx.fillText(titleText, canvasCenter, titleY);
+        } else {
+          // Title too long - use scrolling
+          ctx.textAlign = 'left';
+          const titleX = padX;
+          const titleStyle = { style: 'solid', color: { dark: titleColor } };
+          drawScrollingText(ctx, titleText, titleX, titleY, maxTitleWidth, titleStyle, false, phaseBase, titleFont);
+        }
+      }
+
       for (let i = 0; i < allDisplay.length; i++) {
         const r = allDisplay[i];
         const y = startY + i * rowH;
@@ -627,11 +692,12 @@
           const rankX = getRankTextX(colRank);
           ctx.textAlign = getRankTextAlign();
           if (useRainbow) {
-            applyRainbowText(rankX, y, rankText, phaseBase + i * 12);
+            applyRainbowText(phaseBase + i * 12);
+            ctx.fillText(rankText, rankX, y);
           } else {
             ctx.fillStyle = color;
+            ctx.fillText(rankText, rankX, y);
           }
-          ctx.fillText(rankText, rankX, y);
         }
 
         // Draw flag + name
@@ -667,18 +733,17 @@
         // Use the smaller of the two: respect config, but shrink if screen is too small
         const availableWidth = Math.min(configuredMaxNameWidth, screenSpaceAvailable);
 
-        const rawName = isTemporary ? `PB - ${r.player}` : r.player;
+        const rawName = isTemporary ? `${PB_PREFIX} - ${r.player}` : r.player;
         drawScrollingText(ctx, rawName, x, y, availableWidth, r.nameStyle, useRainbow, phaseBase + 40 + i * 12, DRAW.FONT_BASE);
 
         // Draw time (right-aligned)
         ctx.font = DRAW.FONT_MONO;
-        ctx.fillStyle = color;
-
         ctx.textAlign = 'right';
         if (useRainbow) {
-          applyRainbowText(timeX - timeWidth, y, r.time, phaseBase + 80 + i * 12);
+          applyRainbowText(phaseBase + 80 + i * 12);
           ctx.fillText(r.time, timeX, y);
         } else {
+          ctx.fillStyle = color;
           ctx.fillText(r.time, timeX, y);
         }
 
@@ -686,16 +751,16 @@
       }
 
       if (playerRow) {
-        const gap = rowH; // One clear blank row
         const canvasH = canvas.clientHeight;
-        const desiredY = startY + allDisplay.length * rowH + gap;
-        const y = Math.min(desiredY, canvasH - rowH);
         const isTemporary = !!playerRow.isTemporary;
         const isRecent = playerRow.isRecent;  // Use precomputed value
-        const useRainbow = isTemporary || isRecent;
+        const useRainbow = PB_USE_RAINBOW;  // Master control: true = always rainbow, false = always use pbColor
 
-        // Separator line instead of an empty gap
-        const lineY = startY + allDisplay.length * rowH - 4;
+        // Position PB row with fixed gap below last carousel run, separator line in the middle
+        const lastRunY = startY + (allDisplay.length - 1) * rowH; // Y position of last displayed run
+        const gapRows = 2; // Gap of 2 row heights between last run and PB row
+        const y = lastRunY + gapRows * rowH; // PB row position
+        const lineY = lastRunY + (gapRows / 2) * rowH - 4; // Separator line centered in the gap (moved 4px up)
         ctx.save();
         ctx.globalAlpha = 0.7;
         ctx.strokeStyle = '#ffffff';
@@ -737,11 +802,12 @@
           const rankX = getRankTextX(colRank);
           ctx.textAlign = getRankTextAlign();
           if (useRainbow) {
-            applyRainbowText(rankX, y, rankText, phaseBase);
+            applyRainbowText(phaseBase);
+            ctx.fillText(rankText, rankX, y);
           } else {
-            ctx.fillStyle = DRAW.COLORS.other;
+            ctx.fillStyle = PB_COLOR;
+            ctx.fillText(rankText, rankX, y);
           }
-          ctx.fillText(rankText, rankX, y);
         }
 
         let x = colRank + fixedMaxRankW + NAME_SPACING;
@@ -775,16 +841,16 @@
         // Use the smaller of the two
         const availableWidth = Math.min(configuredMaxNameWidth, screenSpaceAvailable);
 
-        const rawName = isTemporary ? `PB - ${playerRow.player}` : playerRow.player;
-        drawScrollingText(ctx, rawName, x, y, availableWidth, playerRow.nameStyle, useRainbow, phaseBase + 40, DRAW.FONT_BASE);
+        const rawName = isTemporary ? `${PB_PREFIX} - ${playerRow.player}` : playerRow.player;
+        drawScrollingText(ctx, rawName, x, y, availableWidth, playerRow.nameStyle, useRainbow, phaseBase + 40, DRAW.FONT_BASE, PB_COLOR);
 
         ctx.font = DRAW.FONT_MONO;
         ctx.textAlign = 'right';
         if (useRainbow) {
-          applyRainbowText(timeX - timeWidth, y, playerRow.time, phaseBase + 80);
+          applyRainbowText(phaseBase + 80);
           ctx.fillText(playerRow.time, timeX, y);
         } else {
-          ctx.fillStyle = DRAW.COLORS.other;
+          ctx.fillStyle = PB_COLOR;
           ctx.fillText(playerRow.time, timeX, y);
         }
         ctx.globalAlpha = 1;
@@ -904,15 +970,11 @@
         if (r.rank >= 1 && r.rank <= 3 && USE_TROPHY_ICONS) {
           maxRankW = Math.max(maxRankW, trophyWidth);
         } else {
-          // Calculate rank text and width
-          const rankText = r.rankText || (typeof r.rank === 'number' && r.rank > 0
-            ? (RANK_PREFIX_MODE === 'hash' ? `#${r.rank}` : `${r.rank}.`)
-            : `${r.rank}`);
-          // Use cached value if available (for precomputed runs)
-          let numberW = getCachedMeasure(measureCache, r.rowIdx, DRAW.FONT_BASE);
-          if (numberW === undefined) {
-            numberW = ctx.measureText(rankText).width;
-          }
+          // Calculate rank text and width directly (no cache needed here)
+          const rankText = typeof r.rank === 'number' && r.rank > 0
+            ? (RANK_PREFIX_MODE === 'hash' ? `#${r.rank}` : RANK_PREFIX_MODE === 'none' ? `${r.rank}` : `${r.rank}.`)
+            : `${r.rank}`;
+          const numberW = ctx.measureText(rankText).width;
           maxRankW = Math.max(maxRankW, numberW);
         }
 
@@ -1136,13 +1198,14 @@
         // Store for carousel
         processedTopRuns = processedTop;
 
-        // Calculate fixed widths
+        // Calculate fixed widths from all sorted runs (measures directly)
         calculateColumnWidths(sortedRuns, processedPlayerRow);
 
         // Draw and start carousel
-        const availableRows = Math.floor((canvas.clientHeight - DRAW.LAYOUT.startY) / DRAW.LAYOUT.rowH);
-        const extraRows = processedPlayerRow ? 2 : 0; // blank row + player row
-        const neededRows = TOP_COUNT + RUNS_PER_BATCH + extraRows;
+        // Reserve space at bottom for PB row if present (2 rows: separator + PB)
+        const reservedBottomSpace = processedPlayerRow ? (2 * DRAW.LAYOUT.rowH) : 0;
+        const availableRows = Math.floor((canvas.clientHeight - DRAW.LAYOUT.startY - reservedBottomSpace) / DRAW.LAYOUT.rowH);
+        const neededRows = TOP_COUNT + RUNS_PER_BATCH;
         const overflow = Math.max(0, neededRows - availableRows);
         const displayRunsPerBatch = Math.max(0, RUNS_PER_BATCH - overflow);
         const firstBatch = displayRunsPerBatch > 0 ? carouselRuns.slice(0, displayRunsPerBatch) : [];

@@ -1,6 +1,6 @@
 # Speedrun Leaderboard Overlay
 
-**Version 1.40** - Overlay-based speedrun.com leaderboard display  
+**Version 1.41** - Overlay-based speedrun.com leaderboard display  
 **Multilingual preset manager with intelligent automation**  
 **Supports 5 languages**: Français, English, Español, Português, 中文
 
@@ -18,18 +18,22 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - Configurable rank alignment (left/center/right) and rank prefix style (dot vs hash) via `defaults.rankAlign` and `defaults.rankPrefixMode`.
 - Smarter player name rendering with `defaults.maxNameWidthVisible`, marquee scrolling for long names, and spacing that respects the time column.
 - Enhanced temporary PB handling: your PB can appear even if your account is not on the loaded leaderboard, using `playerName` and `playerCountry`.
-- New PB highlight: personal bests submitted in the last 5 days are rainbow-colored on the board, with configurable `defaults.rainbowIntensity`.
+- **PB color customization**: Choose custom hex color for your PB row with `defaults.pbColor`, or enable rainbow effect with `defaults.pbUseRainbow`.
+- PB highlight: personal bests submitted in the last 5 days get rainbow effect (when `pbUseRainbow` is disabled), with configurable `defaults.rainbowIntensity`.
+- Configurable category name display with `defaults.categoryNameVisible`, `defaults.categoryNameFontSize`, `defaults.categoryNameColor`, and `defaults.categoryNameSpacing`.
 - Configurable separator bar width between the main table and the personal row via `defaults.pbSeparatorWidth`.
 - Optional time format `1h25m25s225ms` in addition to `1:25:25.255` via `defaults.timeFormat`.
 - Safe reset option in the PowerShell script to restore `config.json` to default values if your configuration is broken.
-- Full review and correction of all 5 language packs (FR/EN/ES/PT/ZH), including the new parameters/visuals menu texts.
+- Full review and correction of all 5 language packs (FR/EN/ES/PT/ZH), including all parameter descriptions with proper accents.
 - Improved flag rendering: consistent spacing, fallback globe icon when no flag is available, and per-country overrides via `flagOverrides`.
 
 ### Personal Best Tracking
 - **Enhanced Temporary PB**: Show your run even when you're not on the loaded leaderboard (uses `playerName` and `playerCountry`)
-- **Rainbow Visual Effects**: Temporary PBs and recent official runs (< 5 days) display with rainbow colors
+- **Custom PB Colors**: Choose your own hex color for your PB row with `pbColor` parameter
+- **Rainbow Visual Effects**: Optional rainbow effect for PB row (enable with `pbUseRainbow`), or automatic rainbow for recent runs when disabled
+- **Master Control**: `pbUseRainbow` setting controls whether PB uses rainbow (true) or custom color (false) - ignores recent run status
 - **Real-time Updates**: Manually update your temporary PB during runs via the PowerShell menu
-- **Smart Display**: Appears on a dedicated row at the bottom with your flag and name
+- **Smart Display**: Appears on a dedicated row at the bottom with your flag, name, rank, and time
 - **Easy Management**: Clear or update temp times anytime through the configuration script
 
 ### Game Support
@@ -48,13 +52,15 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - **Overlay Rendering**: Smooth, high-quality graphics with canvas-based rendering
 - **Animated Carousel**: Rotating display of additional leaderboard entries with fade transitions
 - **Country Flags**: Automatic flag display from flagcdn.com with per-country override support
-- **Ranking Colors**: Gold/Silver/Bronze for top 3, blue-grey for others
-- **Recent PB Highlighting**: Rainbow effect for runs submitted in the last 5 days
+- **Ranking Colors**: Gold/Silver/Bronze for top 3, blue-grey for others, or custom color for your PB
+- **PB Color Customization**: Set your own hex color for your PB row, or enable rainbow effect
+- **Recent PB Highlighting**: Rainbow effect for recent runs (< 5 days) when custom PB color is enabled
 - **Tie Handling**: Same time = same rank
 - **Trophy Icons (Optional)**: Show 1st/2nd/3rd trophy icons instead of rank numbers
-- **Configurable Fonts**: Choose from 10 font families (Arial, Verdana, Times, etc.)
+- **Configurable Fonts**: Choose from 10 font families (Arial, Verdana, Times, etc.) or use custom installed fonts
+- **Category Name Display**: Show/hide category name at the top with customizable visibility, font size, color, and spacing
 - **Smart Name Display**: Marquee scrolling for long names with configurable width limits
-- **Flexible Rank Appearance**: Left/center/right alignment with dot (#) or hash (№) prefix
+- **Flexible Rank Appearance**: Left/center/right alignment with dot (.) or hash (#) prefix, or no prefix
 - **Responsive Layout**: Adapts to different display sizes with configurable dimensions
 
 ### Intelligent Automation
@@ -126,12 +132,12 @@ Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instruc
 1. Set your `playerName` and `playerCountry` in the configuration (enables enhanced display)
 2. Access "My Temporary PB" menu
 3. Enter your current attempt time (e.g., `1:23.45`)
-4. Your PB displays with rainbow effects, even if you're not on the leaderboard
+4. Your PB displays with custom color or rainbow effect, even if you're not on the leaderboard
 5. Clear when run is complete or submit a new time
 
 ### OBS Integration
 - **Browser Source**: Local File → `leaderboard.html`
-- **Dimensions**: Configure in `config.json` (defaults: 700px × 300px)
+- **Recommended Dimensions**: 343px width × 350px height (configurable in `config.json`)
 - **Refresh**: Not needed - updates automatically
 
 ### Recommended: Shadow Filter Plugin
@@ -140,7 +146,7 @@ Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instruc
 - **Plugin**: OBS Stroke Glow Shadow
 - **Download**: https://github.com/FiniteSingularity/obs-stroke-glow-shadow
 - **Benefits**: Adds professional drop shadow effects to the overlay text
-- **Usage**: After installing, right-click your browser source → Filters → Add "Stroke Glow Shadow"
+- **Usage**: After installing, right-click your browser source → Filters → Add "Shadow"
 
 ---
 
@@ -154,17 +160,23 @@ Edit `config.json` for customization (Edit it straight from the terminal):
   "defaults": {
     "topCount": 3,                          // Number of top positions always shown
     "timeFormat": "1:25:25.255",            // Time format: standard or "1h25m25s255ms"
-    "rankAlign": "center",                  // Rank alignment: "left", "center", or "right"
-    "rankPrefixMode": "dot",                // Rank prefix: "dot" (#) or "hash" (№)
-    "nameSpacing": 4,                       // Spacing between flag and player name
-    "pbSeparatorWidth": 320,                // Width of the PB separator line
-    "rainbowIntensity": 90,                 // Rainbow effect intensity for recent PBs (0-100)
-    "CAROUSEL_DISPLAY_DURATION": 3000,      // Carousel: stable display duration per page (ms)
+    "rankAlign": "left",                    // Rank alignment: "left", "center", or "right"
+    "rankPrefixMode": "dot",                // Rank prefix: "dot" (.), "hash" (#), or "none"
+    "nameSpacing": 5,                       // Spacing between flag and player name (0-10)
+    "pbSeparatorWidth": 320,                // Width of the PB separator line (50-600)
+    "pbPrefix": "PB",                       // Custom prefix text before PB (1-3 letters)
+    "pbColor": "fffff1",                    // PB row color (6 hex characters, without #)
+    "pbUseRainbow": true,                   // Use rainbow effect for PB (true) or custom color (false)
+    "rainbowIntensity": 90,                 // Rainbow effect intensity (0-100)
+    "categoryNameVisible": true,            // Show category name at top
+    "categoryNameFontSize": 18,             // Category name font size (12-24)
+    "categoryNameColor": "#ffffff",         // Category name color (hex with #)
+    "categoryNameSpacing": 35,              // Space between category name and leaderboard (12-50)
+    "CAROUSEL_DISPLAY_DURATION": 5000,      // Carousel: stable display duration per page (ms)
     "CAROUSEL_FADE_DURATION": 500,          // Carousel: fade in/out transition duration (ms)
     "useTrophyIcons": true,                 // Use trophy icons for top 3 positions
-    "displayHeight": "300px",               // OBS Browser Source height
-    "canvasHeight": 300,                    // Internal canvas resolution height
-    "displayWidth": "700px",                // OBS Browser Source width
+    "displayHeight": 450,                   // OBS Browser Source height
+    "displayWidth": 500,                    // OBS Browser Source width
     "canvasWidth": 300,                     // Internal canvas resolution width
     "runsPerBatch": 4,                      // Carousel entries per rotation
     "maxRuns": 200,                         // Max runs fetched for carousel
@@ -188,15 +200,17 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 ```
 
 ### Display Customization
-- **Overlay Dimensions**: Adjust `canvasWidth`/`canvasHeight` for internal resolution
-- **OBS Dimensions**: Modify `displayWidth`/`displayHeight` for browser source
+- **Overlay Dimensions**: Adjust `displayWidth`/`displayHeight` for OBS browser source size
 - **Name Display**: Change `maxNameWidthVisible` for name width before marquee scrolling
-- **Font Style**: Set `fontStyle` to choose from 10 available font families
-- **Rank Appearance**: Configure `rankAlign` (left/center/right) and `rankPrefixMode` (dot/hash)
+- **Font Style**: Set `fontStyle` to choose from 10 available font families, or use `customFont` for installed fonts
+- **Category Name**: Toggle visibility with `categoryNameVisible`, customize size, color, and spacing (12-50px)
+- **Rank Appearance**: Configure `rankAlign` (left/center/right) and `rankPrefixMode` (dot/hash/none)
+- **PB Customization**: Set `pbColor` (hex without #) and `pbUseRainbow` (true/false)
+- **PB Prefix**: Customize `pbPrefix` text (1-3 letters, e.g., "PB", "WR", "CR")
 - **Carousel Timing**: Set `CAROUSEL_DISPLAY_DURATION` for stable display time per page (ms)
 - **Carousel Transitions**: Adjust `CAROUSEL_FADE_DURATION` for fade in/out speed (ms)
 - **Batch Size**: Modify `runsPerBatch` for entries per carousel page
-- **Visual Effects**: Adjust `rainbowIntensity` for recent PB highlighting (0-100)
+- **Visual Effects**: Adjust `rainbowIntensity` for rainbow effect intensity (0-100)
 
 ### Color Scheme
 - **1st Place**: Gold (#FFD700)
@@ -217,12 +231,12 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 
 ### Time Format Support
 **Display Formats** (configurable via `defaults.timeFormat`):
-- **Standard**: `1:25:25.255` (hours:minutes:seconds.milliseconds)
+- **Custom PB Colors**: Choose your own color for the PB row or use rainbow effect (configurable via `pbColor` and `pbUseRainbow`)
+- **Recent PB Highlighting**: Runs submitted in the last 5 days get rainbow effect (only when `pbUseRainbow` is false)
 - **Alternative**: `1h25m25s255ms` (with unit labels)
 
 **Input Formats** (for temporary PB entry):
-- **Standard**: `1:23:45` (hours:minutes:seconds)
-- **Short**: `1:23` (minutes:seconds)
+- **Standard**: `1:25:25.255` (hours:minutes:seconds.milliseconds
 - **Decimal**: `82.5` (seconds with decimals)
 - **Millisecond**: `1:22.123` (with millisecond precision)
 
@@ -234,7 +248,8 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 - **Country Detection**: Automatic flag display with override support
 - **Player Validation**: Verifies usernames against speedrun.com API
 
----
+---Custom PB Colors**: Choose your own color for the PB row or use rainbow effect (configurable via `pbColor` and `pbUseRainbow`)
+- **Recent PB Highlighting**: Runs submitted in the last 5 days get rainbow effect (only when `pbUseRainbow` is false)
 
 ## Troubleshooting
 
@@ -244,8 +259,16 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 Solution: Run `FIX_ACCESS.bat` or manually set execution policy
 
 **Game not found**  
+
+**PB color not applying**  
+Solution: Check that `pbUseRainbow` is set to `false` to use custom `pbColor`. When `pbUseRainbow` is `true`, rainbow effect overrides the custom color
 Solution: Verify game exists on speedrun.com, check spelling, try alternate names
 
+**Game not found**  
+Solution: Verify game exists on speedrun.com, check spelling, try alternate names
+
+**Category name not showing**  
+Solution: Check that `categoryNameVisible` is set to `true` in config.json default
 **Missing categories**  
 Solution: Some games have complex structures, verify category exists on website
 
@@ -257,6 +280,9 @@ Solution: Ensure `playerName` and `playerCountry` are set in config.json for enh
 
 **Carousel not working**  
 Solution: Check if enough entries exist beyond the `topCount` setting (e.g., if topCount=3, need 4+ runs total)
+
+**Missing carousel rows with large spacing values**  
+Solution: When using large `categoryNameSpacing` values (e.g., 40-50px), ensure your OBS browser source height is sufficient. The overlay automatically reduces carousel rows to fit available space. If you're not seeing all expected carousel rows, increase your OBS browser source height (e.g., from 300px to 400px or more) to accommodate the category name spacing + top runs + carousel runs + PB row.
 
 ### Error Messages
 
@@ -409,6 +435,9 @@ See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screen
 
 **The carousel doesn't scroll?**  
 → Check that there are more runs than the `topCount` setting (default: 3)
+
+**Carousel rows are missing with large spacing?**  
+→ When using large `categoryNameSpacing` values (40-50px), increase your OBS browser source height to fit all elements. The overlay automatically reduces carousel rows when vertical space is insufficient.
 
 **No runs appear?**  
 → Verify the gameId, category, and subcategory (case sensitive!)

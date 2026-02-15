@@ -2,25 +2,33 @@
   "defaults": {
     "topCount": 3,
     "timeFormat": "1:25:25.255",
-    "rankAlign": "center",
+    "rankAlign": "left",
     "rankPrefixMode": "dot",
-    "nameSpacing": 4,
+    "nameSpacing": 5,
     "pbSeparatorWidth": 320,
+    "pbPrefix": "PB",
+    "pbColor": "fffff1",
+    "pbUseRainbow": true,
+    "customFont": "",
     "rainbowIntensity": 90,
     "CAROUSEL_DISPLAY_DURATION": 5000,
     "CAROUSEL_FADE_DURATION": 500,
     "useTrophyIcons": true,
-    "displayWidth": 400,
-    "displayHeight": 274,
+    "displayWidth": 500,
+    "displayHeight": 450,
     "runsPerBatch": 4,
     "maxRuns": 200,
     "fontStyle": "Arial", 
-    "maxNameWidthVisible": 18
+    "maxNameWidthVisible": 18,
+    "categoryNameVisible": true,
+    "categoryNameFontSize": 18,
+    "categoryNameColor": "#ffffff",
+    "categoryNameSpacing": 35
   },
   "flagOverrides": {
     "TW": "CN"
   },
-  "presets": {
+  "categories": {
     "elde-any-glitchless": {
       "name": "Elden Ring - Any% Glitchless",
       "gameId": "nd28z0ed",
@@ -35,7 +43,7 @@
   },
   "language": "en",
   "playerName": "Xeill",
-  "activePreset": "elde-any-glitchless",
+  "activeCategory": "elde-any-glitchless",
   "temporaryRun": {
     "active": true,
     "time": "55:05"

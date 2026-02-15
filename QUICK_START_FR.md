@@ -36,8 +36,8 @@
 
 1. Ajoutez une **Source Navigateur**
 2. **Fichier Local** → parcourez jusqu'à `leaderboard.html`
-3. **Largeur** : 400px
-4. **Hauteur** : 250px
+3. **Largeur** : 343px
+4. **Hauteur** : 350px
 5. **Fait !**
 
 Votre classement se mettra à jour automatiquement et affichera votre position en bas sur une ligne séparée quand vous serez en dehors du top 3.
