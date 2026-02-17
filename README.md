@@ -181,6 +181,7 @@ Edit `config.json` for customization (Edit it straight from the terminal):
     "runsPerBatch": 4,                      // Carousel entries per rotation
     "maxRuns": 200,                         // Max runs fetched for carousel
     "fontStyle": "Arial",                   // Font family for all text
+    "fontSize": 18,                         // Font size for leaderboard entries (12-24)
     "maxNameWidthVisible": 18               // Max visible name width (characters) before marquee
   }
 }
@@ -203,6 +204,7 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 - **Overlay Dimensions**: Adjust `displayWidth`/`displayHeight` for OBS browser source size
 - **Name Display**: Change `maxNameWidthVisible` for name width before marquee scrolling
 - **Font Style**: Set `fontStyle` to choose from 10 available font families, or use `customFont` for installed fonts
+- **Font Size**: Adjust `fontSize` (12-24) to control the size of leaderboard entry text
 - **Category Name**: Toggle visibility with `categoryNameVisible`, customize size, color, and spacing (12-50px)
 - **Rank Appearance**: Configure `rankAlign` (left/center/right) and `rankPrefixMode` (dot/hash/none)
 - **PB Customization**: Set `pbColor` (hex without #) and `pbUseRainbow` (true/false)

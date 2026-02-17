@@ -10,6 +10,7 @@
     "pbColor": "fffff1",
     "pbUseRainbow": true,
     "customFont": "",
+    "fontSize": 18,
     "rainbowIntensity": 90,
     "CAROUSEL_DISPLAY_DURATION": 5000,
     "CAROUSEL_FADE_DURATION": 500,
@@ -18,10 +19,9 @@
     "displayHeight": 450,
     "runsPerBatch": 4,
     "maxRuns": 200,
-    "fontStyle": "Arial", 
+    "fontStyle": "Arial",
     "maxNameWidthVisible": 18,
     "categoryNameVisible": true,
-    "categoryNameFontSize": 18,
     "categoryNameColor": "#ffffff",
     "categoryNameSpacing": 35
   },
@@ -41,11 +41,12 @@
       }
     }
   },
-  "language": "en",
+  "language": "fr",
   "playerName": "Xeill",
   "activeCategory": "elde-any-glitchless",
   "temporaryRun": {
     "active": true,
     "time": "55:05"
-  }
+  },
+  "playerCountry": "FR"
 }

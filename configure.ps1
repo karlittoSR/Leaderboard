@@ -50,6 +50,7 @@ $Global:DefaultConfigJSON = @'
     "pbColor": "fffff1",
     "pbUseRainbow": true,
     "customFont": "",
+    "fontSize": 18,
     "rainbowIntensity": 90,
     "CAROUSEL_DISPLAY_DURATION": 5000,
     "CAROUSEL_FADE_DURATION": 500,
@@ -61,7 +62,6 @@ $Global:DefaultConfigJSON = @'
     "fontStyle": "Arial", 
     "maxNameWidthVisible": 18,
     "categoryNameVisible": true,
-    "categoryNameFontSize": 18,
     "categoryNameColor": "#ffffff",
     "categoryNameSpacing": 35
   },
@@ -237,8 +237,8 @@ $Global:Languages = @{
         param_desc_rankPrefixMode = "Symbole visuel du rang (point, dièse ou rien)"
         param_desc_fontStyle = "Police utilisée pour tout le texte"
         param_desc_customFont = "Nom d'une police personnalisée installée sur votre système (laissez vide pour utiliser fontStyle)"
+        param_desc_fontSize = "Taille de la police pour les noms et temps (14-24px)"
         param_desc_categoryNameVisible = "Afficher le nom de catégorie en haut de l'overlay ?"
-        param_desc_categoryNameFontSize = "Taille de la police du nom de catégorie (petit=16px, moyen=18px, grand=20px)"
         param_desc_categoryNameColor = "Couleur du nom de catégorie (6 caractères hexadécimaux, ex: 84c8ff)"
         param_desc_categoryNameSpacing = "Espace vertical entre le nom de catégorie et le classement (12-50px)"
         param_desc_maxNameWidthVisible = "Nombre maximum de caractères pour les noms des joueurs"
@@ -440,8 +440,8 @@ $Global:Languages = @{
         param_desc_rankPrefixMode = "Visual symbol of rank (dot, hash or none)"
         param_desc_fontStyle = "Font family used for all text"
         param_desc_customFont = "Name of a custom font installed on your system (leave empty to use fontStyle)"
+        param_desc_fontSize = "Font size for names and times (14-24px)"
         param_desc_categoryNameVisible = "Display category name at the top of the overlay?"
-        param_desc_categoryNameFontSize = "Category name font size (small=16px, medium=18px, large=20px)"
         param_desc_categoryNameColor = "Category name color (6 hex characters, ex: 84c8ff)"
         param_desc_categoryNameSpacing = "Vertical space between category name and leaderboard (12-50px)"
         param_desc_maxNameWidthVisible = "Maximum characters for player names"
@@ -643,8 +643,8 @@ $Global:Languages = @{
         param_desc_rankPrefixMode = "Símbolo visual del rango (punto, almohadilla o nada)"
         param_desc_fontStyle = "Familia de fuente utilizada para todo el texto"
         param_desc_customFont = "Nombre de una fuente personalizada instalada en su sistema (dejar vacío para usar fontStyle)"
+        param_desc_fontSize = "Tamaño de fuente para nombres y tiempos (14-24px)"
         param_desc_categoryNameVisible = "¿Mostrar el nombre de categoría en la parte superior?"
-        param_desc_categoryNameFontSize = "Tamaño de fuente del nombre de categoría (pequeño=16px, mediano=18px, grande=20px)"
         param_desc_categoryNameColor = "Color del nombre de categoría (6 caracteres hexadecimales, ej: 84c8ff)"
         param_desc_categoryNameSpacing = "Espacio vertical entre nombre de categoría y clasificación (12-50px)"
         param_desc_maxNameWidthVisible = "Máximo de caracteres para nombres de jugadores"
@@ -846,8 +846,8 @@ $Global:Languages = @{
         param_desc_rankPrefixMode = "Símbolo visual da classificação (ponto, cerquilha ou nada)"
         param_desc_fontStyle = "Família de fonte usada para todo o texto"
         param_desc_customFont = "Nome de uma fonte personalizada instalada no seu sistema (deixe vazio para usar fontStyle)"
+        param_desc_fontSize = "Tamanho da fonte para nomes e tempos (14-24px)"
         param_desc_categoryNameVisible = "Exibir o nome da categoria no topo do overlay?"
-        param_desc_categoryNameFontSize = "Tamanho da fonte do nome da categoria (pequeno=16px, médio=18px, grande=20px)"
         param_desc_categoryNameColor = "Cor do nome da categoria (6 caracteres hexadecimais, ex: 84c8ff)"
         param_desc_categoryNameSpacing = "Espaço vertical entre nome da categoria e classificação (12-50px)"
         param_desc_maxNameWidthVisible = "Máximo de caracteres para nomes de jogadores"
@@ -1049,8 +1049,8 @@ $Global:Languages = @{
         param_desc_rankPrefixMode = "排名的视觉符号（点、井号或无）"
         param_desc_fontStyle = "所有文本使用的字体系列"
         param_desc_customFont = "系统中安装的自定义字体名称（留空则使用fontStyle）"
+        param_desc_fontSize = "名称和时间的字体大小（14-24px）"
         param_desc_categoryNameVisible = "在覆盖层顶部显示类别名称？"
-        param_desc_categoryNameFontSize = "类别名称字体大小（小=16px，中=18px，大=20px）"
         param_desc_categoryNameColor = "类别名称颜色（6位十六进制字符，例：84c8ff）"
         param_desc_categoryNameSpacing = "类别名称和排行榜之间的垂直间距（12-50px）"
         param_desc_maxNameWidthVisible = "玩家名称的最大字符数"
@@ -1349,7 +1349,15 @@ function Set-Language {
               $currentValue = (Get-LocalizedString "not_defined")
             }
           } else {
-            $currentValue = $config.defaults.$($item.key)
+            $currentValue = $config.defaults.PSObject.Properties[$item.key].Value
+            if ($null -eq $currentValue) {
+              # Property doesn't exist yet, use default value based on type
+              if ($item.type -eq "bool") {
+                $currentValue = $true
+              } else {
+                $currentValue = ""
+              }
+            }
           }
           $labelPad = $item.label.PadRight($maxLabel)
           $options += "$labelPad : $currentValue"
@@ -1371,7 +1379,17 @@ function Set-Language {
         $lastIndex = $selectedIndex
 
         $selected = $Items[$selectedIndex]
-        $currentValue = $config.defaults.$($selected.key)
+        $currentValue = $config.defaults.PSObject.Properties[$selected.key].Value
+        if ($null -eq $currentValue) {
+          # Property doesn't exist yet, use default value based on type
+          if ($selected.type -eq "bool") {
+            $currentValue = $true
+          } elseif ($selected.type -eq "int") {
+            $currentValue = $selected.min
+          } else {
+            $currentValue = ""
+          }
+        }
 
         if ($selected.type -eq "flagOverride") {
           $inputResult = Read-InputWithEscape (Get-LocalizedString "parameters_flag_override_prompt")
@@ -1402,7 +1420,13 @@ function Set-Language {
         }
 
         if ($selected.type -eq "bool") {
-          $config.defaults.$($selected.key) = -not [bool]$currentValue
+          $newBoolValue = -not [bool]$currentValue
+          # Set value - handle PSCustomObject case where property might not exist
+          if ($config.defaults.PSObject.Properties[$selected.key]) {
+            $config.defaults.$($selected.key) = $newBoolValue
+          } else {
+            $config.defaults | Add-Member -MemberType NoteProperty -Name $selected.key -Value $newBoolValue -Force
+          }
           Save-Config $config
           Clear-Host
           Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
@@ -1423,7 +1447,13 @@ function Set-Language {
           if ($enumIndex -eq -1) {
             continue
           }
-          $config.defaults.$($selected.key) = $enumOptions[$enumIndex]
+          $newEnumValue = $enumOptions[$enumIndex]
+          # Set value - handle PSCustomObject case where property might not exist
+          if ($config.defaults.PSObject.Properties[$selected.key]) {
+            $config.defaults.$($selected.key) = $newEnumValue
+          } else {
+            $config.defaults | Add-Member -MemberType NoteProperty -Name $selected.key -Value $newEnumValue -Force
+          }
           Save-Config $config
           Clear-Host
           Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
@@ -1507,7 +1537,12 @@ function Set-Language {
           continue
         }
 
-        $config.defaults.$($selected.key) = $newValue
+        # Set value - handle PSCustomObject case where property might not exist
+        if ($config.defaults.PSObject.Properties[$selected.key]) {
+          $config.defaults.$($selected.key) = $newValue
+        } else {
+          $config.defaults | Add-Member -MemberType NoteProperty -Name $selected.key -Value $newValue -Force
+        }
         Save-Config $config
         Clear-Host
         Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
@@ -1529,13 +1564,13 @@ function Set-Language {
         ) }
       @{ key = "categoryName"; label = (Get-LocalizedString "parameters_visuals_section_category_name"); items = @(
           @{ key = "categoryNameVisible"; label = "categoryNameVisible"; type = "bool"; desc = "param_desc_categoryNameVisible" }
-          @{ key = "categoryNameFontSize"; label = "categoryNameFontSize"; type = "enum"; options = @("16", "18", "20"); desc = "param_desc_categoryNameFontSize" }
           @{ key = "categoryNameColor"; label = "categoryNameColor"; type = "text"; minLength = 6; maxLength = 6; desc = "param_desc_categoryNameColor" }
           @{ key = "categoryNameSpacing"; label = "categoryNameSpacing"; type = "int"; min = 12; max = 50; desc = "param_desc_categoryNameSpacing" }
         ) }
       @{ key = "textSpacing"; label = (Get-LocalizedString "parameters_visuals_section_text_spacing"); items = @(
           @{ key = "fontStyle"; label = "fontStyle"; type = "enum"; options = @("Arial", "Verdana", "TimesNewRoman", "Georgia", "CourierNew", "Impact", "TrebuchetMS", "Tahoma", "ComicSans", "SegoeUI"); desc = "param_desc_fontStyle" }
           @{ key = "customFont"; label = "customFont"; type = "text"; minLength = 0; maxLength = 30; desc = "param_desc_customFont" }
+          @{ key = "fontSize"; label = "fontSize"; type = "int"; min = 14; max = 24; desc = "param_desc_fontSize" }
           @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 60; desc = "param_desc_maxNameWidthVisible" }
           @{ key = "nameSpacing"; label = "nameSpacing"; type = "int"; min = 0; max = 10; desc = "param_desc_nameSpacing" }
           @{ key = "timeFormat"; label = "timeFormat"; type = "enum"; options = @("1:25:25.255", "1h25m25s225ms"); desc = "param_desc_timeFormat" }
@@ -1820,15 +1855,6 @@ function Initialize-Config {
       if ($config.defaults.ContainsKey("carouselInterval")) {
         $config.defaults.Remove("carouselInterval")
       }
-    }
-  }
-
-  # Ensure categoryNameFontSize exists (backward compatibility)
-  if ($config.defaults -and -not ($config.defaults.PSObject.Properties.Name -contains "categoryNameFontSize")) {
-    if ($config.defaults.GetType().Name -eq "PSCustomObject") {
-      $config.defaults | Add-Member -MemberType NoteProperty -Name "categoryNameFontSize" -Value 16 -Force
-    } else {
-      $config.defaults.categoryNameFontSize = 16
     }
   }
 

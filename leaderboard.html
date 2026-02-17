@@ -130,13 +130,16 @@
         // Apply Font Style
         const customFont = defaults.customFont || '';
         const fontStyle = defaults.fontStyle || 'Arial';
+        const fontSize = defaults.fontSize || 18; // Default 18px
         
         let selectedFontFamily;
+        let isCustomFont = false;
         
         // If customFont is set, use it directly, otherwise use the predefined fontStyle
         if (customFont.trim()) {
           // User provided custom font name - use it with generic fallback
           selectedFontFamily = `"${customFont}", sans-serif`;
+          isCustomFont = true;
         } else {
           // Use predefined font from dropdown
           const fontMap = {
@@ -154,17 +157,27 @@
           selectedFontFamily = fontMap[fontStyle] || fontMap['Arial'];
         }
         
-        DRAW.FONT_BASE = '700 18px ' + selectedFontFamily;
-        DRAW.FONT_MONO = '700 18px ' + selectedFontFamily;
+        // For custom fonts, don't apply font-weight - let the font render with its natural weight
+        // For system fonts, use bold (700) for better contrast
+        if (isCustomFont) {
+          DRAW.FONT_BASE = `${fontSize}px ` + selectedFontFamily;
+          DRAW.FONT_MONO = `${fontSize}px ` + selectedFontFamily;
+        } else {
+          DRAW.FONT_BASE = `700 ${fontSize}px ` + selectedFontFamily;
+          DRAW.FONT_MONO = `700 ${fontSize}px ` + selectedFontFamily;
+        }
 
         // Category name display settings with backward compatibility
         const categoryNameVisible = defaults.categoryNameVisible !== false; // Default to true
-        const categoryNameFontSize = defaults.categoryNameFontSize || 16;
         const categoryNameColor = defaults.categoryNameColor || '#84c8ff';
         const categoryNameSpacing = defaults.categoryNameSpacing || 14;
-        DRAW.CATEGORY_TITLE_FONT = `700 ${categoryNameFontSize}px ` + selectedFontFamily;
+        if (isCustomFont) {
+          DRAW.CATEGORY_TITLE_FONT = `${fontSize}px ` + selectedFontFamily;
+        } else {
+          DRAW.CATEGORY_TITLE_FONT = `700 ${fontSize}px ` + selectedFontFamily;
+        }
         DRAW.CATEGORY_TITLE_COLOR = categoryNameVisible ? categoryNameColor : 'transparent';
-        DRAW.CATEGORY_TITLE_Y = Math.round(categoryNameFontSize * 0.75); // Position relative to font size
+        DRAW.CATEGORY_TITLE_Y = Math.round(fontSize * 0.75); // Position relative to font size
         DRAW.LAYOUT.startY = DRAW.CATEGORY_TITLE_Y + categoryNameSpacing;
 
         // Update title
@@ -223,7 +236,7 @@
       LAYOUT: { padX: 12, startY: 38, rowH: 24 },
       FONT_BASE: '700 18px Arial, sans-serif',
       FONT_MONO: '700 18px Arial, sans-serif, SFMono-Regular, Menlo, Consolas, "Liberation Mono"',
-      SHADOW: { color: 'rgba(0,0,0,0.6)', blur: 6, offsetY: 2 },
+      SHADOW: { color: 'transparent', blur: 0, offsetY: 0 },
       COLORS: { top1: '#ffd700', top2: '#c0c0c0', top3: '#cd7f32', other: '#9fb4ca' },
       CATEGORY_TITLE_FONT: '700 16px Arial, sans-serif',
       CATEGORY_TITLE_COLOR: '#84c8ff',
