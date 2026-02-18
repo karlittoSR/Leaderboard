@@ -14,6 +14,40 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 
 ---
 
+## Installation (5 minutes)
+
+### Prerequisites
+
+**PowerShell 7 Required** (Windows 10/11 - handles UTF-8 encoding correctly)
+
+1. **Install PowerShell 7**  
+   Download from: https://github.com/PowerShell/PowerShell/releases/
+   - Choose latest stable release (green label)
+   - Download `.msi` installer for your system (x64/x86)
+
+2. **File Association**  
+   - Right-click `configure.ps1` → "Open with" → "Choose another app"
+   - Check "Always use this app to open .ps1 files"
+   - Select "PowerShell 7"
+
+3. **Fix Execution Policy**
+   
+   **Quick Fix**: Double-click `FIX_ACCESS.bat` - fixes everything automatically
+   
+   **Manual method**:
+   ```powershell
+   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+   Unblock-File -Path .\configure.ps1
+   ```
+
+4. **For Chinese language support** (if experiencing Chinese character display issues):
+   - Right-click the PowerShell window title bar
+   - Select "Properties" → "Font" tab
+   - Change font to a Chinese-compatible font (e.g., SimSun, SimHei, or Microsoft YaHei)
+   - Click "OK"
+   
+   <img src="images/chinesecharacters.png" width="50%" alt="Chinese Font Setup">
+
 ## Features
 
 ### Advanced customization
@@ -74,41 +108,6 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - **Error Handling**: Comprehensive error messages and recovery
 
 ---
-
-## Installation (5 minutes)
-
-### Prerequisites
-
-**PowerShell 7 Required** (Windows 10/11 - handles UTF-8 encoding correctly)
-
-1. **Install PowerShell 7**  
-   Download from: https://github.com/PowerShell/PowerShell/releases/
-   - Choose latest stable release (green label)
-   - Download `.msi` installer for your system (x64/x86)
-
-2. **File Association**  
-   - Right-click `configure.ps1` → "Open with" → "Choose another app"
-   - Check "Always use this app to open .ps1 files"
-   - Select "PowerShell 7"
-
-3. **Fix Execution Policy**
-   
-   **Quick Fix**: Double-click `FIX_ACCESS.bat` - fixes everything automatically
-   
-   **Manual method**:
-   ```powershell
-   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-   Unblock-File -Path .\configure.ps1
-   ```
-
-4. **For Chinese language support** (if experiencing Chinese character display issues):
-   - Right-click the PowerShell window title bar
-   - Select "Properties" → "Font" tab
-   - Change font to a Chinese-compatible font (e.g., SimSun, SimHei, or Microsoft YaHei)
-   - Click "OK"
-   
-   <img src="images/chinesecharacters.png" width="50%" alt="Chinese Font Setup">
-
 ### Quick Setup
 
 Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instructions to get your leaderboard in OBS within 5 minutes.
