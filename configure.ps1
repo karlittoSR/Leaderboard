@@ -3,7 +3,7 @@
 
 # PowerShell script to manage speedrun.com presets easily
 # Manages multiple games and categories for streamers
-# Version 1.41 - PB color customization + improved translations
+# Version 1.5 - Per-category personal best, live auto-refresh, optimized overlay rendering
 # By karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
@@ -63,7 +63,8 @@ $Global:DefaultConfigJSON = @'
     "maxNameWidthVisible": 18,
     "categoryNameVisible": true,
     "categoryNameColor": "#ffffff",
-    "categoryNameSpacing": 35
+    "categoryNameSpacing": 35,
+    "refreshInterval": 30
   },
   "flagOverrides": {
     "TW": "CN"
@@ -78,6 +79,10 @@ $Global:DefaultConfigJSON = @'
         "variableId": "7891zr5n",
         "valueId": "qj740p3q",
         "label": "Glitchless"
+      },
+      "personalBest": {
+        "active": false,
+        "time": ""
       }
     }
   },
@@ -85,8 +90,8 @@ $Global:DefaultConfigJSON = @'
   "playerName": "Xeill",
   "activeCategory": "elde-any-glitchless",
   "temporaryRun": {
-    "active": true,
-    "time": "55:05"
+    "active": false,
+    "time": ""
   }
 }
 '@
@@ -95,7 +100,7 @@ $Global:DefaultConfigJSON = @'
 $Global:Languages = @{
     fr = @{
         # Main menu
-        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v1.41"
+        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v1.5"
         menu_add_category = "Ajouter une nouvelle catégorie"
         menu_view_details = "Voir les détails d'une catégorie existante"
         menu_change_active = "Changer la catégorie active"
@@ -278,9 +283,12 @@ $Global:Languages = @{
         temp_time_cleared = "Temps temporaire supprimé."
         temp_time_cancelled = "Opération annulée."
         temp_time_no_player = "Impossible sans nom du joueur."
+        temp_time_no_category = "Aucune catégorie active."
+        temp_time_clear_title = "=== SUPPRIMER UN PB ==="
         temp_time_check_title = "Vérification du joueur..."
         temp_time_check_status = "Recherche dans la catégorie sélectionnée"
         temp_time_disabled = "PB temporaire désactivé (joueur introuvable dans cette catégorie)."
+        temp_time_player_warn = "Attention : ce pseudo n'apparaît pas dans le classement de cette catégorie. Le PB sera affiché comme entrée temporaire."
         
         # Reset
         reset_confirm = "Êtes-vous sûr de vouloir réinitialiser la configuration ? (o/N)"
@@ -298,7 +306,7 @@ $Global:Languages = @{
     }
     en = @{
         # Main menu
-        menu_title = "SRC Leaderboard Manager by karlitto__ v1.41"
+        menu_title = "SRC Leaderboard Manager by karlitto__ v1.5"
         menu_add_category = "Add a new category"
         menu_view_details = "View details of an existing category"
         menu_change_active = "Change active category"
@@ -481,9 +489,12 @@ $Global:Languages = @{
         temp_time_cleared = "Temporary time cleared."
         temp_time_cancelled = "Operation cancelled."
         temp_time_no_player = "Unavailable without player name."
+        temp_time_no_category = "No active category."
+        temp_time_clear_title = "=== DELETE A PB ==="
         temp_time_check_title = "Checking player..."
         temp_time_check_status = "Searching in selected category"
         temp_time_disabled = "Temporary PB disabled (player not found in this category)."
+        temp_time_player_warn = "Warning: this name isn't on this category's leaderboard. The PB will show as a temporary entry."
         
         # Reset
         reset_confirm = "Are you sure you want to reset the configuration? (y/N)"
@@ -501,7 +512,7 @@ $Global:Languages = @{
     }
     es = @{
         # Main menu
-        menu_title = "Gestor de Leaderboard SRC by karlitto__ v1.41"
+        menu_title = "Gestor de Leaderboard SRC by karlitto__ v1.5"
         menu_add_category = "Añadir una nueva categoría"
         menu_view_details = "Ver detalles de una categoría existente"
         menu_change_active = "Cambiar categoría activa"
@@ -684,9 +695,12 @@ $Global:Languages = @{
         temp_time_cleared = "Tiempo temporal eliminado."
         temp_time_cancelled = "Operación cancelada."
         temp_time_no_player = "No disponible sin nombre de jugador."
+        temp_time_no_category = "Ninguna categoría activa."
+        temp_time_clear_title = "=== ELIMINAR UN PB ==="
         temp_time_check_title = "Verificando jugador..."
         temp_time_check_status = "Buscando en la categoría seleccionada"
         temp_time_disabled = "PB temporal desactivado (jugador no encontrado en esta categoría)."
+        temp_time_player_warn = "Advertencia: este nombre no está en la clasificación de esta categoría. El PB se mostrará como entrada temporal."
         
         # Reset
         reset_confirm = "¿Seguro que quieres restablecer la configuración? (s/N)"
@@ -704,7 +718,7 @@ $Global:Languages = @{
     }
     pt = @{
         # Main menu
-        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v1.41"
+        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v1.5"
         menu_add_category = "Adicionar uma nova categoria"
         menu_view_details = "Ver detalhes de uma categoria existente"
         menu_change_active = "Alterar categoria ativa"
@@ -887,9 +901,12 @@ $Global:Languages = @{
         temp_time_cleared = "Tempo temporário eliminado."
         temp_time_cancelled = "Operação cancelada."
         temp_time_no_player = "Indisponível sem nome do jogador."
+        temp_time_no_category = "Nenhuma categoria ativa."
+        temp_time_clear_title = "=== ELIMINAR UM PB ==="
         temp_time_check_title = "Verificando jogador..."
         temp_time_check_status = "Buscando na categoria selecionada"
         temp_time_disabled = "PB temporário desativado (jogador não encontrado nesta categoria)."
+        temp_time_player_warn = "Aviso: este nome não está na classificação desta categoria. O PB será exibido como entrada temporária."
         
         # Reset
         reset_confirm = "Tem certeza que deseja redefinir a configuração? (s/N)"
@@ -907,7 +924,7 @@ $Global:Languages = @{
     }
     zh = @{
         # Main menu
-        menu_title = "SRC 排行榜管理器 by karlitto__ v1.41 卡里托"
+        menu_title = "SRC 排行榜管理器 by karlitto__ v1.5 卡里托"
         menu_add_category = "添加新类别"
         menu_view_details = "查看现有类别详情"
         menu_change_active = "更改活动类别"
@@ -1090,9 +1107,12 @@ $Global:Languages = @{
         temp_time_cleared = "临时成绩已清除。"
         temp_time_cancelled = "操作已取消。"
         temp_time_no_player = "未设置玩家名称，无法使用。"
+        temp_time_no_category = "没有激活的分类。"
+        temp_time_clear_title = "=== 删除个人最佳成绩 ==="
         temp_time_check_title = "正在检查玩家..."
         temp_time_check_status = "在所选类别中查找"
         temp_time_disabled = "临时PB已禁用（该类别中未找到玩家）。"
+        temp_time_player_warn = "警告：该名称不在此类别的排行榜中。个人最佳将显示为临时条目。"
         
         # Reset
         reset_confirm = "您确定要重置配置吗？(y/N)"
@@ -1679,6 +1699,45 @@ function Set-Language {
     }
   }
 
+# === PERSONAL BEST (PER-CATEGORY) HELPERS ===
+# The personal best is stored on each category as `personalBest = { active; time }`.
+
+function Get-CategoryPB {
+  param($category)
+  if ($category -and ($category.PSObject.Properties.Name -contains "personalBest")) {
+    return $category.personalBest
+  }
+  return $null
+}
+
+function Set-CategoryPB {
+  param($category, $active, $time)
+  if (-not $category) { return }
+  $pb = @{ active = $active; time = $time }
+  if ($category.GetType().Name -eq "PSCustomObject") {
+    $category | Add-Member -MemberType NoteProperty -Name "personalBest" -Value $pb -Force
+  } else {
+    $category["personalBest"] = $pb
+  }
+}
+
+# Returns @( @{ Id; Name; Time } ) for every category that currently has a non-empty PB.
+function Get-CategoriesWithPB {
+  param($config)
+  $result = @()
+  if ($config.categories) {
+    foreach ($prop in $config.categories.PSObject.Properties) {
+      $cat = $prop.Value
+      $pb = Get-CategoryPB $cat
+      if ($pb -and -not [string]::IsNullOrWhiteSpace($pb.time)) {
+        $catName = if ($cat.name) { $cat.name } else { $prop.Name }
+        $result += @{ Id = $prop.Name; Name = $catName; Time = $pb.time }
+      }
+    }
+  }
+  return $result
+}
+
 # === SETTINGS FUNCTION ===
 function Initialize-Config {
   param($config)
@@ -1916,6 +1975,24 @@ function Initialize-Config {
     } else {
       $config.flagOverrides = @{}
     }
+  }
+
+  # === MIGRATION: global temporaryRun -> active category personalBest ===
+  # The personal best used to be a single global value. It now lives per-category
+  # so switching games keeps each category's own PB. Move any legacy global PB
+  # into the active category (only if that category has no PB yet), then clear it.
+  $legacyTemp = $config.temporaryRun
+  if ($legacyTemp -and $legacyTemp.active -and -not [string]::IsNullOrWhiteSpace($legacyTemp.time)) {
+    $activeId = $config.activeCategory
+    if ($activeId -and $config.categories -and ($config.categories.PSObject.Properties.Name -contains $activeId)) {
+      $activeCat = $config.categories.$activeId
+      $existingPB = Get-CategoryPB $activeCat
+      if (-not ($existingPB -and -not [string]::IsNullOrWhiteSpace($existingPB.time))) {
+        Set-CategoryPB $activeCat $true $legacyTemp.time
+      }
+    }
+    # Retire the legacy global value so it can't double-display via the overlay fallback.
+    $config.temporaryRun = @{ active = $false; time = $null }
   }
 
   return $config
@@ -2442,16 +2519,33 @@ function Set-TemporaryRun {
     return
   }
 
-  $currentTemp = $config.temporaryRun
-  $hasTempTime = ($currentTemp -and $currentTemp.active -and $currentTemp.time)
-  $currentTime = if ($hasTempTime) { $currentTemp.time } else { (Get-LocalizedString "not_defined") }
+  # The PB is now per-category. "Set" always edits the ACTIVE category; "clear"
+  # lets you pick which category's PB to delete (only those that have one).
+  $activeId = $config.activeCategory
+  $activeCat = $null
+  if ($activeId -and $config.categories -and ($config.categories.PSObject.Properties.Name -contains $activeId)) {
+    $activeCat = $config.categories.$activeId
+  }
+  if (-not $activeCat) {
+    Clear-Host
+    Write-Host (Get-LocalizedString "temp_time_no_category") -ForegroundColor Yellow
+    Write-Host ""
+    Start-Sleep -Milliseconds 800
+    return
+  }
 
-  # Prepare context text with current time
-  $contextText = "$(Get-LocalizedString 'temp_time_current') $currentTime"
+  $activePB = Get-CategoryPB $activeCat
+  $hasActivePB = ($activePB -and $activePB.active -and -not [string]::IsNullOrWhiteSpace($activePB.time))
+  $currentTime = if ($hasActivePB) { $activePB.time } else { (Get-LocalizedString "not_defined") }
+
+  # Context text: active category name + its current PB
+  $contextText = "$($activeCat.name) | $(Get-LocalizedString 'temp_time_current') $currentTime"
+
+  $categoriesWithPB = @(Get-CategoriesWithPB $config)
 
   $actionItems = @()
   $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_set"); Key = "set" }
-  if ($hasTempTime) {
+  if ($categoriesWithPB.Count -gt 0) {
     $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_clear"); Key = "clear" }
   }
   $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_back"); Key = "back" }
@@ -2467,12 +2561,20 @@ function Set-TemporaryRun {
   }
 
   if ($actionKey -eq "clear") {
-    $newTemp = @{ active = $false; time = $null }
-    if ($config.GetType().Name -eq "PSCustomObject") {
-      $config | Add-Member -MemberType NoteProperty -Name "temporaryRun" -Value $newTemp -Force
-    } else {
-      $config.temporaryRun = $newTemp
+    # Let the user pick which category's PB to delete (only ones that have a PB)
+    $clearItems = @()
+    foreach ($entry in $categoriesWithPB) {
+      $clearItems += @{ Label = "$($entry.Name) ($($entry.Time))"; Id = $entry.Id }
     }
+    $clearLabels = $clearItems | ForEach-Object { $_.Label }
+    $clearIndex = Show-ArrowMenu -Title (Get-LocalizedString "temp_time_clear_title") -Options $clearLabels -AllowCancel
+    if ($clearIndex -eq -1) {
+      return
+    }
+
+    $targetId = $clearItems[$clearIndex].Id
+    $targetCat = $config.categories.$targetId
+    Set-CategoryPB $targetCat $false $null
 
     $jsonOutput = $config | ConvertTo-Json -Depth 10
     $jsonOutput | Set-Content "config.json" -Encoding UTF8
@@ -2504,18 +2606,28 @@ function Set-TemporaryRun {
     return
   }
 
-  $newTemp = @{ active = $true; time = $newTime }
-  if ($config.GetType().Name -eq "PSCustomObject") {
-    $config | Add-Member -MemberType NoteProperty -Name "temporaryRun" -Value $newTemp -Force
-  } else {
-    $config.temporaryRun = $newTemp
-  }
+  Set-CategoryPB $activeCat $true $newTime
 
   $jsonOutput = $config | ConvertTo-Json -Depth 10
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
 
+  # Advisory only: warn (without erasing) if the player isn't on this category's
+  # leaderboard. The PB is kept and shown as a temporary entry in the overlay.
+  $playerWarning = $false
+  try {
+    Show-ProgressStep -Activity (Get-LocalizedString "temp_time_check_title") -Status (Get-LocalizedString "temp_time_check_status") -PercentComplete 60
+    $exists = Test-PlayerInCategory $config $activeCat
+    Clear-Progress
+    if (-not $exists) { $playerWarning = $true }
+  } catch {
+    Clear-Progress
+  }
+
   Clear-Host
   Write-Host "$(Get-LocalizedString 'temp_time_saved') $newTime" -ForegroundColor Green
+  if ($playerWarning) {
+    Write-Host (Get-LocalizedString "temp_time_player_warn") -ForegroundColor Yellow
+  }
   Write-Host ""
   Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
@@ -2736,34 +2848,16 @@ function Update-ActivePreset($presetList, $currentConfig) {
   $newActivePreset = $presetList[$selectedIndex]
   $currentConfig.activeCategory = $newActivePreset.Name
 
-  $tempDisabled = $false
-  $playerNameValue = if ($currentConfig.playerName) { $currentConfig.playerName.Trim() } else { "" }
-  $tempRun = $currentConfig.temporaryRun
-  if (-not [string]::IsNullOrWhiteSpace($playerNameValue) -and $tempRun -and $tempRun.active -and $tempRun.time) {
-    try {
-      Show-ProgressStep -Activity (Get-LocalizedString "temp_time_check_title") -Status (Get-LocalizedString "temp_time_check_status") -PercentComplete 60
-      $exists = Test-PlayerInCategory $currentConfig $newActivePreset.Value
-      Clear-Progress
-      if (-not $exists) {
-        $currentConfig.temporaryRun.active = $false
-        $currentConfig.temporaryRun.time = $null
-        $tempDisabled = $true
-      }
-    } catch {
-      Clear-Progress
-    }
-  }
-  
+  # The personal best is per-category now, so switching categories keeps each
+  # category's own PB - nothing to disable here.
+
   # Save
   $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
   $jsonOutput | Set-Content "config.json" -Encoding UTF8
-  
+
   Clear-Host
   Write-Host "$(Get-LocalizedString 'change_active_changed') $($newActivePreset.Value.name)" -ForegroundColor Green
   Write-Host (Get-LocalizedString "change_active_obs_info") -ForegroundColor Green
-  if ($tempDisabled) {
-    Write-Host (Get-LocalizedString "temp_time_disabled") -ForegroundColor Yellow
-  }
   Write-Host ""
   Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
   $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
@@ -3366,24 +3460,8 @@ function New-Preset($currentConfig) {
     # Load or create the settings
     $config = Initialize-Config $currentConfig
 
-    $tempDisabled = $false
-    $playerNameValue = if ($config.playerName) { $config.playerName.Trim() } else { "" }
-    $tempRun = $config.temporaryRun
-    if (-not [string]::IsNullOrWhiteSpace($playerNameValue) -and $tempRun -and $tempRun.active -and $tempRun.time) {
-      try {
-        Show-ProgressStep -Activity (Get-LocalizedString "temp_time_check_title") -Status (Get-LocalizedString "temp_time_check_status") -PercentComplete 60
-        $exists = Test-PlayerInCategory $config $newPreset
-        Clear-Progress
-        if (-not $exists) {
-          $config.temporaryRun.active = $false
-          $config.temporaryRun.time = $null
-          $tempDisabled = $true
-        }
-      } catch {
-        Clear-Progress
-      }
-    }
-    
+    # PB is per-category; a freshly added preset has none, so nothing to disable.
+
     # Add the new preset
     # If it's a PSCustomObject (loaded from JSON), use Add-Member
     if ($config.categories.GetType().Name -eq "PSCustomObject") {
@@ -3431,10 +3509,7 @@ function New-Preset($currentConfig) {
     Write-Host ""
     Write-Host (Get-LocalizedString "final_saved" -f $presetId) -ForegroundColor Green
     Write-Host "$(Get-LocalizedString 'final_status') $activationMessage" -ForegroundColor Cyan
-    if ($tempDisabled) {
-      Write-Host (Get-LocalizedString "temp_time_disabled") -ForegroundColor Yellow
-    }
-    
+
     if ($config.activeCategory -eq $presetId) {
       Write-Host (Get-LocalizedString "final_obs_will_show") -ForegroundColor Green
     } else {
