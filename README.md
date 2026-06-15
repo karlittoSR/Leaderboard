@@ -1,6 +1,6 @@
 # Speedrun Leaderboard Overlay
 
-**Version 1.41** - Overlay-based speedrun.com leaderboard display  
+**Version 1.5** - Overlay-based speedrun.com leaderboard display  
 **Multilingual preset manager with intelligent automation**  
 **Supports 5 languages**: Français, English, Español, Português, 中文
 
@@ -60,6 +60,7 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - PB highlight: personal bests submitted in the last 5 days get rainbow effect (when `pbUseRainbow` is disabled), with configurable `defaults.rainbowIntensity`.
 - Configurable category name display with `defaults.categoryNameVisible`, `defaults.categoryNameFontSize`, `defaults.categoryNameColor`, and `defaults.categoryNameSpacing`.
 - Configurable separator bar width between the main table and the personal row via `defaults.pbSeparatorWidth`.
+- Auto-refresh: the overlay re-reads its config and re-fetches the leaderboard on an interval so it stays live during a stream without refreshing the OBS source. Set `defaults.refreshInterval` in seconds (default `30`, minimum `30`, `0` to disable).
 - Optional time format `1h25m25s225ms` in addition to `1:25:25.255` via `defaults.timeFormat`.
 - Safe reset option in the PowerShell script to restore `config.json` to default values if your configuration is broken.
 - Full review and correction of all 5 language packs (FR/EN/ES/PT/ZH), including all parameter descriptions with proper accents.

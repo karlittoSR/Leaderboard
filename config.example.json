@@ -23,11 +23,10 @@
     "maxNameWidthVisible": 18,
     "categoryNameVisible": true,
     "categoryNameColor": "#ffffff",
-    "categoryNameSpacing": 35
+    "categoryNameSpacing": 35,
+    "refreshInterval": 30
   },
-  "flagOverrides": {
-    "TW": "CN"
-  },
+  "flagOverrides": {},
   "categories": {
     "elde-any-glitchless": {
       "name": "Elden Ring - Any% Glitchless",
@@ -38,15 +37,19 @@
         "variableId": "7891zr5n",
         "valueId": "qj740p3q",
         "label": "Glitchless"
+      },
+      "personalBest": {
+        "active": false,
+        "time": ""
       }
     }
   },
-  "language": "fr",
-  "playerName": "Xeill",
+  "language": "en",
+  "playerName": "",
   "activeCategory": "elde-any-glitchless",
+  "playerCountry": "FR",
   "temporaryRun": {
-    "active": true,
-    "time": "55:05"
-  },
-  "playerCountry": "FR"
+    "active": false,
+    "time": ""
+  }
 }

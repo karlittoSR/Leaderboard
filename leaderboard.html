@@ -46,16 +46,19 @@
     let RAINBOW_INTENSITY = 50;
     let PREFERRED_WIDTH = 400;
     let PREFERRED_HEIGHT = 274;
+    let REFRESH_INTERVAL_MS = 30000; // Auto-refresh leaderboard data (0 = disabled)
 
     // Trophy icon URLs (loaded from game assets)
     let TROPHY_1ST_URL = null;
     let TROPHY_2ND_URL = null;
     let TROPHY_3RD_URL = null;
 
-    async function loadConfig() {
+    async function loadConfig(isInitial = true) {
+      if (isConfigLoading) return; // avoid overlapping config reloads
+      isConfigLoading = true;
       try {
-        // Load settings file (config.json)
-        const configRes = await fetch('config.json');
+        // Load settings file (config.json) - bypass cache so live PS1 edits are picked up
+        const configRes = await fetch('config.json', { cache: 'no-store' });
         if (!configRes.ok) {
           throw new Error(`Impossible de charger config.json (HTTP ${configRes.status})`);
         }
@@ -89,9 +92,14 @@
         PLAYER_COUNTRY = (config.playerCountry || 'FR').trim().toUpperCase();
         if (PLAYER_COUNTRY.length !== 2) PLAYER_COUNTRY = 'FR'; // Fallback to FR if invalid
 
-        const tempRun = config.temporaryRun || null;
-        if (tempRun && tempRun.active && tempRun.time) {
-          TEMPORARY_RUN = { time: String(tempRun.time).trim() };
+        // Personal best is per-category (category.personalBest). Fall back to the
+        // legacy global config.temporaryRun for configs that predate the change.
+        // Without a player name, never show a PB/temporary entry at all.
+        const pbRun = (category.personalBest && category.personalBest.active && category.personalBest.time)
+          ? category.personalBest
+          : (config.temporaryRun || null);
+        if (PLAYER_NAME && pbRun && pbRun.active && pbRun.time) {
+          TEMPORARY_RUN = { time: String(pbRun.time).trim() };
         } else {
           TEMPORARY_RUN = null;
         }
@@ -123,6 +131,12 @@
         PB_USE_RAINBOW = defaults.pbUseRainbow === true;
         const rainbowValue = Number(defaults.rainbowIntensity);
         RAINBOW_INTENSITY = Number.isFinite(rainbowValue) ? Math.min(100, Math.max(0, rainbowValue)) : 50;
+        // Auto-refresh interval (seconds in config). 0 disables; otherwise clamp to >= 30s
+        // to stay friendly with the speedrun.com API.
+        const refreshSeconds = Number(defaults.refreshInterval);
+        if (Number.isFinite(refreshSeconds)) {
+          REFRESH_INTERVAL_MS = refreshSeconds <= 0 ? 0 : Math.max(30, refreshSeconds) * 1000;
+        }
 
         // Initialize rainbow colors table
         initRainbowColors();
@@ -196,7 +210,13 @@
         loadTop();
       } catch (e) {
         console.error('Erreur de configuration :', e);
-        document.body.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">❌ Erreur : ${e.message}</div>`;
+        // Only replace the overlay with an error on first load. During an
+        // auto-refresh, keep showing the last good render instead of wiping it.
+        if (isInitial) {
+          document.body.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">❌ Erreur : ${e.message}</div>`;
+        }
+      } finally {
+        isConfigLoading = false;
       }
     }
 
@@ -291,15 +311,22 @@
     // Carousel state
     let carouselPage = 0;
     let carouselRuns = [];
-    let carouselInterval = null;
     let carouselStartTime = 0;
     let carouselPhase = 'display'; // 'display', 'fadeOut', 'fadeIn'
     let CAROUSEL_FADE_DURATION = 500; // Fade transition duration (ms) - loaded from config
     let CAROUSEL_DISPLAY_DURATION = 3000; // Display duration (ms) - loaded from config
 
+    // Single requestAnimationFrame render loop state
+    let renderState = null;        // { processedTop, carouselRuns, displayRunsPerBatch, processedPlayerRow }
+    let animationFrameId = null;   // active rAF handle (null = loop not running)
+    let frameNeedsAnimation = false; // set by draw(): true if the rendered frame contains rainbow/scrolling
+    let lastFrameAnimated = false;   // whether the last drawn frame still needs to animate
+    let isLoading = false;           // guards against overlapping loadTop() calls
+    let isConfigLoading = false;     // guards against overlapping loadConfig() calls
+    let refreshTimer = null;         // auto-refresh interval handle
+
     let fixedMaxRankW = 0;
     let fixedMaxNameBlock = 0;
-    let processedTopRuns = [];
     async function loadImage(url, cache, timeout = 5000) {
       if (!url) return null;
       if (cache.has(url)) return cache.get(url);
@@ -510,6 +537,7 @@
       }
 
       // Scrolling logic (Marquee loop)
+      frameNeedsAnimation = true; // scrolling text moves every frame
       const speed = 30; // pixels per second
       const gap = 20;   // gap between loops
       const loopDist = textWidth + gap;
@@ -570,6 +598,7 @@
     }
 
     function applyRainbowText(phase) {
+      frameNeedsAnimation = true; // rainbow text animates every frame
       const hue = Math.floor(phase % 360);
       ctx.fillStyle = rainbowColors[hue];
     }
@@ -628,6 +657,9 @@
 
     // === Draw ===
     function draw(topRuns, carouselBatch, fadeProgress = 1, playerRow = null) {
+      // Reset per-frame animation flag; set true below whenever we render
+      // rainbow text or a scrolling marquee (i.e. content that keeps moving).
+      frameNeedsAnimation = false;
       const dpr = window.devicePixelRatio || 1;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
@@ -873,6 +905,69 @@
       ctx.shadowOffsetY = 0;
     }
 
+    // === Render loop ===
+    // Single requestAnimationFrame loop that drives the carousel phases AND only
+    // repaints when something is actually animating (rainbow text, scrolling
+    // names, or an in-progress fade). When the board is static it idles without
+    // burning CPU/GPU - important since this runs continuously inside OBS.
+    function renderTick(now) {
+      animationFrameId = requestAnimationFrame(renderTick);
+      if (!renderState) return;
+
+      const { processedTop, carouselRuns: runs, displayRunsPerBatch, processedPlayerRow } = renderState;
+
+      // No carousel: a single static page. Repaint only while it still animates.
+      if (!(runs.length > 0 && displayRunsPerBatch > 0)) {
+        if (lastFrameAnimated) {
+          draw(processedTop, [], 1, processedPlayerRow);
+          lastFrameAnimated = frameNeedsAnimation;
+        }
+        return;
+      }
+
+      const elapsed = now - carouselStartTime;
+      const pageCount = Math.ceil(runs.length / displayRunsPerBatch);
+      const batchStart = carouselPage * displayRunsPerBatch;
+      const batch = runs.slice(batchStart, batchStart + displayRunsPerBatch);
+
+      if (carouselPhase === 'fadeIn') {
+        if (elapsed < CAROUSEL_FADE_DURATION) {
+          draw(processedTop, batch, elapsed / CAROUSEL_FADE_DURATION, processedPlayerRow);
+        } else {
+          carouselPhase = 'display';
+          carouselStartTime = now;
+          draw(processedTop, batch, 1, processedPlayerRow);
+          lastFrameAnimated = frameNeedsAnimation;
+        }
+      } else if (carouselPhase === 'display') {
+        if (elapsed >= CAROUSEL_DISPLAY_DURATION) {
+          carouselPhase = 'fadeOut';
+          carouselStartTime = now;
+          draw(processedTop, batch, 1, processedPlayerRow);
+        } else if (lastFrameAnimated) {
+          // Stable phase: only repaint if the content keeps moving.
+          draw(processedTop, batch, 1, processedPlayerRow);
+          lastFrameAnimated = frameNeedsAnimation;
+        }
+      } else if (carouselPhase === 'fadeOut') {
+        if (elapsed < CAROUSEL_FADE_DURATION) {
+          draw(processedTop, batch, 1 - (elapsed / CAROUSEL_FADE_DURATION), processedPlayerRow);
+        } else {
+          carouselPage = (carouselPage + 1) % pageCount;
+          carouselPhase = 'fadeIn';
+          carouselStartTime = now;
+          const nextStart = carouselPage * displayRunsPerBatch;
+          draw(processedTop, runs.slice(nextStart, nextStart + displayRunsPerBatch), 0, processedPlayerRow);
+        }
+      }
+    }
+
+    function startRenderLoop() {
+      if (animationFrameId === null) {
+        animationFrameId = requestAnimationFrame(renderTick);
+      }
+    }
+
     // === Data processing ===
     async function fetchJSON(url, timeout = 10000) {
       const controller = new AbortController();
@@ -1013,6 +1108,8 @@
     }
 
     async function loadTop() {
+      if (isLoading) return; // avoid overlapping refresh/resize fetches
+      isLoading = true;
       try {
         const { categoryId, variablePairs } = await resolveCategoryAndVariable();
         
@@ -1208,9 +1305,6 @@
           trophyImg: trophyMap[playerRow.rank] || null
         }, playerRowIdx) : null;
 
-        // Store for carousel
-        processedTopRuns = processedTop;
-
         // Calculate fixed widths from all sorted runs (measures directly)
         calculateColumnWidths(sortedRuns, processedPlayerRow);
 
@@ -1222,60 +1316,45 @@
         const overflow = Math.max(0, neededRows - availableRows);
         const displayRunsPerBatch = Math.max(0, RUNS_PER_BATCH - overflow);
         const firstBatch = displayRunsPerBatch > 0 ? carouselRuns.slice(0, displayRunsPerBatch) : [];
-        draw(processedTop, firstBatch, 1, processedPlayerRow);
 
-        if (carouselRuns.length > 0 && displayRunsPerBatch > 0) {
-          if (carouselInterval) clearInterval(carouselInterval);
-          carouselPage = 0;
-          carouselStartTime = Date.now();
-          carouselPhase = 'fadeIn'; // Start with fade in
-          
-          carouselInterval = setInterval(() => {
-            const elapsed = Date.now() - carouselStartTime;
-            const batchStart = carouselPage * displayRunsPerBatch;
-            const batch = carouselRuns.slice(batchStart, batchStart + displayRunsPerBatch);
-            
-            if (carouselPhase === 'fadeIn') {
-              // Fade-in transition phase (0 to 1)
-              if (elapsed < CAROUSEL_FADE_DURATION) {
-                const fadeProgress = elapsed / CAROUSEL_FADE_DURATION;
-                draw(processedTop, batch, fadeProgress, processedPlayerRow);
-              } else {
-                carouselPhase = 'display';
-                carouselStartTime = Date.now();
-              }
-            } else if (carouselPhase === 'display') {
-              // Stable display phase (opacity = 1)
-              if (elapsed < CAROUSEL_DISPLAY_DURATION) {
-                draw(processedTop, batch, 1, processedPlayerRow);
-              } else {
-                carouselPhase = 'fadeOut';
-                carouselStartTime = Date.now();
-              }
-            } else if (carouselPhase === 'fadeOut') {
-              // Fade-out transition phase (1 to 0)
-              if (elapsed < CAROUSEL_FADE_DURATION) {
-                const fadeProgress = 1 - (elapsed / CAROUSEL_FADE_DURATION);
-                draw(processedTop, batch, fadeProgress, processedPlayerRow);
-              } else {
-                // Move to the next page
-                carouselPage = (carouselPage + 1) % Math.ceil(carouselRuns.length / displayRunsPerBatch);
-                carouselPhase = 'fadeIn';
-                carouselStartTime = Date.now();
-              }
-            }
-          }, 16); // ~60 FPS
-        }
+        // Hand the freshly processed data to the single rAF render loop.
+        renderState = { processedTop, carouselRuns, displayRunsPerBatch, processedPlayerRow };
+        carouselPage = 0;
+        carouselPhase = 'fadeIn';
+        carouselStartTime = performance.now();
+
+        // Initial paint, then let the render loop take over.
+        draw(processedTop, firstBatch, 1, processedPlayerRow);
+        lastFrameAnimated = frameNeedsAnimation;
+        startRenderLoop();
       } catch (e) {
         console.error(e);
         draw([], [], 1, null);
+      } finally {
+        isLoading = false;
       }
     }
 
-    loadConfig();
+    // Periodically re-read config.json AND re-fetch leaderboard data so the
+    // overlay stays live during a stream - both API updates and PS1 edits (PB,
+    // player, category, visual settings) show up without an OBS source refresh.
+    function startAutoRefresh() {
+      if (refreshTimer) clearInterval(refreshTimer);
+      if (REFRESH_INTERVAL_MS > 0) {
+        refreshTimer = setInterval(() => loadConfig(false), REFRESH_INTERVAL_MS);
+      }
+    }
+
+    loadConfig().then(startAutoRefresh);
+
+    // Debounce resize so dragging the OBS source doesn't spam the API.
+    let resizeTimer = null;
     window.addEventListener('resize', () => {
-      updateCanvasSize();
-      loadTop();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        updateCanvasSize();
+        loadTop();
+      }, 250);
     });
   </script>
 </body>
