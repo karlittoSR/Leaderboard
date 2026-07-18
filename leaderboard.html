@@ -62,18 +62,27 @@
         if (!configRes.ok) {
           throw new Error(`Impossible de charger config.json (HTTP ${configRes.status})`);
         }
-        const config = await configRes.json();
-        
+        // Keep the raw text so the config watcher can detect edits (category
+        // switch, new preset, name/PB/visual changes) and reload immediately.
+        const configText = await configRes.text();
+        const config = JSON.parse(configText);
+
         // Get the active category from the settings file (no URL parameter needed)
         const categoryName = config.activeCategory;
         if (!categoryName) {
           throw new Error('Aucune catégorie active définie dans config.json. Utilisez le script PowerShell pour en définir une.');
         }
-        
+
         const category = config.categories[categoryName];
         if (!category) {
           const availableCategories = Object.keys(config.categories);
           throw new Error(`Catégorie active "${categoryName}" non trouvée. Options disponibles : ${availableCategories.join(', ')}`);
+        }
+
+        // A different active category means a different leaderboard, so restart
+        // the carousel from the top instead of continuing mid-cycle.
+        if (currentActiveCategory !== null && currentActiveCategory !== categoryName) {
+          carouselPage = 0;
         }
 
         // Apply category settings
@@ -206,8 +215,16 @@
 
         updateCanvasSize();
 
-        // Start data load
-        loadTop();
+        // Start data load. Await it so carouselCycleMs is known before we
+        // schedule the next auto-refresh (otherwise the first refresh would
+        // fire on the fixed interval and interrupt the carousel mid-cycle).
+        await loadTop();
+
+        // Remember what we successfully applied so the config watcher can spot
+        // future edits, then (re)arm the periodic refresh for this cycle length.
+        lastConfigText = configText;
+        currentActiveCategory = categoryName;
+        scheduleAutoRefresh();
       } catch (e) {
         console.error('Erreur de configuration :', e);
         // Only replace the overlay with an error on first load. During an
@@ -323,7 +340,11 @@
     let lastFrameAnimated = false;   // whether the last drawn frame still needs to animate
     let isLoading = false;           // guards against overlapping loadTop() calls
     let isConfigLoading = false;     // guards against overlapping loadConfig() calls
-    let refreshTimer = null;         // auto-refresh interval handle
+    let refreshTimer = null;         // auto-refresh timer handle
+    let carouselCycleMs = 0;         // time for the carousel to show every page once
+    let configWatchTimer = null;     // fast config.json change-watch handle
+    let lastConfigText = null;       // raw text of the last successfully applied config
+    let currentActiveCategory = null;// active category of the last applied config
 
     let fixedMaxRankW = 0;
     let fixedMaxNameBlock = 0;
@@ -1315,11 +1336,28 @@
         const neededRows = TOP_COUNT + RUNS_PER_BATCH;
         const overflow = Math.max(0, neededRows - availableRows);
         const displayRunsPerBatch = Math.max(0, RUNS_PER_BATCH - overflow);
-        const firstBatch = displayRunsPerBatch > 0 ? carouselRuns.slice(0, displayRunsPerBatch) : [];
+
+        // Preserve the carousel position across data reloads. loadTop() also runs
+        // on every auto-refresh (REFRESH_INTERVAL); resetting to page 0 here would
+        // snap the carousel back to the start each cycle, so viewers never see past
+        // the first few pages (e.g. only ranks up to ~13 before it restarted).
+        // Keep the current page, clamped in case the number of pages shrank.
+        const pageCount = displayRunsPerBatch > 0
+          ? Math.max(1, Math.ceil(carouselRuns.length / displayRunsPerBatch))
+          : 1;
+        carouselPage = carouselPage % pageCount;
+        const batchStart = carouselPage * displayRunsPerBatch;
+
+        // Time for the carousel to show every page once. Each page is shown for
+        // CAROUSEL_DISPLAY_DURATION plus a fade in and out. The auto-refresh uses
+        // this so a data reload only ever lands after a full cycle completes,
+        // never mid-carousel (which is what snapped viewers back to the top).
+        const perPageMs = CAROUSEL_DISPLAY_DURATION + 2 * CAROUSEL_FADE_DURATION;
+        carouselCycleMs = pageCount * perPageMs;
+        const firstBatch = displayRunsPerBatch > 0 ? carouselRuns.slice(batchStart, batchStart + displayRunsPerBatch) : [];
 
         // Hand the freshly processed data to the single rAF render loop.
         renderState = { processedTop, carouselRuns, displayRunsPerBatch, processedPlayerRow };
-        carouselPage = 0;
         carouselPhase = 'fadeIn';
         carouselStartTime = performance.now();
 
@@ -1335,17 +1373,44 @@
       }
     }
 
-    // Periodically re-read config.json AND re-fetch leaderboard data so the
-    // overlay stays live during a stream - both API updates and PS1 edits (PB,
-    // player, category, visual settings) show up without an OBS source refresh.
-    function startAutoRefresh() {
-      if (refreshTimer) clearInterval(refreshTimer);
-      if (REFRESH_INTERVAL_MS > 0) {
-        refreshTimer = setInterval(() => loadConfig(false), REFRESH_INTERVAL_MS);
-      }
+    // Periodically re-fetch the leaderboard data from speedrun.com so times stay
+    // live during a stream. loadConfig() re-arms this on completion, so it forms
+    // a self-perpetuating loop.
+    //
+    // The wait is dynamic: at least REFRESH_INTERVAL, but never shorter than one
+    // full carousel cycle (pages x time-per-page). That way the reload always
+    // lands when the carousel has just wrapped back to the first page on its own,
+    // instead of interrupting it partway (e.g. cutting off around rank 13).
+    function scheduleAutoRefresh() {
+      if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+      if (REFRESH_INTERVAL_MS <= 0) return; // auto-refresh disabled
+      const wait = Math.max(REFRESH_INTERVAL_MS, carouselCycleMs || 0);
+      refreshTimer = setTimeout(() => loadConfig(false), wait);
     }
 
-    loadConfig().then(startAutoRefresh);
+    // Watch config.json for edits (much faster than the leaderboard refresh): the
+    // moment the file changes - switching the active category, adding a preset,
+    // updating name/PB/visuals via the PowerShell tool - reload right away instead
+    // of waiting for the next full carousel cycle. Reading a local file every few
+    // seconds is cheap; it only triggers a reload when the contents actually change.
+    function watchConfig() {
+      if (configWatchTimer) clearInterval(configWatchTimer);
+      configWatchTimer = setInterval(async () => {
+        if (isConfigLoading) return; // a reload is already in progress
+        try {
+          const res = await fetch('config.json', { cache: 'no-store' });
+          if (!res.ok) return;
+          const text = await res.text();
+          if (lastConfigText !== null && text !== lastConfigText) {
+            loadConfig(false); // config.json changed on disk - apply it now
+          }
+        } catch (_) {
+          // Ignore transient read errors; the next tick will try again.
+        }
+      }, 3000);
+    }
+
+    loadConfig().then(watchConfig);
 
     // Debounce resize so dragging the OBS source doesn't spam the API.
     let resizeTimer = null;
