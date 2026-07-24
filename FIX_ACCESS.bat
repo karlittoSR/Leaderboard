@@ -7,19 +7,23 @@ echo   PowerShell Security Policy Fix
 echo   For Speedrun Leaderboard Script
 echo ================================================
 echo.
-echo This will fix common issues when running the script:
-echo   1. Fix execution policy (allow scripts)
-echo   2. Unblock downloaded file
+echo This will prepare the script without changing your user-wide
+echo PowerShell execution policy:
+echo   1. Check PowerShell 7
+echo   2. Unblock the downloaded script
 echo.
 pause
 
 echo.
-echo [1/2] Checking execution policy...
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -Command "$policy = Get-ExecutionPolicy -Scope CurrentUser; if ($policy -in @('Restricted', 'AllSigned')) { Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force -ErrorAction SilentlyContinue }; $final = Get-ExecutionPolicy -Scope CurrentUser; Write-Host \"Current policy: $final\" -ForegroundColor Cyan; exit 0"
+echo [1/2] Checking PowerShell 7...
+pwsh.exe -NoProfile -Command "Write-Host \"PowerShell $($PSVersionTable.PSVersion) is available.\" -ForegroundColor Cyan"
 if %errorlevel% equ 0 (
-    echo [OK] Execution policy is ready!
+    echo [OK] PowerShell 7 is ready!
 ) else (
-    echo [WARNING] Could not check policy. Script may still work.
+    echo [ERROR] PowerShell 7 (pwsh.exe) was not found.
+    echo Install it from https://aka.ms/powershell
+    pause
+    exit /b 1
 )
 
 echo.
@@ -40,11 +44,11 @@ echo Exiting.
 exit /b 0
 
 :launch
-pwsh.exe -NoProfile -File "%~dp0configure.ps1"
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0configure.ps1"
 
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Script failed to launch.
-    echo Try running this file as Administrator.
+    echo Check the error shown above, then try again.
     pause
 )

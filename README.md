@@ -1,6 +1,6 @@
 # Speedrun Leaderboard Overlay
 
-**Version 1.5** - Overlay-based speedrun.com leaderboard display  
+**Version 1.6.1** - Overlay-based speedrun.com leaderboard display
 **Multilingual preset manager with intelligent automation**  
 **Supports 5 languages**: Français, English, Español, Português, 中文
 
@@ -57,10 +57,13 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - Smarter player name rendering with `defaults.maxNameWidthVisible`, marquee scrolling for long names, and spacing that respects the time column.
 - Enhanced temporary PB handling: your PB can appear even if your account is not on the loaded leaderboard, using `playerName` and `playerCountry`.
 - **PB color customization**: Choose custom hex color for your PB row with `defaults.pbColor`, or enable rainbow effect with `defaults.pbUseRainbow`.
-- PB highlight: personal bests submitted in the last 5 days get rainbow effect (when `pbUseRainbow` is disabled), with configurable `defaults.rainbowIntensity`.
-- Configurable category name display with `defaults.categoryNameVisible`, `defaults.categoryNameFontSize`, `defaults.categoryNameColor`, and `defaults.categoryNameSpacing`.
+- Recent official runs are highlighted with the configurable rainbow effect; temporary PB rows follow `defaults.pbUseRainbow` consistently.
+- Configurable category name display with `defaults.categoryNameVisible`, `defaults.fontSize`, `defaults.categoryNameColor`, and `defaults.categoryNameSpacing`.
 - Configurable separator bar width between the main table and the personal row via `defaults.pbSeparatorWidth`.
 - Auto-refresh: the overlay re-reads its config and re-fetches the leaderboard on an interval so it stays live during a stream without refreshing the OBS source. Set `defaults.refreshInterval` in seconds (default `30`, minimum `30`, `0` to disable).
+- Accurate temporary PB ranks are calculated against the complete category, independently of `defaults.maxRuns`.
+- Failed refreshes keep the last good leaderboard visible and retry automatically.
+- Configuration saves are validated and backed up to `config.json.backup`.
 - Optional time format `1h25m25s225ms` in addition to `1:25:25.255` via `defaults.timeFormat`.
 - Safe reset option in the PowerShell script to restore `config.json` to default values if your configuration is broken.
 - Full review and correction of all 5 language packs (FR/EN/ES/PT/ZH), including all parameter descriptions with proper accents.
@@ -93,7 +96,7 @@ Dynamic and animated display of Speedrun.com leaderboards with advanced features
 - **Country Flags**: Automatic flag display from flagcdn.com with per-country override support
 - **Ranking Colors**: Gold/Silver/Bronze for top 3, blue-grey for others, or custom color for your PB
 - **PB Color Customization**: Set your own hex color for your PB row, or enable rainbow effect
-- **Recent PB Highlighting**: Rainbow effect for recent runs (< 5 days) when custom PB color is enabled
+- **Recent Run Highlighting**: Rainbow effect for official submissions from the last 5 days
 - **Tie Handling**: Same time = same rank
 - **Trophy Icons (Optional)**: Show 1st/2nd/3rd trophy icons instead of rank numbers
 - **Configurable Fonts**: Choose from 10 font families (Arial, Verdana, Times, etc.) or use custom installed fonts
@@ -159,8 +162,9 @@ Follow the [QUICK_START_EN.md](QUICK_START_EN.md) guide for step-by-step instruc
 ### Basic Settings
 Edit `config.json` for customization (Edit it straight from the terminal):
 
-```json
+```jsonc
 {
+  "schemaVersion": 2,
   "defaults": {
     "topCount": 3,                          // Number of top positions always shown
     "timeFormat": "1:25:25.255",            // Time format: standard or "1h25m25s255ms"
@@ -173,7 +177,6 @@ Edit `config.json` for customization (Edit it straight from the terminal):
     "pbUseRainbow": true,                   // Use rainbow effect for PB (true) or custom color (false)
     "rainbowIntensity": 90,                 // Rainbow effect intensity (0-100)
     "categoryNameVisible": true,            // Show category name at top
-    "categoryNameFontSize": 18,             // Category name font size (12-24)
     "categoryNameColor": "#ffffff",         // Category name color (hex with #)
     "categoryNameSpacing": 35,              // Space between category name and leaderboard (12-50)
     "CAROUSEL_DISPLAY_DURATION": 5000,      // Carousel: stable display duration per page (ms)
@@ -181,18 +184,18 @@ Edit `config.json` for customization (Edit it straight from the terminal):
     "useTrophyIcons": true,                 // Use trophy icons for top 3 positions
     "displayHeight": 450,                   // OBS Browser Source height
     "displayWidth": 500,                    // OBS Browser Source width
-    "canvasWidth": 300,                     // Internal canvas resolution width
     "runsPerBatch": 4,                      // Carousel entries per rotation
-    "maxRuns": 200,                         // Max runs fetched for carousel
+    "maxRuns": 200,                         // Max runs displayed in the carousel
     "fontStyle": "Arial",                   // Font family for all text
     "fontSize": 18,                         // Font size for leaderboard entries (12-24)
-    "maxNameWidthVisible": 18               // Max visible name width (characters) before marquee
+    "maxNameWidthVisible": 18,              // Max visible name width (characters) before marquee
+    "refreshInterval": 30                   // Data refresh seconds; 0 disables
   }
 }
 ```
 
 ### Flag Overrides
-Override country flags for specific players using ISO 3166-1 alpha-2 codes
+Override one country code with another using ISO 3166-1 alpha-2 codes.
 
 **Format**: The left side is the original country code (what players have), the right side is the flag to display instead.
 
@@ -233,48 +236,41 @@ Override country flags for specific players using ISO 3166-1 alpha-2 codes
 - **Full Game Categories**: Any%, 100%, All Bosses, Low%, etc.
 - **Individual Level Runs**: Celeste chapters, Mario stages, etc.
 - **Complex Subcategories**: Multiple variable filters
-- **Mixed Formats**: Supports both timed categories and score-based
 
 ### Time Format Support
 **Display Formats** (configurable via `defaults.timeFormat`):
-- **Custom PB Colors**: Choose your own color for the PB row or use rainbow effect (configurable via `pbColor` and `pbUseRainbow`)
-- **Recent PB Highlighting**: Runs submitted in the last 5 days get rainbow effect (only when `pbUseRainbow` is false)
+- **Standard**: `1:25:25.255`
 - **Alternative**: `1h25m25s255ms` (with unit labels)
 
 **Input Formats** (for temporary PB entry):
-- **Standard**: `1:25:25.255` (hours:minutes:seconds.milliseconds
+- **Standard**: `1:25:25.255` (hours:minutes:seconds.milliseconds)
 - **Decimal**: `82.5` (seconds with decimals)
 - **Millisecond**: `1:22.123` (with millisecond precision)
 
 ### Player Features
 - **Enhanced Temporary PB**: Shows your run even when you're not on the loaded leaderboard (uses `playerName` and `playerCountry`)
-- **Recent PB Highlighting**: Runs submitted in the last 5 days get rainbow-colored highlighting
-- **Position Display**: Shows your official rank at the bottom on a separate row when outside top positions
+- **Recent Run Highlighting**: Official runs submitted in the last 5 days get rainbow-colored highlighting
+- **Position Display**: Shows the temporary PB's calculated rank at the bottom when it is outside the displayed top positions
 - **Smart Name Rendering**: Marquee scrolling for long names with configurable width limits
 - **Country Detection**: Automatic flag display with override support
 - **Player Validation**: Verifies usernames against speedrun.com API
-
----Custom PB Colors**: Choose your own color for the PB row or use rainbow effect (configurable via `pbColor` and `pbUseRainbow`)
-- **Recent PB Highlighting**: Runs submitted in the last 5 days get rainbow effect (only when `pbUseRainbow` is false)
 
 ## Troubleshooting
 
 ### Common Issues
 
 **Script won't execute**  
-Solution: Run `FIX_ACCESS.bat` or manually set execution policy
-
-**Game not found**  
+Solution: Run `FIX_ACCESS.bat`. It launches the configurator with a process-scoped policy override and does not change your user-wide PowerShell policy.
 
 **PB color not applying**  
 Solution: Check that `pbUseRainbow` is set to `false` to use custom `pbColor`. When `pbUseRainbow` is `true`, rainbow effect overrides the custom color
-Solution: Verify game exists on speedrun.com, check spelling, try alternate names
 
 **Game not found**  
 Solution: Verify game exists on speedrun.com, check spelling, try alternate names
 
 **Category name not showing**  
 Solution: Check that `categoryNameVisible` is set to `true` in config.json default
+
 **Missing categories**  
 Solution: Some games have complex structures, verify category exists on website
 
@@ -283,6 +279,10 @@ Solution: Requires internet connection, flags load from flagcdn.com
 
 **Temporary PB not showing**  
 Solution: Ensure `playerName` and `playerCountry` are set in config.json for enhanced temporary PB display
+
+**Configuration became invalid after a manual edit**
+
+Solution: Close the configurator, copy `config.json.backup` over `config.json`, then reopen it. The backup contains the state before the most recent save.
 
 **Carousel not working**  
 Solution: Check if enough entries exist beyond the `topCount` setting (e.g., if topCount=3, need 4+ runs total)
@@ -309,11 +309,12 @@ Use formats like `1:23.45` or `82.5` for time entry
 leaderboard/
 ├── configure.ps1          # Main configuration script (multilingual)
 ├── leaderboard.html       # Overlay display (for OBS)
-├── config.json           # Settings and presets storage
-├── FIX_ACCESS.bat        # Execution policy fixer
-├── README.md             # Complete documentation
-├── QUICK_START_*.md      # Language-specific quick guides
-└── images/              # Documentation assets
+├── config.json            # Personal settings and categories
+├── config.json.backup     # Automatically maintained recovery copy
+├── FIX_ACCESS.bat         # Safe PowerShell launcher
+├── README.md              # Complete documentation
+├── QUICK_START_*.md       # Language-specific quick guides
+└── images/                # Documentation assets
 ```
 
 ---
@@ -342,45 +343,39 @@ leaderboard/
 
 ## How it works
 
-The **"config.json"** file contains **presets** for different games/categories:
+The **`config.json`** file contains named categories and selects one with `activeCategory`:
 
-```json
+```jsonc
 {
-  "playerName": "Xeill",
+  "schemaVersion": 2,
+  "playerName": "YourSpeedrunName",
   "playerCountry": "US",
-  "activePreset": "elde-any-glitchless",
+  "activeCategory": "elde-any-glitchless",
   "language": "en",
-  "presets": {
+  "categories": {
     "elde-any-glitchless": {
       "name": "Elden Ring - Any% Glitchless",
       "gameId": "nd28z0ed",
+      "categoryId": "02qr00pk",
       "category": "Any%",
       "subcategory": "Glitchless",
       "subcategories": {
         "variableId": "7891zr5n",
         "valueId": "qj740p3q",
         "label": "Glitchless"
+      },
+      "personalBest": {
+        "active": true,
+        "time": "2:00:00"
       }
-    },
-    "celeste-resort": {
-      "name": "Celeste - Celestial Resort",
-      "gameId": "o1y9j9v6",
-      "levelId": "r9g4k7p9",
-      "levelName": "Celestial Resort",
-      "category": "Any%",
-      "subcategory": ""
     }
-  },
-  "temporaryRun": {
-    "active": true,
-    "time": "55:05"
   },
   "defaults": { /* visual settings */ },
   "flagOverrides": { /* country code mappings */ }
 }
 ```
 
-The overlay automatically uses the `activePreset` from the configuration.
+The overlay automatically uses `activeCategory`. `categoryId` is stored for new categories so normal refreshes do not need to rediscover it from the API.
 
 ## Adding a Game
 
@@ -412,7 +407,7 @@ See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screen
 - **Visual customization** → Use "Set Visual Tweaks" menu in configure.ps1
 - **Multilingual interface** → "Change Language" menu option
 - **Advanced settings** → Edit defaults in config.json (see Basic Settings section)
-- **Runs fetched** → defaults.maxRuns (default: 200)
+- **Runs displayed** → defaults.maxRuns (default: 200; an active PB may fetch more runs to calculate its exact rank)
 
 ## Customizing Appearance
 
@@ -428,12 +423,11 @@ See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screen
 ## Help
 
 **Script won't run when double-clicking?**  
-→ **Use `FIX_ACCESS.bat`** - it fixes security policies automatically!  
+→ **Use `FIX_ACCESS.bat`** - it launches the script with a process-scoped policy override without changing your account settings.
 → Or make sure you installed **PowerShell 7** and associated `.ps1` files with it (see Prerequisites above)
 
 **Get "running scripts is disabled" error?**  
-→ **Double-click `FIX_ACCESS.bat`** to fix execution policy  
-→ Or manually run: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
+→ **Double-click `FIX_ACCESS.bat`**, or run `pwsh -NoProfile -ExecutionPolicy Bypass -File .\configure.ps1`
 
 **If it still doesn't work:**
 - Try: Right-click `configure.ps1` → "Run with PowerShell 7"
@@ -450,3 +444,13 @@ See **[QUICK_START_EN.md](QUICK_START_EN.md)** for detailed tutorial with screen
 
 **"Failed to fetch" when double-clicking the HTML?**  
 → Normal! Only works with OBS integration.
+
+## Validation
+
+Run the built-in non-interactive checks after editing the project:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\configure.ps1 -Validate
+```
+
+This checks the default configuration, schema version, localization key parity, time parsing, and required overlay features without opening the interactive menu.
