@@ -1,9 +1,13 @@
 ﻿# Encoding: UTF-8
+param(
+  [switch]$Validate
+)
+
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # PowerShell script to manage speedrun.com presets easily
 # Manages multiple games and categories for streamers
-# Version 1.5 - Per-category personal best, live auto-refresh, optimized overlay rendering
+# Version 1.6.1 - Accurate PB ranks, resilient refresh, safe configuration saves
 # By karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
@@ -39,6 +43,7 @@ if ($scriptPath) {
 # === DEFAULT CONFIGURATION ===
 $Global:DefaultConfigJSON = @'
 {
+  "schemaVersion": 2,
   "defaults": {
     "topCount": 3,
     "timeFormat": "1:25:25.255",
@@ -66,13 +71,12 @@ $Global:DefaultConfigJSON = @'
     "categoryNameSpacing": 35,
     "refreshInterval": 30
   },
-  "flagOverrides": {
-    "TW": "CN"
-  },
+  "flagOverrides": {},
   "categories": {
     "elde-any-glitchless": {
       "name": "Elden Ring - Any% Glitchless",
       "gameId": "nd28z0ed",
+      "categoryId": "02qr00pk",
       "subcategory": "Glitchless",
       "category": "Any%",
       "subcategories": {
@@ -87,8 +91,9 @@ $Global:DefaultConfigJSON = @'
     }
   },
   "language": "en",
-  "playerName": "Xeill",
+  "playerName": "",
   "activeCategory": "elde-any-glitchless",
+  "playerCountry": "FR",
   "temporaryRun": {
     "active": false,
     "time": ""
@@ -100,7 +105,7 @@ $Global:DefaultConfigJSON = @'
 $Global:Languages = @{
     fr = @{
         # Main menu
-        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v1.5"
+        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v1.6.1"
         menu_add_category = "Ajouter une nouvelle catégorie"
         menu_view_details = "Voir les détails d'une catégorie existante"
         menu_change_active = "Changer la catégorie active"
@@ -125,7 +130,8 @@ $Global:Languages = @{
         details_title = "=== DETAILS D'UNE CATÉGORIE ==="
         details_choose = "Choisissez une catégorie à voir :"
         details_name = "Nom :"
-        details_category_id = "ID Catégorie :"
+        details_category_id = "ID du preset :"
+        details_src_category_id = "ID catégorie speedrun.com :"
         details_game_id = "Game ID :"
         details_category = "Category :"
         details_subcategory = "Subcategory :"
@@ -237,7 +243,7 @@ $Global:Languages = @{
         param_desc_displayHeight = "Hauteur du canevas de l'overlay en pixels"
         param_desc_topCount = "Nombre de runs fixes en haut du classement"
         param_desc_runsPerBatch = "Nombre de runs affichées par cycle de carrousel"
-        param_desc_maxRuns = "Nombre maximum de runs récupérées depuis l'API"
+        param_desc_maxRuns = "Nombre maximum de runs affichées dans le carrousel"
         param_desc_rankAlign = "Alignement des numéros de rang (gauche, centre, droite)"
         param_desc_rankPrefixMode = "Symbole visuel du rang (point, dièse ou rien)"
         param_desc_fontStyle = "Police utilisée pour tout le texte"
@@ -258,6 +264,7 @@ $Global:Languages = @{
         param_desc_flagOverrides = "Remplacer les codes de drapeau de pays (ex: HR FR)"
         param_desc_CAROUSEL_DISPLAY_DURATION = "Temps d'affichage du carrousel (millisecondes)"
         param_desc_CAROUSEL_FADE_DURATION = "Durée de la transition en fondu (millisecondes)"
+        param_desc_refreshInterval = "Intervalle de mise à jour des données en secondes (0 pour désactiver)"
 
         # Player name
         player_name_title = "=== NOM DU JOUEUR ==="
@@ -306,7 +313,7 @@ $Global:Languages = @{
     }
     en = @{
         # Main menu
-        menu_title = "SRC Leaderboard Manager by karlitto__ v1.5"
+        menu_title = "SRC Leaderboard Manager by karlitto__ v1.6.1"
         menu_add_category = "Add a new category"
         menu_view_details = "View details of an existing category"
         menu_change_active = "Change active category"
@@ -331,7 +338,8 @@ $Global:Languages = @{
         details_title = "=== CATEGORY DETAILS ==="
         details_choose = "Choose a category to view:"
         details_name = "Name:"
-        details_category_id = "Category ID:"
+        details_category_id = "Preset ID:"
+        details_src_category_id = "speedrun.com category ID:"
         details_game_id = "Game ID:"
         details_category = "Category:"
         details_subcategory = "Subcategory:"
@@ -443,7 +451,7 @@ $Global:Languages = @{
         param_desc_displayHeight = "Height of the overlay canvas in pixels"
         param_desc_topCount = "Number of fixed runs at the top of leaderboard"
         param_desc_runsPerBatch = "Number of runs displayed per carousel cycle"
-        param_desc_maxRuns = "Maximum total runs fetched from API"
+        param_desc_maxRuns = "Maximum total runs displayed in the carousel"
         param_desc_rankAlign = "Alignment of rank numbers (left, center, right)"
         param_desc_rankPrefixMode = "Visual symbol of rank (dot, hash or none)"
         param_desc_fontStyle = "Font family used for all text"
@@ -464,6 +472,7 @@ $Global:Languages = @{
         param_desc_flagOverrides = "Replace country flag codes (e.g., HR FR)"
         param_desc_CAROUSEL_DISPLAY_DURATION = "Carousel display time (milliseconds)"
         param_desc_CAROUSEL_FADE_DURATION = "Duration of fade transition (milliseconds)"
+        param_desc_refreshInterval = "Leaderboard data refresh interval in seconds (0 disables)"
 
         # Player name
         player_name_title = "=== PLAYER NAME ==="
@@ -512,7 +521,7 @@ $Global:Languages = @{
     }
     es = @{
         # Main menu
-        menu_title = "Gestor de Leaderboard SRC by karlitto__ v1.5"
+        menu_title = "Gestor de Leaderboard SRC by karlitto__ v1.6.1"
         menu_add_category = "Añadir una nueva categoría"
         menu_view_details = "Ver detalles de una categoría existente"
         menu_change_active = "Cambiar categoría activa"
@@ -537,7 +546,8 @@ $Global:Languages = @{
         details_title = "=== DETALLES DE LA CATEGORÍA ==="
         details_choose = "Elige una categoría para ver:"
         details_name = "Nombre:"
-        details_category_id = "ID de Categoría:"
+        details_category_id = "ID del preset:"
+        details_src_category_id = "ID de categoría de speedrun.com:"
         details_game_id = "ID del Juego:"
         details_category = "Categoría:"
         details_subcategory = "Subcategoría:"
@@ -649,7 +659,7 @@ $Global:Languages = @{
         param_desc_displayHeight = "Altura del lienzo del overlay en píxeles"
         param_desc_topCount = "Número de runs fijas en la parte superior de la clasificación"
         param_desc_runsPerBatch = "Número de runs mostradas por ciclo de carrusel"
-        param_desc_maxRuns = "Número máximo de runs obtenidas de la API"
+        param_desc_maxRuns = "Número máximo de runs mostradas en el carrusel"
         param_desc_rankAlign = "Alineación de los números de rango (izquierda, centro, derecha)"
         param_desc_rankPrefixMode = "Símbolo visual del rango (punto, almohadilla o nada)"
         param_desc_fontStyle = "Familia de fuente utilizada para todo el texto"
@@ -670,6 +680,7 @@ $Global:Languages = @{
         param_desc_flagOverrides = "Reemplazar códigos de bandera de país (ej: HR FR)"
         param_desc_CAROUSEL_DISPLAY_DURATION = "Tiempo de visualización del carrusel (milisegundos)"
         param_desc_CAROUSEL_FADE_DURATION = "Duración de la transición de desvanecimiento (milisegundos)"
+        param_desc_refreshInterval = "Intervalo de actualización de datos en segundos (0 para desactivar)"
 
         # Player name
         player_name_title = "=== NOMBRE DEL JUGADOR ==="
@@ -718,7 +729,7 @@ $Global:Languages = @{
     }
     pt = @{
         # Main menu
-        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v1.5"
+        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v1.6.1"
         menu_add_category = "Adicionar uma nova categoria"
         menu_view_details = "Ver detalhes de uma categoria existente"
         menu_change_active = "Alterar categoria ativa"
@@ -743,7 +754,8 @@ $Global:Languages = @{
         details_title = "=== DETALHES DA CATEGORIA ==="
         details_choose = "Escolha uma categoria para ver:"
         details_name = "Nome:"
-        details_category_id = "ID da Categoria:"
+        details_category_id = "ID do preset:"
+        details_src_category_id = "ID da categoria speedrun.com:"
         details_game_id = "ID do Jogo:"
         details_category = "Categoria:"
         details_subcategory = "Subcategoria:"
@@ -855,7 +867,7 @@ $Global:Languages = @{
         param_desc_displayHeight = "Altura da tela do overlay em pixels"
         param_desc_topCount = "Número de runs fixas no topo da classificação"
         param_desc_runsPerBatch = "Número de runs exibidas por ciclo de carrossel"
-        param_desc_maxRuns = "Número máximo de runs obtidas da API"
+        param_desc_maxRuns = "Número máximo de runs exibidas no carrossel"
         param_desc_rankAlign = "Alinhamento dos números de classificação (esquerda, centro, direita)"
         param_desc_rankPrefixMode = "Símbolo visual da classificação (ponto, cerquilha ou nada)"
         param_desc_fontStyle = "Família de fonte usada para todo o texto"
@@ -876,6 +888,7 @@ $Global:Languages = @{
         param_desc_flagOverrides = "Substituir códigos de bandeira de país (ex: HR FR)"
         param_desc_CAROUSEL_DISPLAY_DURATION = "Tempo de exibição do carrossel (milissegundos)"
         param_desc_CAROUSEL_FADE_DURATION = "Duração da transição de esmaecimento (milissegundos)"
+        param_desc_refreshInterval = "Intervalo de atualização dos dados em segundos (0 para desativar)"
 
         # Player name
         player_name_title = "=== NOME DO JOGADOR ==="
@@ -924,7 +937,7 @@ $Global:Languages = @{
     }
     zh = @{
         # Main menu
-        menu_title = "SRC 排行榜管理器 by karlitto__ v1.5 卡里托"
+        menu_title = "SRC 排行榜管理器 by karlitto__ v1.6.1 卡里托"
         menu_add_category = "添加新类别"
         menu_view_details = "查看现有类别详情"
         menu_change_active = "更改活动类别"
@@ -949,7 +962,8 @@ $Global:Languages = @{
         details_title = "=== 类别详情 ==="
         details_choose = "选择要查看的类别："
         details_name = "名称："
-        details_category_id = "类别ID："
+        details_category_id = "预设 ID："
+        details_src_category_id = "speedrun.com 类别 ID："
         details_game_id = "游戏ID："
         details_category = "类别："
         details_subcategory = "子类别："
@@ -1061,7 +1075,7 @@ $Global:Languages = @{
         param_desc_displayHeight = "覆盖层画布的高度（像素）"
         param_desc_topCount = "排行榜顶部固定记录数量"
         param_desc_runsPerBatch = "每个轮播周期显示的记录数"
-        param_desc_maxRuns = "从API获取的最大记录数"
+        param_desc_maxRuns = "轮播中显示的最大记录数"
         param_desc_rankAlign = "排名数字的对齐方式（左、中、右）"
         param_desc_rankPrefixMode = "排名的视觉符号（点、井号或无）"
         param_desc_fontStyle = "所有文本使用的字体系列"
@@ -1082,6 +1096,7 @@ $Global:Languages = @{
         param_desc_flagOverrides = "替换国家旗帜代码（例如：HR FR）"
         param_desc_CAROUSEL_DISPLAY_DURATION = "轮播显示时间（毫秒）"
         param_desc_CAROUSEL_FADE_DURATION = "淡入淡出过渡的持续时间（毫秒）"
+        param_desc_refreshInterval = "排行榜数据刷新间隔（秒，0 表示禁用）"
 
         # Player name
         player_name_title = "=== 玩家名称 ==="
@@ -1209,9 +1224,10 @@ function Set-Language {
     # Save the new language
     if (-not $currentConfig) {
         $currentConfig = @{
+            schemaVersion = 2
             language = $newLang
-            activePreset = $null
-            presets = @{}
+            activeCategory = $null
+            categories = @{}
         }
     } else {
         if ($currentConfig.GetType().Name -eq "PSCustomObject") {
@@ -1229,8 +1245,7 @@ function Set-Language {
     $Global:CurrentLanguage = $newLang
     
     # Save
-    $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
-    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+    Save-Config $currentConfig
     
     Clear-Host
     Write-Host "$(Get-LocalizedString 'language_changed') $($langDisplayNames[$newLang])" -ForegroundColor Green
@@ -1301,8 +1316,34 @@ function Set-Language {
   function Save-Config {
     param($Config)
 
+    $Config = Initialize-Config $Config
     $jsonOutput = $Config | ConvertTo-Json -Depth 10
-    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+    $configPath = Join-Path $scriptDir "config.json"
+    $tempPath = Join-Path $scriptDir "config.json.tmp"
+    $backupPath = Join-Path $scriptDir "config.json.backup"
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+
+    try {
+      [System.IO.File]::WriteAllText($tempPath, "$jsonOutput`n", $utf8NoBom)
+      # Parse the exact bytes that will be installed before replacing a good file.
+      [System.IO.File]::ReadAllText($tempPath, $utf8NoBom) | ConvertFrom-Json | Out-Null
+
+      if ([System.IO.File]::Exists($configPath)) {
+        try {
+          [System.IO.File]::Replace($tempPath, $configPath, $backupPath, $true)
+        } catch {
+          # Fallback for filesystems where File.Replace is unavailable.
+          [System.IO.File]::Copy($configPath, $backupPath, $true)
+          [System.IO.File]::Move($tempPath, $configPath, $true)
+        }
+      } else {
+        [System.IO.File]::Move($tempPath, $configPath)
+      }
+    } finally {
+      if ([System.IO.File]::Exists($tempPath)) {
+        [System.IO.File]::Delete($tempPath)
+      }
+    }
   }
 
   function Set-VisualTweaks {
@@ -1327,9 +1368,9 @@ function Set-Language {
     
     $baseWidthValue = if ($displayWidthValue -ne $null) { [double]$displayWidthValue } else { 350.0 }
 
-    $timeXValue = [Math]::Min(350.0, $baseWidthValue - $padX)
+    $timeXValue = $baseWidthValue - $padX
     if ([double]::IsNaN($timeXValue) -or [double]::IsInfinity($timeXValue)) {
-      $timeXValue = 350.0 - $padX
+      $timeXValue = 500.0 - $padX
     }
     $pbSeparatorMax = [Math]::Floor($timeXValue - $padX - 12.0)
     if ($pbSeparatorMax -lt 50) { $pbSeparatorMax = 50 }
@@ -1421,10 +1462,13 @@ function Set-Language {
           if ($text -match '^(?<from>[A-Za-z]{2})\s+(?<to>[A-Za-z]{2})$') {
             $from = $Matches.from.ToUpperInvariant()
             $to = $Matches.to.ToUpperInvariant()
-            if ($config.GetType().Name -eq "PSCustomObject") {
-              $config.flagOverrides = [PSCustomObject]@{ $from = $to }
+            if (-not $config.flagOverrides) {
+              $config.flagOverrides = [PSCustomObject]@{}
+            }
+            if ($config.flagOverrides -is [System.Collections.IDictionary]) {
+              $config.flagOverrides[$from] = $to
             } else {
-              $config.flagOverrides = @{ $from = $to }
+              $config.flagOverrides | Add-Member -MemberType NoteProperty -Name $from -Value $to -Force
             }
             Save-Config $config
             Clear-Host
@@ -1500,6 +1544,9 @@ function Set-Language {
           $parsed = 0
           if ([int]::TryParse($inputResult.Text.Trim(), [ref]$parsed)) {
             $newValue = Clamp-IntValue -Value $parsed -Min $selected.min -Max $selected.max
+            if ($selected.key -eq "refreshInterval" -and $newValue -gt 0 -and $newValue -lt 30) {
+              $newValue = 30
+            }
           }
         } elseif ($selected.type -eq "px") {
           $newValue = Convert-SizeToPx -Text $inputResult.Text -Min $selected.min -Max $selected.max
@@ -1611,6 +1658,7 @@ function Set-Language {
       @{ key = "carousel"; label = (Get-LocalizedString "parameters_visuals_section_carousel"); items = @(
           @{ key = "CAROUSEL_DISPLAY_DURATION"; label = "CAROUSEL_DISPLAY_DURATION"; type = "int"; min = 1000; max = 10000; desc = "param_desc_CAROUSEL_DISPLAY_DURATION" }
           @{ key = "CAROUSEL_FADE_DURATION"; label = "CAROUSEL_FADE_DURATION"; type = "int"; min = 50; max = 1000; desc = "param_desc_CAROUSEL_FADE_DURATION" }
+          @{ key = "refreshInterval"; label = "refreshInterval"; type = "int"; min = 0; max = 3600; desc = "param_desc_refreshInterval" }
         ) }
     )
 
@@ -1681,7 +1729,7 @@ function Set-Language {
         
         $confirm = Read-Host
         if ($confirm -and $confirm.ToLower().Trim() -eq $expectedAnswer) {
-             $Global:DefaultConfigJSON | Set-Content "config.json" -Encoding UTF8
+             Save-Config ($Global:DefaultConfigJSON | ConvertFrom-Json)
              Write-Host (Get-LocalizedString "reset_success") -ForegroundColor Green
              Start-Sleep -Seconds 1
              # Reload config
@@ -1744,6 +1792,19 @@ function Initialize-Config {
 
   if (-not $config) { $config = @{} }
 
+  if (-not ($config.PSObject.Properties.Name -contains "schemaVersion")) {
+    if ($config.GetType().Name -eq "PSCustomObject") {
+      $config | Add-Member -MemberType NoteProperty -Name "schemaVersion" -Value 2 -Force
+    } else {
+      $config["schemaVersion"] = 2
+    }
+  } else {
+    $parsedSchemaVersion = 0
+    if (-not [int]::TryParse("$($config.schemaVersion)", [ref]$parsedSchemaVersion) -or $parsedSchemaVersion -lt 2) {
+      $config.schemaVersion = 2
+    }
+  }
+
   # === MIGRATION: Rename presets → categories (backward compatibility) ===
   if ($config.PSObject.Properties.Name -contains "presets") {
     $presetsValue = $config.presets
@@ -1791,32 +1852,134 @@ function Initialize-Config {
       $config.categories = @{}
     }
   }
+  if ($config.categories -isnot [System.Collections.IDictionary] -and
+      $config.categories -isnot [System.Management.Automation.PSCustomObject]) {
+    throw "Invalid config.json: categories must be an object."
+  }
+  if ($config.defaults -and
+      $config.defaults -isnot [System.Collections.IDictionary] -and
+      $config.defaults -isnot [System.Management.Automation.PSCustomObject]) {
+    $config.defaults = $null
+  }
+
+  $canonicalDefaults = [ordered]@{
+    topCount = 3
+    timeFormat = "1:25:25.255"
+    rankAlign = "left"
+    rankPrefixMode = "dot"
+    nameSpacing = 5
+    pbSeparatorWidth = 320
+    pbPrefix = "PB"
+    pbColor = "#fffff1"
+    pbUseRainbow = $true
+    customFont = ""
+    fontSize = 18
+    rainbowIntensity = 90
+    CAROUSEL_DISPLAY_DURATION = 5000
+    CAROUSEL_FADE_DURATION = 500
+    useTrophyIcons = $true
+    displayWidth = 500
+    displayHeight = 450
+    runsPerBatch = 4
+    maxRuns = 200
+    fontStyle = "Arial"
+    maxNameWidthVisible = 18
+    categoryNameVisible = $true
+    categoryNameColor = "#ffffff"
+    categoryNameSpacing = 35
+    refreshInterval = 30
+  }
+
+  if ($config.defaults) {
+    $hasNewNameWidth = $config.defaults.PSObject.Properties.Name -contains "maxNameWidthVisible"
+    $hasLegacyNameWidth = $config.defaults.PSObject.Properties.Name -contains "maxPlayerNameChars"
+    if (-not $hasNewNameWidth -and $hasLegacyNameWidth) {
+      $legacyNameWidth = 0
+      if ([int]::TryParse("$($config.defaults.maxPlayerNameChars)", [ref]$legacyNameWidth)) {
+        $canonicalDefaults.maxNameWidthVisible = [Math]::Max(4, [Math]::Min(60, $legacyNameWidth))
+      }
+    }
+  }
 
   if (-not $config.defaults) {
-    $defaults = @{
-      runsPerBatch = 3
-      maxRuns = 200
-      topCount = 3
-      displayWidth = 400
-      displayHeight = 274
-      rankAlign = "right"
-      rankPrefixMode = "dot"
-      fontStyle = "Arial"
-      customFont = ""
-      maxNameWidthVisible = 30
-      timeFormat = "1:25:25.255"
-      nameSpacing = 4
-      pbSeparatorWidth = 326
-      pbPrefix = "PB"
-      rainbowIntensity = 50
-      CAROUSEL_DISPLAY_DURATION = 3000
-      CAROUSEL_FADE_DURATION = 500
-      useTrophyIcons = $false
-    }
+    $defaults = [PSCustomObject]$canonicalDefaults
     if ($config.GetType().Name -eq "PSCustomObject") {
       $config | Add-Member -MemberType NoteProperty -Name "defaults" -Value $defaults -Force
     } else {
       $config.defaults = $defaults
+    }
+  }
+
+  foreach ($entry in $canonicalDefaults.GetEnumerator()) {
+    $hasProperty = if ($config.defaults -is [System.Collections.IDictionary]) {
+      $config.defaults.Contains($entry.Key)
+    } else {
+      $config.defaults.PSObject.Properties.Name -contains $entry.Key
+    }
+    if (-not $hasProperty) {
+      if ($config.defaults -is [System.Collections.IDictionary]) {
+        $config.defaults[$entry.Key] = $entry.Value
+      } else {
+        $config.defaults | Add-Member -MemberType NoteProperty -Name $entry.Key -Value $entry.Value -Force
+      }
+    }
+  }
+
+  $intRanges = @{
+    topCount = @(1, 5)
+    runsPerBatch = @(1, 5)
+    maxRuns = @(10, 200)
+    nameSpacing = @(0, 10)
+    pbSeparatorWidth = @(50, 4000)
+    fontSize = @(14, 24)
+    rainbowIntensity = @(0, 100)
+    CAROUSEL_DISPLAY_DURATION = @(1000, 10000)
+    CAROUSEL_FADE_DURATION = @(50, 1000)
+    displayWidth = @(200, 4000)
+    displayHeight = @(100, 3000)
+    maxNameWidthVisible = @(4, 60)
+    categoryNameSpacing = @(12, 50)
+    refreshInterval = @(0, 3600)
+  }
+  foreach ($key in $intRanges.Keys) {
+    $parsed = 0
+    $defaultValue = [int]$canonicalDefaults[$key]
+    if (-not [int]::TryParse("$($config.defaults.$key)", [ref]$parsed)) {
+      $parsed = $defaultValue
+    }
+    if ($key -eq "refreshInterval" -and $parsed -gt 0 -and $parsed -lt 30) {
+      $parsed = 30
+    } else {
+      $parsed = [Math]::Max($intRanges[$key][0], [Math]::Min($intRanges[$key][1], $parsed))
+    }
+    $config.defaults.$key = $parsed
+  }
+  if ($config.defaults.maxRuns -lt $config.defaults.topCount) {
+    $config.defaults.maxRuns = $config.defaults.topCount
+  }
+
+  if ("$($config.defaults.rankAlign)".ToLowerInvariant() -notin @("left", "center", "right")) {
+    $config.defaults.rankAlign = $canonicalDefaults.rankAlign
+  }
+  if ("$($config.defaults.rankPrefixMode)".ToLowerInvariant() -notin @("dot", "hash", "none")) {
+    $config.defaults.rankPrefixMode = $canonicalDefaults.rankPrefixMode
+  }
+  if ("$($config.defaults.timeFormat)" -notin @("1:25:25.255", "1h25m25s225ms")) {
+    $config.defaults.timeFormat = $canonicalDefaults.timeFormat
+  }
+  foreach ($key in @("pbColor", "categoryNameColor")) {
+    $color = "$($config.defaults.$key)".Trim()
+    if ($color -notmatch '^#?[0-9A-Fa-f]{6}$') {
+      $config.defaults.$key = $canonicalDefaults[$key]
+    } elseif (-not $color.StartsWith("#")) {
+      $config.defaults.$key = "#$($color.ToLowerInvariant())"
+    }
+  }
+  $prefix = "$($config.defaults.pbPrefix)".Trim().ToUpperInvariant()
+  $config.defaults.pbPrefix = if ($prefix -match '^[A-Z]{1,3}$') { $prefix } else { $canonicalDefaults.pbPrefix }
+  foreach ($key in @("pbUseRainbow", "useTrophyIcons", "categoryNameVisible")) {
+    if ($config.defaults.$key -isnot [bool]) {
+      $config.defaults.$key = $canonicalDefaults[$key]
     }
   }
 
@@ -1959,6 +2122,8 @@ function Initialize-Config {
       $config.playerCountry = "FR"
     }
   }
+  $normalizedCountry = "$($config.playerCountry)".Trim().ToUpperInvariant()
+  $config.playerCountry = if ($normalizedCountry -match '^[A-Z]{2}$') { $normalizedCountry } else { "FR" }
 
   if (-not ($config.PSObject.Properties.Name -contains "temporaryRun")) {
     $tempRun = @{ active = $false; time = $null }
@@ -1975,6 +2140,10 @@ function Initialize-Config {
     } else {
       $config.flagOverrides = @{}
     }
+  }
+  if ($config.flagOverrides -isnot [System.Collections.IDictionary] -and
+      $config.flagOverrides -isnot [System.Management.Automation.PSCustomObject]) {
+    $config.flagOverrides = [PSCustomObject]@{}
   }
 
   # === MIGRATION: global temporaryRun -> active category personalBest ===
@@ -2080,7 +2249,7 @@ function Convert-TimeStringToSeconds {
     if (-not [double]::TryParse($parts[2], [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$seconds)) { return $null }
   }
 
-  if ($minutes -lt 0 -or $seconds -lt 0 -or $seconds -ge 60) { return $null }
+  if ($hours -lt 0 -or $minutes -lt 0 -or $seconds -lt 0 -or $seconds -ge 60) { return $null }
   if ($parts.Count -eq 3 -and ($minutes -ge 60)) { return $null }
 
   return ($hours * 3600) + ($minutes * 60) + $seconds
@@ -2089,11 +2258,23 @@ function Convert-TimeStringToSeconds {
 function Invoke-SrcApiJson {
   param(
     [Parameter(Mandatory = $true)][string]$Uri,
-    [int]$TimeoutSec = 10
+    [int]$TimeoutSec = 10,
+    [int]$MaxAttempts = 3
   )
 
-  $response = Invoke-WebRequest -Uri $Uri -TimeoutSec $TimeoutSec
-  return ($response.Content | ConvertFrom-Json)
+  $lastError = $null
+  for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+    try {
+      $response = Invoke-WebRequest -Uri $Uri -TimeoutSec $TimeoutSec -ErrorAction Stop
+      return ($response.Content | ConvertFrom-Json)
+    } catch {
+      $lastError = $_
+      if ($attempt -lt $MaxAttempts) {
+        Start-Sleep -Milliseconds (500 * [Math]::Pow(2, $attempt - 1))
+      }
+    }
+  }
+  throw $lastError
 }
 
 function ConvertTo-SubcategoryVariable {
@@ -2278,8 +2459,19 @@ function Resolve-CategoryDetailsAndVariables {
   $categoryName = $preset.category
   $levelId = $preset.levelId
 
-  $response = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$gameId?embed=categories.variables" -TimeoutSec 10
-  $data = $response.Content | ConvertFrom-Json
+  $storedPairs = @()
+  if ($preset.subcategories) {
+    foreach ($entry in @($preset.subcategories)) {
+      if ($entry -and $entry.variableId -and $entry.valueId) {
+        $storedPairs += @{ variableId = $entry.variableId; valueId = $entry.valueId }
+      }
+    }
+  }
+  if ($preset.categoryId -and ($storedPairs.Count -gt 0 -or -not $preset.subcategory)) {
+    return @{ CategoryId = $preset.categoryId; VariablePairs = $storedPairs }
+  }
+
+  $data = Invoke-SrcApiJson -Uri "https://www.speedrun.com/api/v1/games/$gameId?embed=categories.variables" -TimeoutSec 10
   $cats = $data.data.categories.data
   $targetType = if ($levelId) { "per-level" } else { "per-game" }
   $cat = $cats | Where-Object { $_.type -eq $targetType -and $_.name -eq $categoryName } | Select-Object -First 1
@@ -2350,15 +2542,10 @@ function Test-PlayerInCategory {
   $categoryId = $resolved.CategoryId
   $variablePairs = $resolved.VariablePairs
 
-  $limit = 200
-  if ($config.defaults -and $config.defaults.maxRuns) {
-    $limit = [int]$config.defaults.maxRuns
-  }
-
   if ($preset.levelId) {
-    $lbUrl = "https://www.speedrun.com/api/v1/leaderboards/$($preset.gameId)/level/$($preset.levelId)/$categoryId?top=$limit&embed=players"
+    $lbUrl = "https://www.speedrun.com/api/v1/leaderboards/$($preset.gameId)/level/$($preset.levelId)/$categoryId?embed=players"
   } else {
-    $lbUrl = "https://www.speedrun.com/api/v1/leaderboards/$($preset.gameId)/category/$categoryId?top=$limit&embed=players"
+    $lbUrl = "https://www.speedrun.com/api/v1/leaderboards/$($preset.gameId)/category/$categoryId?embed=players"
   }
 
   if ($variablePairs -and $variablePairs.Count -gt 0) {
@@ -2369,8 +2556,7 @@ function Test-PlayerInCategory {
     }
   }
 
-  $lbResponse = Invoke-WebRequest -Uri $lbUrl -TimeoutSec 10
-  $lb = $lbResponse.Content | ConvertFrom-Json
+  $lb = Invoke-SrcApiJson -Uri $lbUrl -TimeoutSec 20
 
   $playerMap = @{}
   if ($lb.data.players -and $lb.data.players.data) {
@@ -2498,8 +2684,7 @@ function Set-PlayerName {
     }
   }
 
-  $jsonOutput = $config | ConvertTo-Json -Depth 10
-  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+  Save-Config $config
 
   Write-Host ""
   Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
@@ -2576,8 +2761,7 @@ function Set-TemporaryRun {
     $targetCat = $config.categories.$targetId
     Set-CategoryPB $targetCat $false $null
 
-    $jsonOutput = $config | ConvertTo-Json -Depth 10
-    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+    Save-Config $config
 
     Clear-Host
     Write-Host (Get-LocalizedString "temp_time_cleared") -ForegroundColor Yellow
@@ -2608,8 +2792,7 @@ function Set-TemporaryRun {
 
   Set-CategoryPB $activeCat $true $newTime
 
-  $jsonOutput = $config | ConvertTo-Json -Depth 10
-  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+  Save-Config $config
 
   # Advisory only: warn (without erasing) if the player isn't on this category's
   # leaderboard. The PB is kept and shown as a temporary entry in the overlay.
@@ -2757,6 +2940,9 @@ function Write-PresetDetails($presetList, $currentConfig) {
   Write-Host (Get-LocalizedString "details_title") -ForegroundColor Cyan
   Write-Host "$(Get-LocalizedString 'details_name') $($selectedPreset.Value.name)" -ForegroundColor White
   Write-Host "$(Get-LocalizedString 'details_category_id') $($selectedPreset.Name)" -ForegroundColor Cyan
+  if ($selectedPreset.Value.categoryId) {
+    Write-Host "$(Get-LocalizedString 'details_src_category_id') $($selectedPreset.Value.categoryId)" -ForegroundColor Cyan
+  }
   Write-Host "$(Get-LocalizedString 'details_game_id') $($selectedPreset.Value.gameId)" -ForegroundColor Cyan
   Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
   $subcat = if ($selectedPreset.Value.subcategory) { $selectedPreset.Value.subcategory } else { (Get-LocalizedString "null_value") }
@@ -2809,8 +2995,7 @@ function Write-PresetDetails($presetList, $currentConfig) {
     }
 
     $selectedPreset.Value.name = $trimmedName
-    $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
-    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+    Save-Config $currentConfig
 
     Clear-Host
     Write-Host "$(Get-LocalizedString 'details_edit_saved') $trimmedName" -ForegroundColor Green
@@ -2837,7 +3022,7 @@ function Update-ActivePreset($presetList, $currentConfig) {
   
   $options = @()
   foreach ($preset in $presetList) {
-    $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " [ACTIF]" } else { "" }
+    $isActive = if ($preset.Name -eq $currentConfig.activeCategory) { " [ACTIF]" } else { "" }
     $options += "$($preset.Value.name)$isActive"
   }
   
@@ -2852,8 +3037,7 @@ function Update-ActivePreset($presetList, $currentConfig) {
   # category's own PB - nothing to disable here.
 
   # Save
-  $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
-  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+  Save-Config $currentConfig
 
   Clear-Host
   Write-Host "$(Get-LocalizedString 'change_active_changed') $($newActivePreset.Value.name)" -ForegroundColor Green
@@ -2887,8 +3071,27 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
   Write-Host (Get-LocalizedString "remove_warning") -ForegroundColor Red
   Write-Host "$($selectedPreset.Value.name)" -ForegroundColor Cyan
   Write-Host ""
-  
-  # Immediate deletion without confirmation
+
+  $confirmPrompt = switch ($Global:CurrentLanguage) {
+    "en" { "Are you sure? (y/N)" }
+    "es" { "¿Estás seguro? (s/N)" }
+    "pt" { "Tem certeza? (s/N)" }
+    "zh" { "确定要删除吗？(y/N)" }
+    default { "Êtes-vous sûr ? (o/N)" }
+  }
+  $expectedAnswer = switch ($Global:CurrentLanguage) {
+    "en" { "y" }
+    "es" { "s" }
+    "pt" { "s" }
+    "zh" { "y" }
+    default { "o" }
+  }
+  $confirmation = Read-Host $confirmPrompt
+  if (-not $confirmation -or $confirmation.Trim().ToLowerInvariant() -ne $expectedAnswer) {
+    Write-Host (Get-LocalizedString "remove_cancelled") -ForegroundColor Cyan
+    Start-Sleep -Milliseconds 800
+    return
+  }
   
   # Delete the preset
   $deletedPresetId = $selectedPreset.Name
@@ -2917,8 +3120,7 @@ function Remove-PresetSingle($selectedPreset, $currentConfig) {
   }
   
   # Save
-  $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
-  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+  Save-Config $currentConfig
   
   Clear-Host
   Write-Host (Get-LocalizedString "remove_success" -f $selectedPreset.Value.name) -ForegroundColor Green
@@ -2951,7 +3153,7 @@ function Remove-Preset($presetList, $currentConfig) {
   
   $options = @()
   foreach ($preset in $presetList) {
-    $isActive = if ($preset.Name -eq $currentConfig.activePreset) { " [ACTIF]" } else { "" }
+    $isActive = if ($preset.Name -eq $currentConfig.activeCategory) { " [ACTIF]" } else { "" }
     $options += "$($preset.Value.name)$isActive"
   }
   
@@ -2970,8 +3172,27 @@ function Remove-Preset($presetList, $currentConfig) {
   Write-Host (Get-LocalizedString "remove_warning") -ForegroundColor Red
   Write-Host "$($presetToDelete.Value.name)" -ForegroundColor Cyan
   Write-Host ""
-  
-  # Immediate deletion without confirmation
+
+  $confirmPrompt = switch ($Global:CurrentLanguage) {
+    "en" { "Are you sure? (y/N)" }
+    "es" { "¿Estás seguro? (s/N)" }
+    "pt" { "Tem certeza? (s/N)" }
+    "zh" { "确定要删除吗？(y/N)" }
+    default { "Êtes-vous sûr ? (o/N)" }
+  }
+  $expectedAnswer = switch ($Global:CurrentLanguage) {
+    "en" { "y" }
+    "es" { "s" }
+    "pt" { "s" }
+    "zh" { "y" }
+    default { "o" }
+  }
+  $confirmation = Read-Host $confirmPrompt
+  if (-not $confirmation -or $confirmation.Trim().ToLowerInvariant() -ne $expectedAnswer) {
+    Write-Host (Get-LocalizedString "remove_cancelled") -ForegroundColor Cyan
+    Start-Sleep -Milliseconds 800
+    return
+  }
   
   # Delete the preset
   $deletedPresetId = $presetToDelete.Name
@@ -3000,8 +3221,7 @@ function Remove-Preset($presetList, $currentConfig) {
   }
   
   # Save
-  $jsonOutput = $currentConfig | ConvertTo-Json -Depth 10
-  $jsonOutput | Set-Content "config.json" -Encoding UTF8
+  Save-Config $currentConfig
   
   Clear-Host
   Write-Host (Get-LocalizedString "remove_success" -f $presetToDelete.Value.name) -ForegroundColor Green
@@ -3046,8 +3266,7 @@ function New-Preset($currentConfig) {
     $completed = $false
     try {
     # === STEP 1: Search for the game ===
-    $response = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games?name=$([System.Web.HttpUtility]::UrlEncode($gameName))" -TimeoutSec 10
-    $data = $response.Content | ConvertFrom-Json
+    $data = Invoke-SrcApiJson -Uri "https://www.speedrun.com/api/v1/games?name=$([System.Web.HttpUtility]::UrlEncode($gameName))" -TimeoutSec 10
     
     $games = $data.data
     
@@ -3089,8 +3308,7 @@ function New-Preset($currentConfig) {
       Start-Sleep -Milliseconds 50
       
       # Fetch categories first to determine what types are available
-      $categoriesResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
-      $categoriesData = $categoriesResponse.Content | ConvertFrom-Json
+      $categoriesData = Invoke-SrcApiJson -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)?embed=categories.variables" -TimeoutSec 10
       $allCategories = $categoriesData.data.categories.data
       
       # Check if game has per-level categories
@@ -3108,8 +3326,7 @@ function New-Preset($currentConfig) {
         Start-Sleep -Milliseconds 50
         
         try {
-          $levelsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
-          $levelsData = $levelsResponse.Content | ConvertFrom-Json
+          $levelsData = Invoke-SrcApiJson -Uri "https://www.speedrun.com/api/v1/games/$($selectedGame.id)/levels" -TimeoutSec 10
           $levels = $levelsData.data
         } catch {
           $levels = @()
@@ -3203,8 +3420,7 @@ function New-Preset($currentConfig) {
           
           $subcategoryVariables = @()
           try {
-            $varsResponse = Invoke-WebRequest -Uri "https://www.speedrun.com/api/v1/categories/$($selectedCategory.id)/variables" -TimeoutSec 10
-            $varsData = $varsResponse.Content | ConvertFrom-Json
+            $varsData = Invoke-SrcApiJson -Uri "https://www.speedrun.com/api/v1/categories/$($selectedCategory.id)/variables" -TimeoutSec 10
             $subcategoryVariables = $varsData.data
           } catch {
             $subcategoryVariables = $selectedCategory.variables.data
@@ -3334,11 +3550,6 @@ function New-Preset($currentConfig) {
                   valueId = $selectedEntry.id
                   label = $selectedEntry.label
                 }
-                # If this value is a terminal/leaf (no further subcategory variables should be prompted), break
-                # For Celeste, after selecting 'All Red Berries+Heart', 'Full Clear', or 'Heart+Cassette', stop prompting for more
-                if ($selectedEntry.label -match 'All Red Berries\+Heart|Full Clear|Heart\+Cassette') {
-                  break
-                }
               }
             }
           }
@@ -3446,6 +3657,7 @@ function New-Preset($currentConfig) {
     $newPreset = @{
       name = $fullName
       gameId = $selectedGame.id
+      categoryId = $selectedCategory.id
       category = $selectedCategory.name
       subcategory = $subcatValue
     }
@@ -3503,8 +3715,7 @@ function New-Preset($currentConfig) {
     }
     
     # Save
-    $jsonOutput = $config | ConvertTo-Json -Depth 10
-    $jsonOutput | Set-Content "config.json" -Encoding UTF8
+    Save-Config $config
     
     Write-Host ""
     Write-Host (Get-LocalizedString "final_saved" -f $presetId) -ForegroundColor Green
@@ -3531,6 +3742,99 @@ function New-Preset($currentConfig) {
   }
 }
 
+# === NON-INTERACTIVE PROJECT VALIDATION ===
+function Invoke-ProjectValidation {
+  $failures = [System.Collections.Generic.List[string]]::new()
+
+  try {
+    $embeddedDefault = $Global:DefaultConfigJSON | ConvertFrom-Json
+    $normalizedDefault = Initialize-Config ($Global:DefaultConfigJSON | ConvertFrom-Json)
+    if ($normalizedDefault.schemaVersion -ne 2) {
+      $failures.Add("Embedded configuration schemaVersion is not 2.")
+    }
+
+    $requiredDefaults = @(
+      "topCount", "runsPerBatch", "maxRuns", "displayWidth", "displayHeight",
+      "fontSize", "pbColor", "categoryNameColor", "refreshInterval"
+    )
+    foreach ($key in $requiredDefaults) {
+      if (-not ($normalizedDefault.defaults.PSObject.Properties.Name -contains $key)) {
+        $failures.Add("Missing default setting: $key")
+      }
+    }
+
+    $legacySample = @'
+{
+  "defaults": { "maxRuns": 50 },
+  "categories": {
+    "sample": {
+      "name": "Sample",
+      "gameId": "o1y9zk26",
+      "category": "Shura",
+      "personalBest": { "active": true, "time": "32:32" }
+    }
+  },
+  "activeCategory": "sample",
+  "playerName": "Mokyx"
+}
+'@ | ConvertFrom-Json
+    $normalizedSample = Initialize-Config $legacySample
+    if ($normalizedSample.schemaVersion -ne 2 -or
+        $normalizedSample.defaults.maxRuns -ne 50 -or
+        $normalizedSample.defaults.refreshInterval -ne 30 -or
+        $normalizedSample.categories.sample.personalBest.time -ne "32:32") {
+      $failures.Add("Legacy/friend-style configuration normalization failed.")
+    }
+
+    $examplePath = Join-Path $scriptDir "config.example.json"
+    if (Test-Path -LiteralPath $examplePath) {
+      $example = Get-Content -LiteralPath $examplePath -Raw | ConvertFrom-Json
+      $embeddedJson = $embeddedDefault | ConvertTo-Json -Depth 10 -Compress
+      $exampleJson = $example | ConvertTo-Json -Depth 10 -Compress
+      if ($embeddedJson -cne $exampleJson) {
+        $failures.Add("Embedded defaults and config.example.json differ.")
+      }
+    }
+
+    $referenceKeys = @($Global:Languages.fr.Keys | Sort-Object)
+    foreach ($lang in @("en", "es", "pt", "zh")) {
+      $difference = Compare-Object $referenceKeys @($Global:Languages[$lang].Keys | Sort-Object)
+      if ($difference) {
+        $failures.Add("Localization keys differ for language: $lang")
+      }
+    }
+
+    if ($null -ne (Convert-TimeStringToSeconds "-1:20:30")) {
+      $failures.Add("Negative-hour time validation failed.")
+    }
+    $timeValue = Convert-TimeStringToSeconds "1:25:31.250"
+    if ([Math]::Abs($timeValue - 5131.25) -gt 0.0001) {
+      $failures.Add("Time parsing regression detected.")
+    }
+
+    $htmlPath = Join-Path $scriptDir "leaderboard.html"
+    $html = Get-Content -LiteralPath $htmlPath -Raw
+    foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId")) {
+      if (-not $html.Contains($marker)) {
+        $failures.Add("leaderboard.html is missing validation marker: $marker")
+      }
+    }
+  } catch {
+    $failures.Add($_.Exception.Message)
+  }
+
+  if ($failures.Count -gt 0) {
+    throw "Validation failed:`n - $($failures -join "`n - ")"
+  }
+
+  Write-Host "Project validation passed." -ForegroundColor Green
+}
+
+if ($Validate) {
+  Invoke-ProjectValidation
+  return
+}
+
 # === MAIN FUNCTION ===
 function Start-MainLoop {
   $mainMenuIndex = 0
@@ -3538,19 +3842,25 @@ function Start-MainLoop {
     try {
       # === LOAD EXISTING PRESETS ===
       if (-not (Test-Path "config.json")) {
-        $Global:DefaultConfigJSON | Set-Content "config.json" -Encoding UTF8
+        Save-Config ($Global:DefaultConfigJSON | ConvertFrom-Json)
       }
 
       $configExists = Test-Path "config.json"
       $currentConfig = $null
+      $configBeforeInitialization = $null
       
       if ($configExists) {
         $configContent = Get-Content "config.json" -Raw | ConvertFrom-Json
         $currentConfig = $configContent
+        $configBeforeInitialization = $currentConfig | ConvertTo-Json -Depth 10 -Compress
       }
       
       # === INITIALIZE SETTINGS (adds missing properties) ===
       $currentConfig = Initialize-Config $currentConfig
+      $configAfterInitialization = $currentConfig | ConvertTo-Json -Depth 10 -Compress
+      if ($configBeforeInitialization -cne $configAfterInitialization) {
+        Save-Config $currentConfig
+      }
       
       # === INITIALIZE LANGUAGE ===
       $Global:CurrentLanguage = "fr" # Default
