@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Elden Ring – Any% Glitchless: Top 10 (Overlay)</title>
+  <title>Speedrun.com Leaderboard Overlay</title>
   <style>
     :root { --muted:#94a3b8; --text:#e2e8f0; }
     html, body { height: 100%; margin: 0; }
@@ -22,17 +22,19 @@
     // === Settings Loading ===
     // Variables loaded from settings file (config.json)
     let GAME_ID;
+    let CATEGORY_ID;
     let CATEGORY_NAME;
     let CATEGORY_DISPLAY_NAME; // Full category name for display
     let SUBCATEGORY_LABEL;
     let SUBCATEGORIES;
     let LEVEL_ID;
-    let LEVEL_NAME;
     let PLAYER_NAME;
+    let PLAYER_COUNTRY = 'FR';
     let TEMPORARY_RUN;
     let RUNS_PER_BATCH;
     let TOP_COUNT;
     let MAX_RUNS;
+    let MAX_PLAYER_NAME_CHARS = 18;
     let FLAG_OVERRIDES;
     let USE_TROPHY_ICONS = false;
     let RANK_ALIGN = 'right';
@@ -46,7 +48,115 @@
     let RAINBOW_INTENSITY = 50;
     let PREFERRED_WIDTH = 400;
     let PREFERRED_HEIGHT = 274;
+    let CANVAS_DPR = 1;
     let REFRESH_INTERVAL_MS = 30000; // Auto-refresh leaderboard data (0 = disabled)
+
+    const CONFIG_SCHEMA_VERSION = 2;
+    const DEFAULT_SETTINGS = Object.freeze({
+      topCount: 3,
+      timeFormat: '1:25:25.255',
+      rankAlign: 'left',
+      rankPrefixMode: 'dot',
+      nameSpacing: 5,
+      pbSeparatorWidth: 320,
+      pbPrefix: 'PB',
+      pbColor: '#fffff1',
+      pbUseRainbow: true,
+      customFont: '',
+      fontSize: 18,
+      rainbowIntensity: 90,
+      CAROUSEL_DISPLAY_DURATION: 5000,
+      CAROUSEL_FADE_DURATION: 500,
+      useTrophyIcons: true,
+      displayWidth: 500,
+      displayHeight: 450,
+      runsPerBatch: 4,
+      maxRuns: 200,
+      fontStyle: 'Arial',
+      maxNameWidthVisible: 18,
+      categoryNameVisible: true,
+      categoryNameColor: '#ffffff',
+      categoryNameSpacing: 35,
+      refreshInterval: 30
+    });
+
+    function clampNumber(value, fallback, min, max, integer = false) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return fallback;
+      const clamped = Math.min(max, Math.max(min, parsed));
+      return integer ? Math.round(clamped) : clamped;
+    }
+
+    function normalizeHexColor(value, fallback) {
+      const text = String(value || '').trim();
+      const hex = text.startsWith('#') ? text.slice(1) : text;
+      return /^[0-9a-fA-F]{6}$/.test(hex) ? `#${hex.toLowerCase()}` : fallback;
+    }
+
+    function normalizeConfig(config) {
+      if (!config || typeof config !== 'object' || Array.isArray(config)) {
+        throw new Error('config.json doit contenir un objet JSON.');
+      }
+      if (!config.categories && config.presets && typeof config.presets === 'object') {
+        config.categories = config.presets;
+      }
+      if (!config.activeCategory && config.activePreset) {
+        config.activeCategory = config.activePreset;
+      }
+      if (!config.categories || typeof config.categories !== 'object' || Array.isArray(config.categories)) {
+        throw new Error('La propriété "categories" de config.json est invalide.');
+      }
+
+      const raw = (config.defaults && typeof config.defaults === 'object') ? config.defaults : {};
+      const defaults = { ...DEFAULT_SETTINGS, ...raw };
+
+      defaults.topCount = clampNumber(defaults.topCount, DEFAULT_SETTINGS.topCount, 1, 5, true);
+      defaults.runsPerBatch = clampNumber(defaults.runsPerBatch, DEFAULT_SETTINGS.runsPerBatch, 1, 5, true);
+      defaults.maxRuns = clampNumber(defaults.maxRuns, DEFAULT_SETTINGS.maxRuns, 10, 200, true);
+      defaults.maxRuns = Math.max(defaults.topCount, defaults.maxRuns);
+      defaults.nameSpacing = clampNumber(defaults.nameSpacing, DEFAULT_SETTINGS.nameSpacing, 0, 10, true);
+      defaults.pbSeparatorWidth = clampNumber(defaults.pbSeparatorWidth, DEFAULT_SETTINGS.pbSeparatorWidth, 50, 4000, true);
+      defaults.fontSize = clampNumber(defaults.fontSize, DEFAULT_SETTINGS.fontSize, 14, 24, true);
+      defaults.rainbowIntensity = clampNumber(defaults.rainbowIntensity, DEFAULT_SETTINGS.rainbowIntensity, 0, 100, true);
+      defaults.CAROUSEL_DISPLAY_DURATION = clampNumber(defaults.CAROUSEL_DISPLAY_DURATION, DEFAULT_SETTINGS.CAROUSEL_DISPLAY_DURATION, 1000, 10000, true);
+      defaults.CAROUSEL_FADE_DURATION = clampNumber(defaults.CAROUSEL_FADE_DURATION, DEFAULT_SETTINGS.CAROUSEL_FADE_DURATION, 50, 1000, true);
+      defaults.displayWidth = clampNumber(defaults.displayWidth, DEFAULT_SETTINGS.displayWidth, 200, 4000, true);
+      defaults.displayHeight = clampNumber(defaults.displayHeight, DEFAULT_SETTINGS.displayHeight, 100, 3000, true);
+      defaults.maxNameWidthVisible = clampNumber(defaults.maxNameWidthVisible, DEFAULT_SETTINGS.maxNameWidthVisible, 4, 60, true);
+      defaults.categoryNameSpacing = clampNumber(defaults.categoryNameSpacing, DEFAULT_SETTINGS.categoryNameSpacing, 12, 50, true);
+
+      const refresh = Number(defaults.refreshInterval);
+      defaults.refreshInterval = Number.isFinite(refresh)
+        ? (refresh <= 0 ? 0 : Math.min(3600, Math.max(30, refresh)))
+        : DEFAULT_SETTINGS.refreshInterval;
+
+      defaults.rankAlign = ['left', 'center', 'right'].includes(String(defaults.rankAlign).toLowerCase())
+        ? String(defaults.rankAlign).toLowerCase()
+        : DEFAULT_SETTINGS.rankAlign;
+      defaults.rankPrefixMode = ['dot', 'hash', 'none'].includes(String(defaults.rankPrefixMode).toLowerCase())
+        ? String(defaults.rankPrefixMode).toLowerCase()
+        : DEFAULT_SETTINGS.rankPrefixMode;
+      defaults.timeFormat = ['1:25:25.255', '1h25m25s225ms'].includes(String(defaults.timeFormat))
+        ? String(defaults.timeFormat)
+        : DEFAULT_SETTINGS.timeFormat;
+
+      const prefix = String(defaults.pbPrefix || '').trim().toUpperCase();
+      defaults.pbPrefix = /^[A-Z]{1,3}$/.test(prefix) ? prefix : DEFAULT_SETTINGS.pbPrefix;
+      defaults.pbColor = normalizeHexColor(defaults.pbColor, DEFAULT_SETTINGS.pbColor);
+      defaults.categoryNameColor = normalizeHexColor(defaults.categoryNameColor, DEFAULT_SETTINGS.categoryNameColor);
+      defaults.pbUseRainbow = defaults.pbUseRainbow === true;
+      defaults.useTrophyIcons = defaults.useTrophyIcons === true;
+      defaults.categoryNameVisible = defaults.categoryNameVisible !== false;
+      defaults.customFont = String(defaults.customFont || '').trim().replace(/["\\]/g, '').slice(0, 30);
+      defaults.fontStyle = String(defaults.fontStyle || DEFAULT_SETTINGS.fontStyle);
+
+      config.defaults = defaults;
+      config.schemaVersion = Number.isInteger(config.schemaVersion) ? config.schemaVersion : 1;
+      config.flagOverrides = (config.flagOverrides && typeof config.flagOverrides === 'object')
+        ? config.flagOverrides
+        : {};
+      return config;
+    }
 
     // Trophy icon URLs (loaded from game assets)
     let TROPHY_1ST_URL = null;
@@ -65,7 +175,12 @@
         // Keep the raw text so the config watcher can detect edits (category
         // switch, new preset, name/PB/visual changes) and reload immediately.
         const configText = await configRes.text();
-        const config = JSON.parse(configText);
+        const configChanged = lastConfigText !== null && configText !== lastConfigText;
+        if (configChanged) pauseRenderLoop();
+        const config = normalizeConfig(JSON.parse(configText));
+        if (config.schemaVersion > CONFIG_SCHEMA_VERSION) {
+          console.warn(`config.json utilise le schema ${config.schemaVersion}; cette version prend en charge le schema ${CONFIG_SCHEMA_VERSION}.`);
+        }
 
         // Get the active category from the settings file (no URL parameter needed)
         const categoryName = config.activeCategory;
@@ -78,15 +193,21 @@
           const availableCategories = Object.keys(config.categories);
           throw new Error(`Catégorie active "${categoryName}" non trouvée. Options disponibles : ${availableCategories.join(', ')}`);
         }
+        if (!category.gameId || !category.category) {
+          throw new Error(`La catégorie active "${categoryName}" ne contient pas gameId/category.`);
+        }
 
         // A different active category means a different leaderboard, so restart
         // the carousel from the top instead of continuing mid-cycle.
-        if (currentActiveCategory !== null && currentActiveCategory !== categoryName) {
-          carouselPage = 0;
-        }
+        const categoryChanged = currentActiveCategory !== null && currentActiveCategory !== categoryName;
 
         // Apply category settings
         GAME_ID = category.gameId;
+        const cachedTrophies = trophyAssetCache.get(GAME_ID);
+        TROPHY_1ST_URL = cachedTrophies?.[1] || null;
+        TROPHY_2ND_URL = cachedTrophies?.[2] || null;
+        TROPHY_3RD_URL = cachedTrophies?.[3] || null;
+        CATEGORY_ID = category.categoryId || null;
         CATEGORY_NAME = category.category;
         CATEGORY_DISPLAY_NAME = category.name; // Store full display name
         SUBCATEGORY_LABEL = category.subcategory;
@@ -95,7 +216,6 @@
           SUBCATEGORIES = [SUBCATEGORIES];
         }
         LEVEL_ID = category.levelId || null;
-        LEVEL_NAME = category.levelName || null;
         PLAYER_NAME = (config.playerName || '').trim();
         if (PLAYER_NAME === '') PLAYER_NAME = null;
         PLAYER_COUNTRY = (config.playerCountry || 'FR').trim().toUpperCase();
@@ -143,9 +263,7 @@
         // Auto-refresh interval (seconds in config). 0 disables; otherwise clamp to >= 30s
         // to stay friendly with the speedrun.com API.
         const refreshSeconds = Number(defaults.refreshInterval);
-        if (Number.isFinite(refreshSeconds)) {
-          REFRESH_INTERVAL_MS = refreshSeconds <= 0 ? 0 : Math.max(30, refreshSeconds) * 1000;
-        }
+        REFRESH_INTERVAL_MS = refreshSeconds <= 0 ? 0 : refreshSeconds * 1000;
 
         // Initialize rainbow colors table
         initRainbowColors();
@@ -154,6 +272,7 @@
         const customFont = defaults.customFont || '';
         const fontStyle = defaults.fontStyle || 'Arial';
         const fontSize = defaults.fontSize || 18; // Default 18px
+        DRAW.LAYOUT.rowH = Math.max(24, Math.ceil(fontSize * 1.4));
         
         let selectedFontFamily;
         let isCustomFont = false;
@@ -215,10 +334,13 @@
 
         updateCanvasSize();
 
-        // Start data load. Await it so carouselCycleMs is known before we
-        // schedule the next auto-refresh (otherwise the first refresh would
-        // fire on the fixed interval and interrupt the carousel mid-cycle).
-        await loadTop();
+        // Start data load and wait until the new render state is ready before
+        // scheduling the next refresh.
+        const loaded = await loadTop({ resetCarousel: isInitial || categoryChanged });
+        if (!loaded) {
+          scheduleAutoRefresh(10000);
+          return;
+        }
 
         // Remember what we successfully applied so the config watcher can spot
         // future edits, then (re)arm the periodic refresh for this cycle length.
@@ -227,10 +349,10 @@
         scheduleAutoRefresh();
       } catch (e) {
         console.error('Erreur de configuration :', e);
-        // Only replace the overlay with an error on first load. During an
-        // auto-refresh, keep showing the last good render instead of wiping it.
+        // Show configuration errors on first load. During an auto-refresh, keep
+        // showing the last good render instead of wiping it.
         if (isInitial) {
-          document.body.innerHTML = `<div style="color: red; padding: 20px; font-family: monospace;">❌ Erreur : ${e.message}</div>`;
+          drawStatusMessage(`Erreur : ${e.message}`);
         }
       } finally {
         isConfigLoading = false;
@@ -257,14 +379,27 @@
       canvas.style.height = actualHeight + 'px';
 
       // Set pixel size (considering device pixel ratio for crisp rendering)
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(actualWidth * dpr);
-      canvas.height = Math.floor(actualHeight * dpr);
+      const deviceDpr = Math.min(2, window.devicePixelRatio || 1);
+      const maxPixelDpr = Math.sqrt(16000000 / Math.max(1, actualWidth * actualHeight));
+      CANVAS_DPR = Math.max(1, Math.min(deviceDpr, maxPixelDpr));
+      canvas.width = Math.floor(actualWidth * CANVAS_DPR);
+      canvas.height = Math.floor(actualHeight * CANVAS_DPR);
     }
 
     // === Overlay Setup ===
     const canvas = document.getElementById('board');
     const ctx = canvas.getContext('2d');
+
+    function drawStatusMessage(message) {
+      const width = canvas.clientWidth || 300;
+      const height = canvas.clientHeight || 150;
+      ctx.setTransform(CANVAS_DPR, 0, 0, CANVAS_DPR, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ff6b6b';
+      ctx.fillText(String(message).slice(0, 100), 8, Math.min(24, height - 8));
+    }
 
     // Drawing constants
     const DRAW = {
@@ -285,13 +420,13 @@
       flags: new Map(),
       trophies: new Map()
     };
+    const trophyAssetCache = new Map();
 
     // Text measurement cache (array for fast access by row index)
     const measureCache = [];
 
     // Precomputed rainbow colors (360 hues)
     let rainbowColors = [];
-    let rainbowSaturation = 0;
 
     // HSL to RGB conversion (needed for rainbow colors)
     function hslToRgb(h, s, l) {
@@ -317,7 +452,6 @@
     function initRainbowColors() {
       const intensity = Math.min(1, Math.max(0, RAINBOW_INTENSITY / 100));
       const saturation = 0.15 + (0.85 * intensity);
-      rainbowSaturation = saturation;
 
       rainbowColors = new Array(360);
       for (let h = 0; h < 360; h++) {
@@ -334,20 +468,22 @@
     let CAROUSEL_DISPLAY_DURATION = 3000; // Display duration (ms) - loaded from config
 
     // Single requestAnimationFrame render loop state
-    let renderState = null;        // { processedTop, carouselRuns, displayRunsPerBatch, processedPlayerRow }
+    let renderState = null;        // processed visible rows plus cached full top/carousel rows
     let animationFrameId = null;   // active rAF handle (null = loop not running)
+    let renderWakeTimer = null;    // wakes a static carousel when its display phase ends
     let frameNeedsAnimation = false; // set by draw(): true if the rendered frame contains rainbow/scrolling
     let lastFrameAnimated = false;   // whether the last drawn frame still needs to animate
-    let isLoading = false;           // guards against overlapping loadTop() calls
+    let activeLoadController = null; // cancels stale leaderboard requests
+    let loadGeneration = 0;          // only the newest request may commit render state
     let isConfigLoading = false;     // guards against overlapping loadConfig() calls
     let refreshTimer = null;         // auto-refresh timer handle
-    let carouselCycleMs = 0;         // time for the carousel to show every page once
     let configWatchTimer = null;     // fast config.json change-watch handle
     let lastConfigText = null;       // raw text of the last successfully applied config
     let currentActiveCategory = null;// active category of the last applied config
 
     let fixedMaxRankW = 0;
     let fixedMaxNameBlock = 0;
+    const gameMetadataCache = new Map();
     async function loadImage(url, cache, timeout = 5000) {
       if (!url) return null;
       if (cache.has(url)) return cache.get(url);
@@ -469,25 +605,19 @@
         return parts.join(' ');
       }
       
-      const h = Math.floor(Number(sec) / 3600);
-      const m = Math.floor((Number(sec) % 3600) / 60);
-      const s = Number(sec) % 60;
-      
-      // Check if we have milliseconds (non-integer seconds)
-      const hasMilliseconds = s !== Math.floor(s);
-      
-      if (hasMilliseconds) {
-        // Format with milliseconds (up to 3 decimal places)
-        const secondsInt = Math.floor(s);
-        const milliseconds = Math.round((s - secondsInt) * 1000);
+      const totalMs = Math.max(0, Math.round(total * 1000));
+      const h = Math.floor(totalMs / 3600000);
+      const m = Math.floor((totalMs % 3600000) / 60000);
+      const secondsInt = Math.floor((totalMs % 60000) / 1000);
+      const milliseconds = totalMs % 1000;
+
+      if (milliseconds > 0) {
         const sFormatted = `${String(secondsInt).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
         const mm = String(m).padStart(2, '0');
         return h > 0 ? `${h}:${mm}:${sFormatted}` : `${m}:${sFormatted}`;
       } else {
-        // Format without milliseconds
-        const sInt = Math.floor(s);
         const mm = String(m).padStart(2, '0');
-        const ss = String(sInt).padStart(2, '0');
+        const ss = String(secondsInt).padStart(2, '0');
         return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
       }
     }
@@ -521,10 +651,6 @@
       return [DRAW.COLORS.top1, DRAW.COLORS.top2, DRAW.COLORS.top3, DRAW.COLORS.other][Math.min(position, 3)];
     }
 
-    function getTemporaryColor() {
-      return '#00e5ff';
-    }
-
     function truncatePlayer(name, maxChars = null) {
       if (maxChars === null) {
         maxChars = MAX_PLAYER_NAME_CHARS || 14;
@@ -532,8 +658,8 @@
       return name.length > maxChars ? 'W'.repeat(maxChars) : name;
     }
 
-    function drawScrollingText(ctx, text, x, y, maxWidth, style, isTemporary, rainbowPhase, fontBase, baseColor = null) {
-      if (!text) return;
+    function drawScrollingText(ctx, text, x, y, maxWidth, style, useRainbow, rainbowPhase, fontBase, baseColor = null) {
+      if (!text || maxWidth <= 0) return;
       const color = baseColor || DRAW.COLORS.other;
 
       // Measure text width
@@ -542,7 +668,7 @@
 
       // If text fits, draw normally
       if (textWidth <= maxWidth) {
-        if (isTemporary) {
+        if (useRainbow) {
           applyRainbowText(rainbowPhase);
           ctx.textAlign = 'left';
           ctx.fillText(text, x, y);
@@ -567,13 +693,14 @@
 
       ctx.save();
       ctx.beginPath();
-      // Clip rectangle: x, y-ascent, width, height
-      // Assuming font size ~18px, baseline at y. extend up 18 and down 6
-      ctx.rect(x, y - 18, maxWidth, 26);
+      const metrics = ctx.measureText('Mg');
+      const ascent = metrics.actualBoundingBoxAscent || 18;
+      const descent = metrics.actualBoundingBoxDescent || 6;
+      ctx.rect(x, y - ascent - 2, maxWidth, ascent + descent + 4);
       ctx.clip();
 
       const drawInstance = (currentX) => {
-         if (isTemporary) {
+         if (useRainbow) {
              applyRainbowText(rainbowPhase);
              ctx.textAlign = 'left';
              ctx.fillText(text, currentX, y);
@@ -651,11 +778,6 @@
       return width;
     }
 
-    // Get cached measurement or compute if not exists
-    function getCachedMeasure(cache, idx, font) {
-      return cache[idx]?.[font];
-    }
-
     // Precompute render properties for a run (called once when data loads)
     function precomputeRunRenderProps(run, idx) {
       const rankText = typeof run.rank === 'number' && run.rank > 0
@@ -681,8 +803,7 @@
       // Reset per-frame animation flag; set true below whenever we render
       // rainbow text or a scrolling marquee (i.e. content that keeps moving).
       frameNeedsAnimation = false;
-      const dpr = window.devicePixelRatio || 1;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setTransform(CANVAS_DPR, 0, 0, CANVAS_DPR, 0, 0);
 
       // Clear canvas for new frame
       ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
@@ -697,7 +818,7 @@
       const phaseBase = (Date.now() / 30) % 360;
       const { padX, startY, rowH } = DRAW.LAYOUT;
       const colRank = padX;
-      const timeX = Math.min(350, canvas.clientWidth - padX); // Right aligned
+      const timeX = canvas.clientWidth - padX; // Right aligned
 
       // Draw category name at the top
       if (CATEGORY_DISPLAY_NAME) {
@@ -731,11 +852,12 @@
         ctx.font = DRAW.FONT_BASE;
         const isTemporary = !!r.isTemporary;
         const isRecent = r.isRecent;  // Use precomputed value
-        const useRainbow = isTemporary || isRecent;
+        const useRainbow = isTemporary ? PB_USE_RAINBOW : isRecent;
         const color = getRankColor(r.rank - 1);  // Use actual rank for color (supports ties)
+        const rowColor = isTemporary ? PB_COLOR : color;
 
-        // Apply fade only to carousel rows (rows 3-7, indices 3-7)
-        const isCarouselRow = i >= TOP_COUNT;
+        // Apply fade only to carousel rows.
+        const isCarouselRow = i >= topRuns.length;
         const globalAlpha = ctx.globalAlpha;
         if (isCarouselRow && fadeProgress < 1) {
           ctx.globalAlpha = fadeProgress;
@@ -761,7 +883,7 @@
             applyRainbowText(phaseBase + i * 12);
             ctx.fillText(rankText, rankX, y);
           } else {
-            ctx.fillStyle = color;
+            ctx.fillStyle = rowColor;
             ctx.fillText(rankText, rankX, y);
           }
         }
@@ -797,10 +919,10 @@
         const screenSpaceAvailable = timeX - timeWidth - x - 12; // 12px padding
 
         // Use the smaller of the two: respect config, but shrink if screen is too small
-        const availableWidth = Math.min(configuredMaxNameWidth, screenSpaceAvailable);
+        const availableWidth = Math.max(0, Math.min(configuredMaxNameWidth, screenSpaceAvailable));
 
         const rawName = isTemporary ? `${PB_PREFIX} - ${r.player}` : r.player;
-        drawScrollingText(ctx, rawName, x, y, availableWidth, r.nameStyle, useRainbow, phaseBase + 40 + i * 12, DRAW.FONT_BASE);
+        drawScrollingText(ctx, rawName, x, y, availableWidth, r.nameStyle, useRainbow, phaseBase + 40 + i * 12, DRAW.FONT_BASE, isTemporary ? PB_COLOR : null);
 
         // Draw time (right-aligned)
         ctx.font = DRAW.FONT_MONO;
@@ -809,7 +931,7 @@
           applyRainbowText(phaseBase + 80 + i * 12);
           ctx.fillText(r.time, timeX, y);
         } else {
-          ctx.fillStyle = color;
+          ctx.fillStyle = rowColor;
           ctx.fillText(r.time, timeX, y);
         }
 
@@ -819,7 +941,6 @@
       if (playerRow) {
         const canvasH = canvas.clientHeight;
         const isTemporary = !!playerRow.isTemporary;
-        const isRecent = playerRow.isRecent;  // Use precomputed value
         const useRainbow = PB_USE_RAINBOW;  // Master control: true = always rainbow, false = always use pbColor
 
         // Position PB row with fixed gap below last carousel run, separator line in the middle
@@ -905,7 +1026,7 @@
         const screenSpaceAvailable = timeX - timeWidth - x - 12; // 12px padding
 
         // Use the smaller of the two
-        const availableWidth = Math.min(configuredMaxNameWidth, screenSpaceAvailable);
+        const availableWidth = Math.max(0, Math.min(configuredMaxNameWidth, screenSpaceAvailable));
 
         const rawName = isTemporary ? `${PB_PREFIX} - ${playerRow.player}` : playerRow.player;
         drawScrollingText(ctx, rawName, x, y, availableWidth, playerRow.nameStyle, useRainbow, phaseBase + 40, DRAW.FONT_BASE, PB_COLOR);
@@ -932,7 +1053,7 @@
     // names, or an in-progress fade). When the board is static it idles without
     // burning CPU/GPU - important since this runs continuously inside OBS.
     function renderTick(now) {
-      animationFrameId = requestAnimationFrame(renderTick);
+      animationFrameId = null;
       if (!renderState) return;
 
       const { processedTop, carouselRuns: runs, displayRunsPerBatch, processedPlayerRow } = renderState;
@@ -943,6 +1064,7 @@
           draw(processedTop, [], 1, processedPlayerRow);
           lastFrameAnimated = frameNeedsAnimation;
         }
+        if (lastFrameAnimated) startRenderLoop();
         return;
       }
 
@@ -954,64 +1076,150 @@
       if (carouselPhase === 'fadeIn') {
         if (elapsed < CAROUSEL_FADE_DURATION) {
           draw(processedTop, batch, elapsed / CAROUSEL_FADE_DURATION, processedPlayerRow);
+          startRenderLoop();
         } else {
           carouselPhase = 'display';
           carouselStartTime = now;
           draw(processedTop, batch, 1, processedPlayerRow);
           lastFrameAnimated = frameNeedsAnimation;
+          if (lastFrameAnimated) startRenderLoop();
+          else scheduleRenderWake(CAROUSEL_DISPLAY_DURATION);
         }
       } else if (carouselPhase === 'display') {
         if (elapsed >= CAROUSEL_DISPLAY_DURATION) {
           carouselPhase = 'fadeOut';
           carouselStartTime = now;
           draw(processedTop, batch, 1, processedPlayerRow);
+          startRenderLoop();
         } else if (lastFrameAnimated) {
           // Stable phase: only repaint if the content keeps moving.
           draw(processedTop, batch, 1, processedPlayerRow);
           lastFrameAnimated = frameNeedsAnimation;
+          if (lastFrameAnimated) startRenderLoop();
+          else scheduleRenderWake(CAROUSEL_DISPLAY_DURATION - elapsed);
+        } else {
+          scheduleRenderWake(CAROUSEL_DISPLAY_DURATION - elapsed);
         }
       } else if (carouselPhase === 'fadeOut') {
         if (elapsed < CAROUSEL_FADE_DURATION) {
           draw(processedTop, batch, 1 - (elapsed / CAROUSEL_FADE_DURATION), processedPlayerRow);
+          startRenderLoop();
         } else {
           carouselPage = (carouselPage + 1) % pageCount;
           carouselPhase = 'fadeIn';
           carouselStartTime = now;
           const nextStart = carouselPage * displayRunsPerBatch;
           draw(processedTop, runs.slice(nextStart, nextStart + displayRunsPerBatch), 0, processedPlayerRow);
+          startRenderLoop();
         }
       }
     }
 
+    function scheduleRenderWake(delay) {
+      if (renderWakeTimer !== null) clearTimeout(renderWakeTimer);
+      renderWakeTimer = setTimeout(() => {
+        renderWakeTimer = null;
+        startRenderLoop();
+      }, Math.max(0, delay));
+    }
+
+    function pauseRenderLoop() {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      if (renderWakeTimer !== null) {
+        clearTimeout(renderWakeTimer);
+        renderWakeTimer = null;
+      }
+    }
+
     function startRenderLoop() {
+      if (renderWakeTimer !== null) {
+        clearTimeout(renderWakeTimer);
+        renderWakeTimer = null;
+      }
       if (animationFrameId === null) {
         animationFrameId = requestAnimationFrame(renderTick);
       }
     }
 
     // === Data processing ===
-    async function fetchJSON(url, timeout = 10000) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
-      try {
-        const r = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        
-        if (!r.ok) throw new Error(`HTTP ${r.status} pour ${url}`);
-        return r.json();
-      } catch (error) {
-        clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
-          throw new Error(`Delai d'attente depasse (${timeout}ms) pour ${url}`);
+    function waitForRetry(ms, signal) {
+      return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+          reject(new DOMException('Aborted', 'AbortError'));
+          return;
         }
-        throw error;
-      }
+        const onAbort = () => {
+          clearTimeout(timer);
+          reject(new DOMException('Aborted', 'AbortError'));
+        };
+        const timer = setTimeout(() => {
+          signal?.removeEventListener('abort', onAbort);
+          resolve();
+        }, ms);
+        signal?.addEventListener('abort', onAbort, { once: true });
+      });
     }
 
-    async function resolveCategoryAndVariable() {
+    async function fetchJSON(url, { timeout = 10000, signal = null, retries = 2 } = {}) {
+      let lastError = null;
+
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+        const timeoutController = new AbortController();
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+          timedOut = true;
+          timeoutController.abort();
+        }, timeout);
+        const forwardAbort = () => timeoutController.abort();
+        signal?.addEventListener('abort', forwardAbort, { once: true });
+
+        try {
+          const response = await fetch(url, { signal: timeoutController.signal, cache: 'no-store' });
+          if (!response.ok) {
+            const retryable = response.status === 429 || response.status >= 500;
+            const error = new Error(`HTTP ${response.status} pour ${url}`);
+            error.retryable = retryable;
+            throw error;
+          }
+          return await response.json();
+        } catch (error) {
+          if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+          lastError = timedOut
+            ? new Error(`Delai d'attente depasse (${timeout}ms) pour ${url}`)
+            : error;
+          const retryable = timedOut || error.retryable || error.name === 'TypeError';
+          if (!retryable || attempt >= retries) throw lastError;
+          await waitForRetry(500 * (2 ** attempt), signal);
+        } finally {
+          clearTimeout(timeoutId);
+          signal?.removeEventListener('abort', forwardAbort);
+        }
+      }
+
+      throw lastError;
+    }
+
+    async function resolveCategoryAndVariable(signal) {
+      const storedPairs = Array.isArray(SUBCATEGORIES)
+        ? SUBCATEGORIES
+          .filter(entry => entry?.variableId && entry?.valueId)
+          .map(entry => ({ variableId: entry.variableId, valueId: entry.valueId }))
+        : [];
+      if (CATEGORY_ID && (storedPairs.length > 0 || !SUBCATEGORY_LABEL)) {
+        return { categoryId: CATEGORY_ID, variablePairs: storedPairs };
+      }
+
       const url = `https://www.speedrun.com/api/v1/games/${GAME_ID}?embed=categories.variables`;
-      const data = await fetchJSON(url);
+      let data = gameMetadataCache.get(GAME_ID);
+      if (!data) {
+        data = await fetchJSON(url, { signal });
+        gameMetadataCache.set(GAME_ID, data);
+      }
       const cats = data.data.categories.data;
       const targetType = LEVEL_ID ? 'per-level' : 'per-game';
       const cat = cats.find(c => c.type === targetType && c.name === CATEGORY_NAME);
@@ -1128,30 +1336,87 @@
       fixedMaxNameBlock = maxNameBlock;
     }
 
-    async function loadTop() {
-      if (isLoading) return; // avoid overlapping refresh/resize fetches
-      isLoading = true;
+    function getResponsiveRowCounts(playerRow) {
+      const reservedBottomSpace = playerRow ? (2 * DRAW.LAYOUT.rowH) : 0;
+      const availableRows = Math.max(0, Math.floor(
+        (canvas.clientHeight - DRAW.LAYOUT.startY - reservedBottomSpace) / DRAW.LAYOUT.rowH
+      ));
+      const visibleTopRows = Math.min(TOP_COUNT, availableRows);
+      const roomForCarousel = Math.max(0, availableRows - visibleTopRows);
+      return {
+        visibleTopRows,
+        displayRunsPerBatch: Math.min(RUNS_PER_BATCH, roomForCarousel)
+      };
+    }
+
+    function getCarouselFadeProgress(now = performance.now()) {
+      const elapsed = Math.max(0, now - carouselStartTime);
+      if (carouselPhase === 'fadeIn') {
+        return Math.min(1, elapsed / CAROUSEL_FADE_DURATION);
+      }
+      if (carouselPhase === 'fadeOut') {
+        return Math.max(0, 1 - (elapsed / CAROUSEL_FADE_DURATION));
+      }
+      return 1;
+    }
+
+    function relayoutRenderState() {
+      if (!renderState) return;
+      const { allProcessedTop, carouselRuns: runs, processedPlayerRow } = renderState;
+      const { visibleTopRows, displayRunsPerBatch } = getResponsiveRowCounts(processedPlayerRow);
+      const processedTop = allProcessedTop.slice(0, visibleTopRows);
+      const pageCount = displayRunsPerBatch > 0
+        ? Math.max(1, Math.ceil(runs.length / displayRunsPerBatch))
+        : 1;
+      carouselPage %= pageCount;
+      renderState = { ...renderState, processedTop, displayRunsPerBatch };
+      const batchStart = carouselPage * displayRunsPerBatch;
+      const batch = displayRunsPerBatch > 0 ? runs.slice(batchStart, batchStart + displayRunsPerBatch) : [];
+      draw(processedTop, batch, getCarouselFadeProgress(), processedPlayerRow);
+      lastFrameAnimated = frameNeedsAnimation;
+      startRenderLoop();
+    }
+
+    async function loadTop({ resetCarousel = false } = {}) {
+      const generation = ++loadGeneration;
+      if (activeLoadController) activeLoadController.abort();
+      const controller = new AbortController();
+      activeLoadController = controller;
       try {
-        const { categoryId, variablePairs } = await resolveCategoryAndVariable();
+        const { categoryId, variablePairs } = await resolveCategoryAndVariable(controller.signal);
         
-        // Build leaderboard URL
+        // Build leaderboard URL. An active PB needs the complete leaderboard so
+        // its temporary rank is calculated against every run, not just the
+        // configured display window (for example, maxRuns: 100).
         let lbUrl;
         const limit = Math.max(TOP_COUNT, MAX_RUNS || 0);
-        const embedParams = USE_TROPHY_ICONS ? 'game,players' : 'players';
-        if (LEVEL_ID) {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?top=${limit}&embed=${embedParams}`;
-        } else {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?top=${limit}&embed=${embedParams}`;
+        const needsGameAssets = USE_TROPHY_ICONS && !trophyAssetCache.has(GAME_ID);
+        const embedParams = needsGameAssets ? 'game,players' : 'players';
+        const query = new URLSearchParams();
+        if (!(PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time)) {
+          query.set('top', limit);
         }
+        query.set('embed', embedParams);
+
         if (Array.isArray(variablePairs) && variablePairs.length > 0) {
           for (const pair of variablePairs) {
             if (pair.variableId && pair.valueId) {
-              lbUrl += `&var-${pair.variableId}=${pair.valueId}`;
+              query.set(`var-${pair.variableId}`, pair.valueId);
             }
           }
         }
+
+        if (LEVEL_ID) {
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?${query}`;
+        } else {
+          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?${query}`;
+        }
         
-        const lb = await fetchJSON(lbUrl);
+        const lb = await fetchJSON(lbUrl, {
+          signal: controller.signal,
+          timeout: TEMPORARY_RUN ? 20000 : 10000
+        });
+        if (generation !== loadGeneration || controller.signal.aborted) return false;
 
         // Extract trophy URLs from embedded game data (only if trophy icons enabled)
         if (USE_TROPHY_ICONS && lb.data.game?.data?.assets) {
@@ -1159,6 +1424,11 @@
           TROPHY_1ST_URL = assets['trophy-1st']?.uri || null;
           TROPHY_2ND_URL = assets['trophy-2nd']?.uri || null;
           TROPHY_3RD_URL = assets['trophy-3rd']?.uri || null;
+          trophyAssetCache.set(GAME_ID, {
+            1: TROPHY_1ST_URL,
+            2: TROPHY_2ND_URL,
+            3: TROPHY_3RD_URL
+          });
         }
 
         // Build player map
@@ -1203,36 +1473,23 @@
 
         if (PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time) {
           const target = PLAYER_NAME.toLowerCase();
-          const matchIndex = allRuns.findIndex(r => (r.players || []).some(n => n.toLowerCase() === target));
-          if (matchIndex >= 0) {
-            const tempSeconds = parseTimeString(TEMPORARY_RUN.time);
-            if (Number.isFinite(tempSeconds)) {
-              allRuns[matchIndex] = {
-                ...allRuns[matchIndex],
-                player: PLAYER_NAME,
-                players: [PLAYER_NAME],
-                timeSeconds: tempSeconds,
-                time: formatTime(tempSeconds),
-                isTemporary: true
-              };
-            }
-          } else {
-             // Player not found in loaded runs, but we have a temporary PB.
-             // Add them as a new entry so they appear in the ranking logic.
-             const tempSeconds = parseTimeString(TEMPORARY_RUN.time);
-             if (Number.isFinite(tempSeconds)) {
-                 allRuns.push({
-                     rank: 0, 
-                     player: PLAYER_NAME,
-                     players: [PLAYER_NAME],
-                     nameStyle: null,
-                     country: normalizeCountry(PLAYER_COUNTRY),
-                     time: formatTime(tempSeconds),
-                     timeSeconds: tempSeconds,
-                     submitted: new Date().toISOString(),
-                     isTemporary: true
-                 });
-             }
+          const officialMatch = allRuns.find(r => (r.players || []).some(n => n.toLowerCase() === target));
+          const tempSeconds = parseTimeString(TEMPORARY_RUN.time);
+          if (Number.isFinite(tempSeconds)) {
+            // Keep every official run intact and insert the PB as a hypothetical
+            // entry. This makes its rank "number of official faster runs + 1",
+            // even when the configured PB is slower than an existing official run.
+            allRuns.push({
+              rank: 0,
+              player: PLAYER_NAME,
+              players: [PLAYER_NAME],
+              nameStyle: officialMatch?.nameStyle || null,
+              country: officialMatch?.country || normalizeCountry(PLAYER_COUNTRY),
+              time: formatTime(tempSeconds),
+              timeSeconds: tempSeconds,
+              submitted: new Date().toISOString(),
+              isTemporary: true
+            });
           }
         }
 
@@ -1264,7 +1521,8 @@
         let playerRow = null;
         if (PLAYER_NAME) {
           const target = PLAYER_NAME.toLowerCase();
-          const match = sortedRuns.find(r => (r.players || []).some(n => n.toLowerCase() === target));
+          const match = sortedRuns.find(r => r.isTemporary)
+            || sortedRuns.find(r => (r.players || []).some(n => n.toLowerCase() === target));
           if (match) {
             const isInTop = typeof match.rank === 'number' && match.rank >= 1 && match.rank <= TOP_COUNT;
             if (!isInTop) {
@@ -1275,11 +1533,12 @@
 
         // Split into top N and carousel
         const topRuns = sortedRuns.slice(0, TOP_COUNT);
-        carouselRuns = sortedRuns.slice(TOP_COUNT, Math.max(TOP_COUNT, MAX_RUNS || 0));
-        carouselPage = 0;
+        const rawCarouselRuns = sortedRuns.slice(TOP_COUNT, Math.max(TOP_COUNT, MAX_RUNS || 0));
+        const visibleRuns = [...topRuns, ...rawCarouselRuns];
+        if (playerRow) visibleRuns.push(playerRow);
 
-        // Load flag images
-        const countryCodes = Array.from(new Set(sortedRuns.map(r => r.country).filter(Boolean)));
+        // Only load assets used by visible rows and the dedicated PB row.
+        const countryCodes = Array.from(new Set(visibleRuns.map(r => r.country).filter(Boolean)));
         await Promise.allSettled(countryCodes.map(loadFlagImage));
         
         const flagMap = new Map();
@@ -1304,6 +1563,7 @@
             3: TROPHY_3RD_URL ? imageCache.trophies.get(TROPHY_3RD_URL) : null
           };
         }
+        if (generation !== loadGeneration || controller.signal.aborted) return false;
 
         // Clear measurement cache for new data
         measureCache.length = 0;
@@ -1318,24 +1578,20 @@
         });
 
         const processedTop = processRuns(topRuns, 0);
-        carouselRuns = processRuns(carouselRuns, TOP_COUNT);
-        const playerRowIdx = TOP_COUNT + carouselRuns.length;
+        const processedCarouselRuns = processRuns(rawCarouselRuns, TOP_COUNT);
+        const playerRowIdx = TOP_COUNT + processedCarouselRuns.length;
         const processedPlayerRow = playerRow ? precomputeRunRenderProps({
           ...playerRow,
           flagImg: flagMap.get(playerRow.country) || null,
           trophyImg: trophyMap[playerRow.rank] || null
         }, playerRowIdx) : null;
 
-        // Calculate fixed widths from all sorted runs (measures directly)
-        calculateColumnWidths(sortedRuns, processedPlayerRow);
+        // Invisible full-leaderboard rows must not affect the visible layout.
+        calculateColumnWidths([...topRuns, ...rawCarouselRuns], processedPlayerRow);
 
-        // Draw and start carousel
-        // Reserve space at bottom for PB row if present (2 rows: separator + PB)
-        const reservedBottomSpace = processedPlayerRow ? (2 * DRAW.LAYOUT.rowH) : 0;
-        const availableRows = Math.floor((canvas.clientHeight - DRAW.LAYOUT.startY - reservedBottomSpace) / DRAW.LAYOUT.rowH);
-        const neededRows = TOP_COUNT + RUNS_PER_BATCH;
-        const overflow = Math.max(0, neededRows - availableRows);
-        const displayRunsPerBatch = Math.max(0, RUNS_PER_BATCH - overflow);
+        // Draw and start carousel.
+        const { visibleTopRows, displayRunsPerBatch } = getResponsiveRowCounts(processedPlayerRow);
+        const visibleProcessedTop = processedTop.slice(0, visibleTopRows);
 
         // Preserve the carousel position across data reloads. loadTop() also runs
         // on every auto-refresh (REFRESH_INTERVAL); resetting to page 0 here would
@@ -1343,33 +1599,45 @@
         // the first few pages (e.g. only ranks up to ~13 before it restarted).
         // Keep the current page, clamped in case the number of pages shrank.
         const pageCount = displayRunsPerBatch > 0
-          ? Math.max(1, Math.ceil(carouselRuns.length / displayRunsPerBatch))
+          ? Math.max(1, Math.ceil(processedCarouselRuns.length / displayRunsPerBatch))
           : 1;
+        if (resetCarousel || !renderState) {
+          carouselPage = 0;
+          carouselPhase = 'fadeIn';
+          carouselStartTime = performance.now();
+        }
         carouselPage = carouselPage % pageCount;
         const batchStart = carouselPage * displayRunsPerBatch;
 
-        // Time for the carousel to show every page once. Each page is shown for
-        // CAROUSEL_DISPLAY_DURATION plus a fade in and out. The auto-refresh uses
-        // this so a data reload only ever lands after a full cycle completes,
-        // never mid-carousel (which is what snapped viewers back to the top).
-        const perPageMs = CAROUSEL_DISPLAY_DURATION + 2 * CAROUSEL_FADE_DURATION;
-        carouselCycleMs = pageCount * perPageMs;
-        const firstBatch = displayRunsPerBatch > 0 ? carouselRuns.slice(batchStart, batchStart + displayRunsPerBatch) : [];
+        const firstBatch = displayRunsPerBatch > 0
+          ? processedCarouselRuns.slice(batchStart, batchStart + displayRunsPerBatch)
+          : [];
 
         // Hand the freshly processed data to the single rAF render loop.
-        renderState = { processedTop, carouselRuns, displayRunsPerBatch, processedPlayerRow };
-        carouselPhase = 'fadeIn';
-        carouselStartTime = performance.now();
+        carouselRuns = processedCarouselRuns;
+        renderState = {
+          allProcessedTop: processedTop,
+          processedTop: visibleProcessedTop,
+          carouselRuns: processedCarouselRuns,
+          displayRunsPerBatch,
+          processedPlayerRow
+        };
 
         // Initial paint, then let the render loop take over.
-        draw(processedTop, firstBatch, 1, processedPlayerRow);
+        draw(visibleProcessedTop, firstBatch, getCarouselFadeProgress(), processedPlayerRow);
         lastFrameAnimated = frameNeedsAnimation;
         startRenderLoop();
+        return true;
       } catch (e) {
+        if (e.name === 'AbortError') return false;
         console.error(e);
-        draw([], [], 1, null);
+        // Preserve the last successful render during transient API failures.
+        if (!renderState) drawStatusMessage(e.message);
+        return false;
       } finally {
-        isLoading = false;
+        if (generation === loadGeneration) {
+          activeLoadController = null;
+        }
       }
     }
 
@@ -1377,14 +1645,12 @@
     // live during a stream. loadConfig() re-arms this on completion, so it forms
     // a self-perpetuating loop.
     //
-    // The wait is dynamic: at least REFRESH_INTERVAL, but never shorter than one
-    // full carousel cycle (pages x time-per-page). That way the reload always
-    // lands when the carousel has just wrapped back to the first page on its own,
-    // instead of interrupting it partway (e.g. cutting off around rank 13).
-    function scheduleAutoRefresh() {
+    // Data refresh is independent from carousel position, so the configured
+    // interval remains accurate even when a full carousel cycle is long.
+    function scheduleAutoRefresh(delayOverride = null) {
       if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
-      if (REFRESH_INTERVAL_MS <= 0) return; // auto-refresh disabled
-      const wait = Math.max(REFRESH_INTERVAL_MS, carouselCycleMs || 0);
+      if (REFRESH_INTERVAL_MS <= 0 && !Number.isFinite(delayOverride)) return; // auto-refresh disabled
+      const wait = Number.isFinite(delayOverride) ? delayOverride : REFRESH_INTERVAL_MS;
       refreshTimer = setTimeout(() => loadConfig(false), wait);
     }
 
@@ -1401,7 +1667,7 @@
           const res = await fetch('config.json', { cache: 'no-store' });
           if (!res.ok) return;
           const text = await res.text();
-          if (lastConfigText !== null && text !== lastConfigText) {
+          if (lastConfigText === null || text !== lastConfigText) {
             loadConfig(false); // config.json changed on disk - apply it now
           }
         } catch (_) {
@@ -1412,13 +1678,13 @@
 
     loadConfig().then(watchConfig);
 
-    // Debounce resize so dragging the OBS source doesn't spam the API.
+    // Resizing only changes layout; cached leaderboard data is reused.
     let resizeTimer = null;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         updateCanvasSize();
-        loadTop();
+        relayoutRenderState();
       }, 250);
     });
   </script>

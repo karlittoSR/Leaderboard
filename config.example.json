@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "defaults": {
     "topCount": 3,
     "timeFormat": "1:25:25.255",
@@ -31,6 +32,7 @@
     "elde-any-glitchless": {
       "name": "Elden Ring - Any% Glitchless",
       "gameId": "nd28z0ed",
+      "categoryId": "02qr00pk",
       "subcategory": "Glitchless",
       "category": "Any%",
       "subcategories": {
