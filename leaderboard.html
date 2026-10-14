@@ -50,8 +50,16 @@
     let PREFERRED_HEIGHT = 274;
     let CANVAS_DPR = 1;
     let REFRESH_INTERVAL_MS = 30000; // Auto-refresh leaderboard data (0 = disabled)
+    let DATA_SOURCE = 'speedruncom'; // 'speedruncom' or 'teamhitless'
+    let TEAMHITLESS = null;          // { slug, section, title, tableIndex } of a Team Hitless preset
 
     const CONFIG_SCHEMA_VERSION = 2;
+    // Team Hitless leaderboards are WordPress pages. The REST API echoes the request
+    // origin in its CORS headers (OBS serves local files from http://absolute/),
+    // while the HTML pages are blocked for non-browser clients.
+    const TEAMHITLESS_API = 'https://www.teamhitless.com/wp-json/wp/v2/pages';
+    const TEAMHITLESS_MIN_REFRESH_MS = 5 * 60 * 1000; // site is updated by hand: poll gently
+    const TEAMHITLESS_CACHE_MS = 60 * 1000;           // reuse a page across quick config edits
     const DEFAULT_SETTINGS = Object.freeze({
       topCount: 3,
       timeFormat: '1:25:25.255',
@@ -193,7 +201,12 @@
           const availableCategories = Object.keys(config.categories);
           throw new Error(`Catégorie active "${categoryName}" non trouvée. Options disponibles : ${availableCategories.join(', ')}`);
         }
-        if (!category.gameId || !category.category) {
+        const source = category.source === 'teamhitless' ? 'teamhitless' : 'speedruncom';
+        if (source === 'teamhitless') {
+          if (!category.teamHitless || !category.teamHitless.slug) {
+            throw new Error(`La catégorie active "${categoryName}" ne contient pas teamHitless.slug.`);
+          }
+        } else if (!category.gameId || !category.category) {
           throw new Error(`La catégorie active "${categoryName}" ne contient pas gameId/category.`);
         }
 
@@ -202,7 +215,16 @@
         const categoryChanged = currentActiveCategory !== null && currentActiveCategory !== categoryName;
 
         // Apply category settings
-        GAME_ID = category.gameId;
+        DATA_SOURCE = source;
+        TEAMHITLESS = source === 'teamhitless'
+          ? {
+              slug: String(category.teamHitless.slug),
+              section: category.teamHitless.section || null,
+              title: category.teamHitless.title || null,
+              tableIndex: Number.isInteger(category.teamHitless.tableIndex) ? category.teamHitless.tableIndex : -1
+            }
+          : null;
+        GAME_ID = category.gameId || null;
         const cachedTrophies = trophyAssetCache.get(GAME_ID);
         TROPHY_1ST_URL = cachedTrophies?.[1] || null;
         TROPHY_2ND_URL = cachedTrophies?.[2] || null;
@@ -264,6 +286,9 @@
         // to stay friendly with the speedrun.com API.
         const refreshSeconds = Number(defaults.refreshInterval);
         REFRESH_INTERVAL_MS = refreshSeconds <= 0 ? 0 : refreshSeconds * 1000;
+        if (DATA_SOURCE === 'teamhitless' && REFRESH_INTERVAL_MS > 0) {
+          REFRESH_INTERVAL_MS = Math.max(REFRESH_INTERVAL_MS, TEAMHITLESS_MIN_REFRESH_MS);
+        }
 
         // Initialize rainbow colors table
         initRainbowColors();
@@ -1377,99 +1402,229 @@
       startRenderLoop();
     }
 
+    // Fetches the speedrun.com leaderboard and maps it to overlay run rows.
+    async function fetchSpeedrunComRuns(signal) {
+      const { categoryId, variablePairs } = await resolveCategoryAndVariable(signal);
+      
+      // Build leaderboard URL. An active PB needs the complete leaderboard so
+      // its temporary rank is calculated against every run, not just the
+      // configured display window (for example, maxRuns: 100).
+      let lbUrl;
+      const limit = Math.max(TOP_COUNT, MAX_RUNS || 0);
+      const needsGameAssets = USE_TROPHY_ICONS && !trophyAssetCache.has(GAME_ID);
+      const embedParams = needsGameAssets ? 'game,players' : 'players';
+      const query = new URLSearchParams();
+      if (!(PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time)) {
+        query.set('top', limit);
+      }
+      query.set('embed', embedParams);
+
+      if (Array.isArray(variablePairs) && variablePairs.length > 0) {
+        for (const pair of variablePairs) {
+          if (pair.variableId && pair.valueId) {
+            query.set(`var-${pair.variableId}`, pair.valueId);
+          }
+        }
+      }
+
+      if (LEVEL_ID) {
+        lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?${query}`;
+      } else {
+        lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?${query}`;
+      }
+      
+      const lb = await fetchJSON(lbUrl, {
+        signal,
+        timeout: TEMPORARY_RUN ? 20000 : 10000
+      });
+      if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+
+      // Extract trophy URLs from embedded game data (only if trophy icons enabled)
+      if (USE_TROPHY_ICONS && lb.data.game?.data?.assets) {
+        const assets = lb.data.game.data.assets;
+        TROPHY_1ST_URL = assets['trophy-1st']?.uri || null;
+        TROPHY_2ND_URL = assets['trophy-2nd']?.uri || null;
+        TROPHY_3RD_URL = assets['trophy-3rd']?.uri || null;
+        trophyAssetCache.set(GAME_ID, {
+          1: TROPHY_1ST_URL,
+          2: TROPHY_2ND_URL,
+          3: TROPHY_3RD_URL
+        });
+      }
+
+      // Build player map
+      const playerMap = new Map();
+      if (lb.data.players?.data) {
+        for (const player of lb.data.players.data) {
+          const displayName = player.rel === 'guest' ? player.name : (player.names?.international || player.id);
+          playerMap.set(player.id, {
+            name: displayName,
+            style: player['name-style'] || null,
+            country: player.location?.country?.code || null
+          });
+        }
+      }
+
+      // Process runs
+      const allRuns = (lb.data.runs || []).map((entry) => {
+        const run = entry.run;
+        const players = (run.players || []).map((p) => {
+          if (p.rel === 'guest') return p.name;
+          const info = playerMap.get(p.id);
+          return info ? info.name : p.id;
+        });
+
+        const firstPlayer = run.players?.[0];
+        const playerInfo = firstPlayer && firstPlayer.rel !== 'guest'
+          ? (playerMap.get(firstPlayer.id) || { name: players[0] || 'Inconnu', style: null, country: null })
+          : { name: players[0] || 'Inconnu', style: null, country: null };
+
+        const timeSeconds = Number.isFinite(run.times?.primary_t) ? run.times.primary_t : 0;
+        return {
+          rank: entry.place || 0,
+          player: playerInfo.name,
+          players,
+          nameStyle: playerInfo.style,
+          country: normalizeCountry(playerInfo.country),
+          time: formatTime(timeSeconds),
+          timeSeconds,
+          submitted: run.submitted
+        };
+      });
+
+      return allRuns;
+    }
+
+    // === Team Hitless ===
+    // Leaderboards are Divi "Table Maker" grids: every cell carries its position as
+    // dvmd_tm_col_X / dvmd_tm_row_Y classes (row 0 = headers). A table is named by
+    // the nearest <h3> before it, inside the current <h2> section. configure.ps1
+    // (Get-TeamHitlessTables) reads pages the same way so tableIndex values match.
+    const teamHitlessPageCache = new Map(); // slug -> { fetchedAt, tables }
+
+    function cleanHeadingText(text) {
+      return String(text || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeHeading(text) {
+      return cleanHeadingText(text).toLowerCase();
+    }
+
+    function parseTeamHitlessTables(html) {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const tables = [];
+      let section = null;
+      let pendingTitle = null;
+
+      for (const el of doc.querySelectorAll('h2, h3, div.dvmd_table_maker')) {
+        if (el.tagName === 'H2') {
+          section = cleanHeadingText(el.textContent) || null;
+          pendingTitle = null;
+          continue;
+        }
+        if (el.tagName === 'H3') {
+          pendingTitle = cleanHeadingText(el.textContent) || null;
+          continue;
+        }
+
+        const cells = new Map();
+        let maxRow = 0;
+        let maxCol = 0;
+        for (const cell of el.querySelectorAll('.dvmd_tm_tcell')) {
+          const col = /\bdvmd_tm_col_(\d+)\b/.exec(cell.className);
+          const row = /\bdvmd_tm_row_(\d+)\b/.exec(cell.className);
+          if (!col || !row) continue;
+          const r = Number(row[1]);
+          const c = Number(col[1]);
+          cells.set(`${r}:${c}`, cleanHeadingText(cell.textContent));
+          maxRow = Math.max(maxRow, r);
+          maxCol = Math.max(maxCol, c);
+        }
+
+        const headers = [];
+        for (let c = 0; c <= maxCol; c++) headers.push(cells.get(`0:${c}`) || '');
+        const findCol = (pattern, fallback) => {
+          const idx = headers.findIndex(h => pattern.test(h));
+          return idx >= 0 ? idx : fallback;
+        };
+        const playerCol = findCol(/player|runner/i, 1);
+        const timeCol = findCol(/time|igt|rta/i, 2);
+
+        // Placeholder rows ("Test Runner 0:00") and empty rows are skipped.
+        const rows = [];
+        for (let r = 1; r <= maxRow; r++) {
+          const player = cells.get(`${r}:${playerCol}`) || '';
+          const timeSeconds = parseTimeString(cells.get(`${r}:${timeCol}`));
+          if (!player || !Number.isFinite(timeSeconds) || timeSeconds <= 0) continue;
+          rows.push({ player, timeSeconds });
+        }
+
+        tables.push({ index: tables.length, section, title: pendingTitle, rows });
+        pendingTitle = null; // a heading names only the first table after it
+      }
+
+      return tables;
+    }
+
+    // Prefer the stored index while its headings still match, then the headings
+    // alone (a table was added or removed above), then the bare index.
+    function resolveTeamHitlessTable(tables, ref) {
+      const section = normalizeHeading(ref.section);
+      const title = normalizeHeading(ref.title);
+      const matches = t => normalizeHeading(t.section) === section && normalizeHeading(t.title) === title;
+      const byIndex = tables[ref.tableIndex] || null;
+      if (byIndex && matches(byIndex)) return byIndex;
+      if (title) {
+        const found = tables.find(matches);
+        if (found) return found;
+      }
+      return byIndex;
+    }
+
+    async function fetchTeamHitlessRuns(signal) {
+      const slug = TEAMHITLESS.slug;
+      let cached = teamHitlessPageCache.get(slug);
+      if (!cached || performance.now() - cached.fetchedAt > TEAMHITLESS_CACHE_MS) {
+        const url = `${TEAMHITLESS_API}?slug=${encodeURIComponent(slug)}&_fields=slug,modified,content`;
+        const pages = await fetchJSON(url, { signal, timeout: 15000 });
+        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        const page = Array.isArray(pages) ? pages[0] : null;
+        if (!page?.content?.rendered) {
+          throw new Error(`Page Team Hitless "${slug}" introuvable`);
+        }
+        cached = { fetchedAt: performance.now(), tables: parseTeamHitlessTables(page.content.rendered) };
+        teamHitlessPageCache.set(slug, cached);
+      }
+
+      const table = resolveTeamHitlessTable(cached.tables, TEAMHITLESS);
+      if (!table) {
+        const label = TEAMHITLESS.title || TEAMHITLESS.section || `#${TEAMHITLESS.tableIndex + 1}`;
+        throw new Error(`Classement Team Hitless "${label}" introuvable sur "${slug}"`);
+      }
+
+      // Team Hitless has no countries, submission dates or trophy assets.
+      return table.rows.map(row => ({
+        rank: 0,
+        player: row.player,
+        players: [row.player],
+        nameStyle: null,
+        country: null,
+        time: formatTime(row.timeSeconds),
+        timeSeconds: row.timeSeconds,
+        submitted: null
+      }));
+    }
+
     async function loadTop({ resetCarousel = false } = {}) {
       const generation = ++loadGeneration;
       if (activeLoadController) activeLoadController.abort();
       const controller = new AbortController();
       activeLoadController = controller;
       try {
-        const { categoryId, variablePairs } = await resolveCategoryAndVariable(controller.signal);
-        
-        // Build leaderboard URL. An active PB needs the complete leaderboard so
-        // its temporary rank is calculated against every run, not just the
-        // configured display window (for example, maxRuns: 100).
-        let lbUrl;
-        const limit = Math.max(TOP_COUNT, MAX_RUNS || 0);
-        const needsGameAssets = USE_TROPHY_ICONS && !trophyAssetCache.has(GAME_ID);
-        const embedParams = needsGameAssets ? 'game,players' : 'players';
-        const query = new URLSearchParams();
-        if (!(PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time)) {
-          query.set('top', limit);
-        }
-        query.set('embed', embedParams);
-
-        if (Array.isArray(variablePairs) && variablePairs.length > 0) {
-          for (const pair of variablePairs) {
-            if (pair.variableId && pair.valueId) {
-              query.set(`var-${pair.variableId}`, pair.valueId);
-            }
-          }
-        }
-
-        if (LEVEL_ID) {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?${query}`;
-        } else {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?${query}`;
-        }
-        
-        const lb = await fetchJSON(lbUrl, {
-          signal: controller.signal,
-          timeout: TEMPORARY_RUN ? 20000 : 10000
-        });
+        const allRuns = DATA_SOURCE === 'teamhitless'
+          ? await fetchTeamHitlessRuns(controller.signal)
+          : await fetchSpeedrunComRuns(controller.signal);
         if (generation !== loadGeneration || controller.signal.aborted) return false;
-
-        // Extract trophy URLs from embedded game data (only if trophy icons enabled)
-        if (USE_TROPHY_ICONS && lb.data.game?.data?.assets) {
-          const assets = lb.data.game.data.assets;
-          TROPHY_1ST_URL = assets['trophy-1st']?.uri || null;
-          TROPHY_2ND_URL = assets['trophy-2nd']?.uri || null;
-          TROPHY_3RD_URL = assets['trophy-3rd']?.uri || null;
-          trophyAssetCache.set(GAME_ID, {
-            1: TROPHY_1ST_URL,
-            2: TROPHY_2ND_URL,
-            3: TROPHY_3RD_URL
-          });
-        }
-
-        // Build player map
-        const playerMap = new Map();
-        if (lb.data.players?.data) {
-          for (const player of lb.data.players.data) {
-            const displayName = player.rel === 'guest' ? player.name : (player.names?.international || player.id);
-            playerMap.set(player.id, {
-              name: displayName,
-              style: player['name-style'] || null,
-              country: player.location?.country?.code || null
-            });
-          }
-        }
-
-        // Process runs
-        const allRuns = (lb.data.runs || []).map((entry) => {
-          const run = entry.run;
-          const players = (run.players || []).map((p) => {
-            if (p.rel === 'guest') return p.name;
-            const info = playerMap.get(p.id);
-            return info ? info.name : p.id;
-          });
-
-          const firstPlayer = run.players?.[0];
-          const playerInfo = firstPlayer && firstPlayer.rel !== 'guest'
-            ? (playerMap.get(firstPlayer.id) || { name: players[0] || 'Inconnu', style: null, country: null })
-            : { name: players[0] || 'Inconnu', style: null, country: null };
-
-          const timeSeconds = Number.isFinite(run.times?.primary_t) ? run.times.primary_t : 0;
-          return {
-            rank: entry.place || 0,
-            player: playerInfo.name,
-            players,
-            nameStyle: playerInfo.style,
-            country: normalizeCountry(playerInfo.country),
-            time: formatTime(timeSeconds),
-            timeSeconds,
-            submitted: run.submitted
-          };
-        });
 
         if (PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time) {
           const target = PLAYER_NAME.toLowerCase();
