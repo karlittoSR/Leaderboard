@@ -102,7 +102,7 @@ To show a time without ranking it (for example a run with hits on a hitless lead
 
 ## Flag overrides
 
-Country flags use ISO 3166-1 alpha-2 codes. To replace a flag, add a mapping to `flagOverrides`:
+Country flags use ISO 3166-1 alpha-2 codes. In **Visual Tweaks → Flags and trophies**, enter `HR FR` to show the French flag instead of the Croatian one, or a single code such as `HR` to remove that override. The mapping is stored in `flagOverrides`:
 
 ```json
 {
