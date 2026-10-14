@@ -4440,7 +4440,7 @@ function Invoke-ProjectValidation {
     $htmlPath = Join-Path $scriptDir "leaderboard.html"
     $html = Get-Content -LiteralPath $htmlPath -Raw
     foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId",
-                          "fetchTeamHitlessRuns", "TEAMHITLESS_MIN_REFRESH_MS")) {
+                          "fetchTeamHitlessRuns", "TEAMHITLESS_MIN_REFRESH_MS", "drawTeamHitlessLogo")) {
       if (-not $html.Contains($marker)) {
         $failures.Add("leaderboard.html is missing validation marker: $marker")
       }

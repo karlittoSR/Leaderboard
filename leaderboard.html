@@ -586,6 +586,21 @@
       ctx.restore();
     }
 
+    // Team Hitless logo (white on transparent, 56x96) shown in the flag slot of
+    // Team Hitless rows, since that site publishes no player countries.
+    const teamHitlessLogo = new Image();
+    teamHitlessLogo.src = 'data:image/png;base64,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';
+
+    // Keeps the logo's aspect ratio and makes it a little taller than a flag so
+    // the thin artwork stays readable, centered in the flag slot.
+    function drawTeamHitlessLogo(x, y) {
+      if (!teamHitlessLogo.complete || !teamHitlessLogo.naturalWidth) return;
+      const h = DRAW.FLAG.h + 5;
+      const w = Math.min(DRAW.FLAG.w, h * teamHitlessLogo.naturalWidth / teamHitlessLogo.naturalHeight);
+      const top = y - DRAW.FLAG.yOffset + (DRAW.FLAG.h - h) / 2;
+      ctx.drawImage(teamHitlessLogo, x + (DRAW.FLAG.w - w) / 2, top, w, h);
+    }
+
     function formatTime(sec) {
       const total = Number(sec);
       if (TIME_FORMAT === '1h25m25s225ms') {
@@ -917,9 +932,10 @@
         let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (r.flagImg) {
           drawRoundedImage(r.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-        } else if (DATA_SOURCE !== 'teamhitless') {
-           // Default flag (Globe). Team Hitless publishes no countries, so its
-           // rows keep an empty flag slot instead of a globe on every line.
+        } else if (DATA_SOURCE === 'teamhitless') {
+          drawTeamHitlessLogo(x, y);
+        } else {
+           // Default flag (Globe)
            ctx.save();
            ctx.font = '16px sans-serif'; // Adapted size for the flag box
            ctx.textAlign = 'center';
@@ -1026,9 +1042,10 @@
         let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (playerRow.flagImg) {
           drawRoundedImage(playerRow.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-        } else if (DATA_SOURCE !== 'teamhitless') {
-           // Default flag (Globe). Team Hitless publishes no countries, so its
-           // rows keep an empty flag slot instead of a globe on every line.
+        } else if (DATA_SOURCE === 'teamhitless') {
+          drawTeamHitlessLogo(x, y);
+        } else {
+           // Default flag (Globe)
            ctx.save();
            ctx.font = '16px sans-serif';
            ctx.textAlign = 'center';
