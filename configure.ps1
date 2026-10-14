@@ -2914,7 +2914,8 @@ function Show-ArrowMenu {
   
   $currentIndex = $SelectedIndex
   $maxIndex = $Options.Count - 1
-  
+  $scrollTop = 0
+
   # Flush input buffer to prevent ghost inputs
   while ($Host.UI.RawUI.KeyAvailable) { 
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown,IncludeKeyUp") | Out-Null 
@@ -2933,9 +2934,46 @@ function Show-ArrowMenu {
       Write-Host ""
     }
     
+    # A list taller than the window would push the title and first entries out
+    # of view, so show only a slice that follows the selection.
+    $firstVisible = 0
+    $lastVisible = $maxIndex
+    $isScrolling = $false
+    $windowHeight = 0
+    $windowWidth = 80
+    try {
+      $windowHeight = $Host.UI.RawUI.WindowSize.Height
+      $windowWidth = [Math]::Max(1, $Host.UI.RawUI.WindowSize.Width)
+    } catch { }
+    if ($windowHeight -gt 0) {
+      $reservedLines = 3 # blank line after the list, instructions, cursor line
+      foreach ($line in @(($ContextText -split "`n") | Where-Object { $ContextText })) {
+        $reservedLines += [Math]::Max(1, [Math]::Ceiling($line.Length / $windowWidth))
+      }
+      if ($Title) { $reservedLines += 2 }
+      if ($Descriptions.Count -gt 0) {
+        $longestDescription = ($Descriptions | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
+        $reservedLines += 1 + [Math]::Max(1, [Math]::Ceiling($longestDescription / $windowWidth))
+      }
+      $visibleSlots = $windowHeight - $reservedLines - 2 # "more above/below" lines
+      if ($Options.Count -gt ($visibleSlots + 2) -and $visibleSlots -ge 3) {
+        $isScrolling = $true
+        if ($currentIndex -lt $scrollTop) { $scrollTop = $currentIndex }
+        if ($currentIndex -ge $scrollTop + $visibleSlots) { $scrollTop = $currentIndex - $visibleSlots + 1 }
+        $scrollTop = [Math]::Max(0, [Math]::Min($scrollTop, $Options.Count - $visibleSlots))
+        $firstVisible = $scrollTop
+        $lastVisible = $scrollTop + $visibleSlots - 1
+      }
+    }
+
+    if ($isScrolling) {
+      $hiddenAbove = if ($firstVisible -gt 0) { "  ▲ ($firstVisible)" } else { "" }
+      Write-Host $hiddenAbove -ForegroundColor DarkGray
+    }
+
     $removeLabel = Get-LocalizedString "menu_remove_category"
     $deleteLabel = Get-LocalizedString "details_delete_category"
-    for ($i = 0; $i -lt $Options.Count; $i++) {
+    for ($i = $firstVisible; $i -le $lastVisible; $i++) {
       $isRemove = $Options[$i] -eq $removeLabel -or $Options[$i] -eq $deleteLabel -or $i -in $ColoredOptions
       if ($i -eq $currentIndex) {
         $color = if ($isRemove) { "Red" } else { "Yellow" }
@@ -2945,7 +2983,12 @@ function Show-ArrowMenu {
         Write-Host "  $($Options[$i])" -ForegroundColor $color
       }
     }
-    
+
+    if ($isScrolling) {
+      $hiddenBelow = if ($lastVisible -lt $maxIndex) { "  ▼ ($($maxIndex - $lastVisible))" } else { "" }
+      Write-Host $hiddenBelow -ForegroundColor DarkGray
+    }
+
     Write-Host ""
     
     # Show description for currently selected item if available
