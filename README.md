@@ -85,7 +85,7 @@ For manual editing, start from [`config.example.json`](config.example.json). Inv
 When adding a preset, choose **Team Hitless** to display a leaderboard from [teamhitless.com](https://www.teamhitless.com/hitless-speedrun-games/) instead of speedrun.com. The manager lists the games that have a hitless leaderboard, then every leaderboard on the game's page, with its run count and world record.
 
 - Data is read from the public Team Hitless pages and refreshed at most every 5 minutes, since the site is updated by hand.
-- Team Hitless does not publish countries, submission dates, or trophies: those rows show the default globe and no trophy icon.
+- Team Hitless does not publish countries, submission dates, or trophies: those rows keep an empty flag slot (names stay aligned) and show no trophy icon. Your PB row still shows your configured country.
 - The temporary PB works the same way: its rank is calculated against the whole Team Hitless leaderboard. Set your player name exactly as it appears on Team Hitless.
 - A Team Hitless preset is stored with `"source": "teamhitless"` and a `teamHitless` object (page slug, section, title, and table position). Presets without `source` keep using speedrun.com.
 
