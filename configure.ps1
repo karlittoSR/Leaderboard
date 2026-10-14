@@ -1489,9 +1489,13 @@ function Set-Language {
         }
         foreach ($item in $Items) {
           if ($item.type -eq "flagOverride") {
+            # Wrap in @(): PSObject.Properties has no Count of its own, so with two
+            # or more overrides .Count returned an array and the "- 1" below failed.
             $flagProps = @()
-            if ($config.flagOverrides) {
-              $flagProps = $config.flagOverrides.PSObject.Properties
+            if ($config.flagOverrides -is [System.Collections.IDictionary]) {
+              $flagProps = @($config.flagOverrides.GetEnumerator() | ForEach-Object { [PSCustomObject]@{ Name = $_.Key; Value = $_.Value } })
+            } elseif ($config.flagOverrides) {
+              $flagProps = @($config.flagOverrides.PSObject.Properties)
             }
             if ($flagProps.Count -gt 0) {
               $first = $flagProps | Select-Object -First 1
