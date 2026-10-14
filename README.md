@@ -98,6 +98,8 @@ When adding a preset, choose **Team Hitless** to display a leaderboard from [tea
 
 The PB receives the rank it would have on speedrun.com, including when that rank is outside `maxRuns`.
 
+To show a time without ranking it (for example a run with hits on a hitless leaderboard), set **Rank my PB in the leaderboard** to **NO** in the same menu. The PB row then shows `--` instead of a position and does not shift anyone. This option is stored per category as `personalBest.ranked` and defaults to `true`.
+
 ## Flag overrides
 
 Country flags use ISO 3166-1 alpha-2 codes. To replace a flag, add a mapping to `flagOverrides`:

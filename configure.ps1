@@ -312,6 +312,9 @@ $Global:Languages = @{
         temp_time_check_status = "Recherche dans la catégorie sélectionnée"
         temp_time_disabled = "PB temporaire désactivé (joueur introuvable dans cette catégorie)."
         temp_time_player_warn = "Attention : ce pseudo n'apparaît pas dans le classement de cette catégorie. Le PB sera affiché comme entrée temporaire."
+        temp_time_action_ranked = "Classer mon PB dans le classement : {0}"
+        temp_time_ranked_on = "[OK] Le PB est classé selon son temps."
+        temp_time_ranked_off = "[OK] Le PB est affiché sans rang (--), sans décaler le classement."
         
         # Reset
         reset_confirm = "Êtes-vous sûr de vouloir réinitialiser la configuration ? (o/N)"
@@ -536,6 +539,9 @@ $Global:Languages = @{
         temp_time_check_status = "Searching in selected category"
         temp_time_disabled = "Temporary PB disabled (player not found in this category)."
         temp_time_player_warn = "Warning: this name isn't on this category's leaderboard. The PB will show as a temporary entry."
+        temp_time_action_ranked = "Rank my PB in the leaderboard: {0}"
+        temp_time_ranked_on = "[OK] The PB is ranked by its time."
+        temp_time_ranked_off = "[OK] The PB is shown without a rank (--), without shifting the leaderboard."
         
         # Reset
         reset_confirm = "Are you sure you want to reset the configuration? (y/N)"
@@ -760,6 +766,9 @@ $Global:Languages = @{
         temp_time_check_status = "Buscando en la categoría seleccionada"
         temp_time_disabled = "PB temporal desactivado (jugador no encontrado en esta categoría)."
         temp_time_player_warn = "Advertencia: este nombre no está en la clasificación de esta categoría. El PB se mostrará como entrada temporal."
+        temp_time_action_ranked = "Clasificar mi PB en el leaderboard: {0}"
+        temp_time_ranked_on = "[OK] El PB se clasifica según su tiempo."
+        temp_time_ranked_off = "[OK] El PB se muestra sin posición (--), sin desplazar el leaderboard."
         
         # Reset
         reset_confirm = "¿Seguro que quieres restablecer la configuración? (s/N)"
@@ -984,6 +993,9 @@ $Global:Languages = @{
         temp_time_check_status = "Buscando na categoria selecionada"
         temp_time_disabled = "PB temporário desativado (jogador não encontrado nesta categoria)."
         temp_time_player_warn = "Aviso: este nome não está na classificação desta categoria. O PB será exibido como entrada temporária."
+        temp_time_action_ranked = "Classificar meu PB no leaderboard: {0}"
+        temp_time_ranked_on = "[OK] O PB é classificado pelo seu tempo."
+        temp_time_ranked_off = "[OK] O PB é exibido sem posição (--), sem deslocar o leaderboard."
         
         # Reset
         reset_confirm = "Tem certeza que deseja redefinir a configuração? (s/N)"
@@ -1208,6 +1220,9 @@ $Global:Languages = @{
         temp_time_check_status = "在所选类别中查找"
         temp_time_disabled = "临时PB已禁用（该类别中未找到玩家）。"
         temp_time_player_warn = "警告：该名称不在此类别的排行榜中。个人最佳将显示为临时条目。"
+        temp_time_action_ranked = "在排行榜中为我的 PB 排名：{0}"
+        temp_time_ranked_on = "[OK] PB 将按时间排名。"
+        temp_time_ranked_off = "[OK] PB 不显示名次（--），不影响排行榜。"
         
         # Reset
         reset_confirm = "您确定要重置配置吗？(y/N)"
@@ -1838,10 +1853,19 @@ function Get-CategoryPB {
   return $null
 }
 
+# ranked = $false shows the PB without a rank ("--") instead of ranking it by time (default: ranked).
+function Test-CategoryPBRanked {
+  param($category)
+  $pb = Get-CategoryPB $category
+  if ($pb -and $pb.ranked -eq $false) { return $false }
+  return $true
+}
+
 function Set-CategoryPB {
-  param($category, $active, $time)
+  param($category, $active, $time, $ranked = $null)
   if (-not $category) { return }
-  $pb = @{ active = $active; time = $time }
+  if ($null -eq $ranked) { $ranked = Test-CategoryPBRanked $category }
+  $pb = [ordered]@{ active = $active; time = $time; ranked = [bool]$ranked }
   if ($category.GetType().Name -eq "PSCustomObject") {
     $category | Add-Member -MemberType NoteProperty -Name "personalBest" -Value $pb -Force
   } else {
@@ -2814,6 +2838,9 @@ function Set-TemporaryRun {
 
   $actionItems = @()
   $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_set"); Key = "set" }
+  $isRanked = Test-CategoryPBRanked $activeCat
+  $rankedState = if ($isRanked) { (Get-LocalizedString "yes") } else { (Get-LocalizedString "no") }
+  $actionItems += @{ Label = [string]::Format((Get-LocalizedString "temp_time_action_ranked"), $rankedState); Key = "ranked" }
   if ($categoriesWithPB.Count -gt 0) {
     $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_clear"); Key = "clear" }
   }
@@ -2826,6 +2853,26 @@ function Set-TemporaryRun {
 
   $actionKey = $actionItems[$actionIndex].Key
   if ($actionKey -eq "back") {
+    return
+  }
+
+  if ($actionKey -eq "ranked") {
+    $activePB = Get-CategoryPB $activeCat
+    $pbActive = if ($activePB) { [bool]$activePB.active } else { $false }
+    $pbTime = if ($activePB) { $activePB.time } else { $null }
+    Set-CategoryPB $activeCat $pbActive $pbTime (-not $isRanked)
+
+    Save-Config $config
+
+    Clear-Host
+    if (-not $isRanked) {
+      Write-Host (Get-LocalizedString "temp_time_ranked_on") -ForegroundColor Green
+    } else {
+      Write-Host (Get-LocalizedString "temp_time_ranked_off") -ForegroundColor Yellow
+    }
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
     return
   }
 
@@ -4437,10 +4484,19 @@ function Invoke-ProjectValidation {
       $failures.Add("Team Hitless preset normalization failed.")
     }
 
+    # PB ranking option: ranked by default, kept when the PB time changes
+    $rankedDefault = Test-CategoryPBRanked $thPreset
+    Set-CategoryPB $thPreset $true "1:10:00" $false
+    Set-CategoryPB $thPreset $true "1:05:00"
+    if (-not $rankedDefault -or (Test-CategoryPBRanked $thPreset) -or $thPreset.personalBest.time -ne "1:05:00") {
+      $failures.Add("PB ranking option handling failed.")
+    }
+
     $htmlPath = Join-Path $scriptDir "leaderboard.html"
     $html = Get-Content -LiteralPath $htmlPath -Raw
     foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId",
-                          "fetchTeamHitlessRuns", "TEAMHITLESS_MIN_REFRESH_MS", "drawTeamHitlessLogo")) {
+                          "fetchTeamHitlessRuns", "TEAMHITLESS_MIN_REFRESH_MS", "drawTeamHitlessLogo",
+                          "getTeamHitlessNameStyles", "isUnranked")) {
       if (-not $html.Contains($marker)) {
         $failures.Add("leaderboard.html is missing validation marker: $marker")
       }
