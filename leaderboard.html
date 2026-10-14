@@ -250,7 +250,9 @@
           ? category.personalBest
           : (config.temporaryRun || null);
         if (PLAYER_NAME && pbRun && pbRun.active && pbRun.time) {
-          TEMPORARY_RUN = { time: String(pbRun.time).trim() };
+          // ranked: false keeps the PB out of the ranking (always shown last),
+          // e.g. a run with hits on a hitless leaderboard.
+          TEMPORARY_RUN = { time: String(pbRun.time).trim(), ranked: pbRun.ranked !== false };
         } else {
           TEMPORARY_RUN = null;
         }
@@ -688,6 +690,7 @@
     }
 
     function getRankColor(position) {
+      if (!Number.isFinite(position) || position < 0) return DRAW.COLORS.other; // e.g. unranked PB ("--")
       return [DRAW.COLORS.top1, DRAW.COLORS.top2, DRAW.COLORS.top3, DRAW.COLORS.other][Math.min(position, 3)];
     }
 
@@ -1600,6 +1603,31 @@
       return byIndex;
     }
 
+    // Team Hitless names have no colors, so each player gets one from a palette
+    // of distinct hues. It is derived from the name (FNV-1a hash), so a player
+    // keeps the same color across refreshes; a color already used by one of the
+    // two previous rows moves to the next hue so neighbours stay distinguishable.
+    const TEAMHITLESS_NAME_COLORS = [
+      '#ee4444', '#ef8241', '#f0c03e', '#b5e655', '#4cc86a', '#2ed1b0',
+      '#44bbee', '#6f8cff', '#9a7cf4', '#d070f0', '#f772c5', '#ff9a8a'
+    ];
+
+    function getTeamHitlessNameStyles(names) {
+      const usedIndexes = [];
+      return names.map(name => {
+        let hash = 0x811c9dc5;
+        for (const ch of String(name).toLowerCase()) {
+          hash ^= ch.codePointAt(0);
+          hash = Math.imul(hash, 0x01000193) >>> 0;
+        }
+        let idx = hash % TEAMHITLESS_NAME_COLORS.length;
+        while (usedIndexes.slice(-2).includes(idx)) idx = (idx + 1) % TEAMHITLESS_NAME_COLORS.length;
+        usedIndexes.push(idx);
+        const color = TEAMHITLESS_NAME_COLORS[idx];
+        return { style: 'solid', color: { light: color, dark: color } };
+      });
+    }
+
     async function fetchTeamHitlessRuns(signal) {
       const slug = TEAMHITLESS.slug;
       let cached = teamHitlessPageCache.get(slug);
@@ -1621,12 +1649,13 @@
         throw new Error(`Classement Team Hitless "${label}" introuvable sur "${slug}"`);
       }
 
-      // Team Hitless has no countries, submission dates or trophy assets.
-      return table.rows.map(row => ({
+      // Team Hitless has no countries, submission dates, trophy assets or name colors.
+      const nameStyles = getTeamHitlessNameStyles(table.rows.map(row => row.player));
+      return table.rows.map((row, i) => ({
         rank: 0,
         player: row.player,
         players: [row.player],
-        nameStyle: null,
+        nameStyle: nameStyles[i],
         country: null,
         time: formatTime(row.timeSeconds),
         timeSeconds: row.timeSeconds,
@@ -1662,16 +1691,22 @@
               time: formatTime(tempSeconds),
               timeSeconds: tempSeconds,
               submitted: new Date().toISOString(),
-              isTemporary: true
+              isTemporary: true,
+              isUnranked: TEMPORARY_RUN.ranked === false
             });
           }
         }
 
+        // An unranked PB sorts after every official run, whatever its time, and
+        // is displayed with "--" instead of a position.
+        const rankingTime = r => (r.isUnranked || !Number.isFinite(r.timeSeconds))
+          ? Number.POSITIVE_INFINITY
+          : r.timeSeconds;
         let sortedRuns = allRuns
           .map((r, idx) => ({ ...r, _idx: idx }))
           .sort((a, b) => {
-            const aTime = Number.isFinite(a.timeSeconds) ? a.timeSeconds : Number.POSITIVE_INFINITY;
-            const bTime = Number.isFinite(b.timeSeconds) ? b.timeSeconds : Number.POSITIVE_INFINITY;
+            const aTime = rankingTime(a);
+            const bTime = rankingTime(b);
             if (aTime !== bTime) return aTime - bTime;
             return a._idx - b._idx;
           });
@@ -1682,7 +1717,9 @@
         sortedRuns = sortedRuns.map((r, idx) => {
           const copy = { ...r };
           delete copy._idx;
-          if (r.timeSeconds === lastTime) {
+          if (r.isUnranked) {
+            copy.rank = '--'; // shown without a position, after every official run
+          } else if (r.timeSeconds === lastTime) {
             copy.rank = lastRank;
           } else {
             copy.rank = idx + 1;
