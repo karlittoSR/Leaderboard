@@ -243,7 +243,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Valeur invalide."
         parameters_saved = "[OK] Valeur mise à jour"
         parameters_invalid_format = "Format invalide."
-        parameters_flag_override_prompt = "Entrer un override (AA BB, ex: CR FR) :"
+        parameters_flag_override_prompt = "Entrer un override (AA BB, ex: CR FR), ou un code seul pour le supprimer (ex: CR) :"
         parameters_visuals_section_layout = "Mise en page"
         parameters_visuals_section_list_ranks = "Liste et rangs"
         parameters_visuals_section_category_name = "Nom de catégorie"
@@ -470,7 +470,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Invalid value."
         parameters_saved = "[OK] Value updated"
         parameters_invalid_format = "Invalid format."
-        parameters_flag_override_prompt = "Enter override (AA BB, e.g. CR FR):"
+        parameters_flag_override_prompt = "Enter override (AA BB, e.g. CR FR), or a single code to remove it (e.g. CR):"
         parameters_visuals_section_layout = "Layout"
         parameters_visuals_section_list_ranks = "List and ranks"
         parameters_visuals_section_category_name = "Category Name"
@@ -697,7 +697,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Valor inválido."
         parameters_saved = "[OK] Valor actualizado"
         parameters_invalid_format = "Formato inválido."
-        parameters_flag_override_prompt = "Introduce override (AA BB, ej.: CR FR):"
+        parameters_flag_override_prompt = "Introduce override (AA BB, ej.: CR FR), o un solo código para eliminarlo (ej.: CR):"
         parameters_visuals_section_layout = "Diseño"
         parameters_visuals_section_list_ranks = "Lista y rankings"
         parameters_visuals_section_category_name = "Nombre de categoría"
@@ -924,7 +924,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Valor inválido."
         parameters_saved = "[OK] Valor atualizado"
         parameters_invalid_format = "Formato inválido."
-        parameters_flag_override_prompt = "Digite override (AA BB, ex.: CR FR):"
+        parameters_flag_override_prompt = "Digite override (AA BB, ex.: CR FR), ou um único código para removê-lo (ex.: CR):"
         parameters_visuals_section_layout = "Layout"
         parameters_visuals_section_list_ranks = "Lista e rankings"
         parameters_visuals_section_category_name = "Nome da categoria"
@@ -1151,7 +1151,7 @@ $Global:Languages = @{
         parameters_invalid_number = "无效的数值。"
         parameters_saved = "[OK] 值已更新"
         parameters_invalid_format = "格式无效。"
-        parameters_flag_override_prompt = "输入覆写代码（AA BB，例如：CR FR）："
+        parameters_flag_override_prompt = "输入覆写代码（AA BB，例如：CR FR），或只输入一个代码以删除它（例如：CR）："
         parameters_visuals_section_layout = "布局"
         parameters_visuals_section_list_ranks = "列表和名次"
         parameters_visuals_section_category_name = "类别名称"
@@ -1490,7 +1490,7 @@ function Set-Language {
         foreach ($item in $Items) {
           if ($item.type -eq "flagOverride") {
             # Wrap in @(): PSObject.Properties has no Count of its own, so with two
-            # or more overrides .Count returned an array and the "- 1" below failed.
+            # or more overrides .Count returned an array instead of a number.
             $flagProps = @()
             if ($config.flagOverrides -is [System.Collections.IDictionary]) {
               $flagProps = @($config.flagOverrides.GetEnumerator() | ForEach-Object { [PSCustomObject]@{ Name = $_.Key; Value = $_.Value } })
@@ -1498,13 +1498,7 @@ function Set-Language {
               $flagProps = @($config.flagOverrides.PSObject.Properties)
             }
             if ($flagProps.Count -gt 0) {
-              $first = $flagProps | Select-Object -First 1
-              $extraCount = $flagProps.Count - 1
-              if ($extraCount -gt 0) {
-                $currentValue = "$($first.Name)->$($first.Value) +$extraCount"
-              } else {
-                $currentValue = "$($first.Name)->$($first.Value)"
-              }
+              $currentValue = ($flagProps | ForEach-Object { "$($_.Name)->$($_.Value)" }) -join ", "
             } else {
               $currentValue = (Get-LocalizedString "not_defined")
             }
@@ -1568,6 +1562,18 @@ function Set-Language {
               $config.flagOverrides[$from] = $to
             } else {
               $config.flagOverrides | Add-Member -MemberType NoteProperty -Name $from -Value $to -Force
+            }
+            Save-Config $config
+            Clear-Host
+            Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
+            Start-Sleep -Milliseconds 400
+          } elseif ($text -match '^(?<from>[A-Za-z]{2})$') {
+            # A single code removes that override.
+            $from = $Matches.from.ToUpperInvariant()
+            if ($config.flagOverrides -is [System.Collections.IDictionary]) {
+              $config.flagOverrides.Remove($from)
+            } elseif ($config.flagOverrides) {
+              $config.flagOverrides.PSObject.Properties.Remove($from)
             }
             Save-Config $config
             Clear-Host
