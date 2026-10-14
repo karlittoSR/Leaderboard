@@ -1,8 +1,8 @@
 # Speedrun Leaderboard Overlay
 
-Current version: **v1.6.1**
+Current version: **v2.0**
 
-An animated [speedrun.com](https://www.speedrun.com/) leaderboard overlay for OBS, with a multilingual PowerShell configuration manager.
+An animated [speedrun.com](https://www.speedrun.com/) and [Team Hitless](https://www.teamhitless.com/hitless-speedrun-games/) leaderboard overlay for OBS, with a multilingual PowerShell configuration manager.
 
 <img src="images/leaderboard-preview.png" width="100%" alt="Leaderboard overlay preview">
 
@@ -11,6 +11,7 @@ An animated [speedrun.com](https://www.speedrun.com/) leaderboard overlay for OB
 ## Main features
 
 - Live speedrun.com leaderboard data with automatic refresh.
+- Team Hitless leaderboards for hitless runs, selectable per preset.
 - Accurate temporary PB ranking against the complete category leaderboard.
 - Multiple game and category presets.
 - English, French, Spanish, Portuguese, and Chinese interfaces.
@@ -32,7 +33,7 @@ An animated [speedrun.com](https://www.speedrun.com/) leaderboard overlay for OB
 1. Download or clone this repository.
 2. Double-click `FIX_ACCESS.bat`.
 3. Choose a language in the configuration manager.
-4. Add a preset and select the game, category, and optional subcategory.
+4. Add a preset: choose speedrun.com or Team Hitless, then select the game and category.
 5. Set your speedrun.com player name and country if you want temporary PB tracking.
 
 You can also start the manager manually:
@@ -79,6 +80,15 @@ Settings are stored in `config.json`. The main display options are under `defaul
 
 For manual editing, start from [`config.example.json`](config.example.json). Invalid values are normalized when the manager saves the configuration.
 
+## Team Hitless leaderboards
+
+When adding a preset, choose **Team Hitless** to display a leaderboard from [teamhitless.com](https://www.teamhitless.com/hitless-speedrun-games/) instead of speedrun.com. The manager lists the games that have a hitless leaderboard, then every leaderboard on the game's page, with its run count and world record.
+
+- Data is read from the public Team Hitless pages and refreshed at most every 5 minutes, since the site is updated by hand.
+- Team Hitless does not publish countries, submission dates, or trophies: those rows show the default globe and no trophy icon.
+- The temporary PB works the same way: its rank is calculated against the whole Team Hitless leaderboard. Set your player name exactly as it appears on Team Hitless.
+- A Team Hitless preset is stored with `"source": "teamhitless"` and a `teamHitless` object (page slug, section, title, and table position). Presets without `source` keep using speedrun.com.
+
 ## Temporary PB
 
 1. Configure your speedrun.com player name and country.
@@ -108,6 +118,7 @@ Country flags use ISO 3166-1 alpha-2 codes. To replace a flag, add a mapping to 
 - **Carousel rows are missing:** increase the OBS source height or reduce category spacing and rows per batch.
 - **Flags or leaderboard data do not load:** verify the internet connection and speedrun.com availability.
 - **A game or category is missing:** reopen the preset wizard and verify its name on speedrun.com.
+- **A Team Hitless leaderboard no longer loads:** the page layout may have changed on teamhitless.com. The overlay keeps the last valid leaderboard; re-add the preset to pick the leaderboard again.
 
 ## Quick-start guides
 
@@ -138,4 +149,4 @@ Run the built-in checks after modifying the project:
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\configure.ps1 -Validate
 ```
 
-The validation checks configuration defaults, schema normalization, translations, time parsing, and required overlay features.
+The validation checks configuration defaults, schema normalization, translations, time parsing, Team Hitless table parsing, and required overlay features.

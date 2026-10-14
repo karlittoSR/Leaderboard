@@ -19,12 +19,14 @@
 ## Étape 3 : Ajouter Votre Jeu
 
 1. Double-cliquez sur `configure.ps1` ou continuez avec la dernière option de `FIX_ACCESS.bat`.
-2. Sélectionnez **"Ajouter un nouveau preset"**
+2. Sélectionnez **"Ajouter un nouveau preset"**, puis choisissez **speedrun.com**
 3. Tapez le nom de votre jeu (ex: "Elden Ring")
 4. Choisissez votre jeu dans la liste
 5. Sélectionnez la catégorie (Any%, 100%, etc.)
 6. Donnez-lui un nom et activez-le
 7. Vous pouvez fermer le programme.
+
+> **Runs hitless :** choisissez **Team Hitless** au lieu de speedrun.com pour afficher un classement de [teamhitless.com](https://www.teamhitless.com/hitless-speedrun-games/). Sélectionnez le jeu, puis le classement (Any%, All Bosses...).
 
 ## Étape 4 : Définir Votre Nom (Optionnel)
 

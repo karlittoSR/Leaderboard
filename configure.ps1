@@ -7,7 +7,7 @@ param(
 
 # PowerShell script to manage speedrun.com presets easily
 # Manages multiple games and categories for streamers
-# Version 1.6.1 - Accurate PB ranks, resilient refresh, safe configuration saves
+# Version 2.0 - Team Hitless leaderboards alongside speedrun.com
 # By karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
@@ -105,7 +105,7 @@ $Global:DefaultConfigJSON = @'
 $Global:Languages = @{
     fr = @{
         # Main menu
-        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v1.6.1"
+        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v2.0"
         menu_add_category = "Ajouter une nouvelle catégorie"
         menu_view_details = "Voir les détails d'une catégorie existante"
         menu_change_active = "Changer la catégorie active"
@@ -167,6 +167,22 @@ $Global:Languages = @{
         add_categories_available = "Catégories disponibles :"
         add_subcategories_available = "Sous-catégories disponibles :"
         add_no_subcategory = "Aucune sous-catégorie (null)"
+
+        # Team Hitless
+        source_title = "Source du classement :"
+        source_teamhitless = "Team Hitless (classements hitless)"
+        th_loading_games = "Chargement des jeux Team Hitless..."
+        th_games_title = "Jeux Team Hitless :"
+        th_no_games = "Aucun jeu trouvé sur Team Hitless."
+        th_loading_page = "Chargement des classements..."
+        th_no_tables = "Aucun classement trouvé sur cette page."
+        th_categories_title = "Classements disponibles :"
+        th_table_label = "Tableau {0}"
+        th_table_preview = "Runs : {0} · WR : {1} ({2})"
+        final_source = "Source   :"
+        final_page = "Page     :"
+        details_source = "Source :"
+        details_page = "Page Team Hitless :"
         
         # Final settings
         final_config = "========[ CONFIGURATION FINALE ]========"
@@ -313,7 +329,7 @@ $Global:Languages = @{
     }
     en = @{
         # Main menu
-        menu_title = "SRC Leaderboard Manager by karlitto__ v1.6.1"
+        menu_title = "SRC Leaderboard Manager by karlitto__ v2.0"
         menu_add_category = "Add a new category"
         menu_view_details = "View details of an existing category"
         menu_change_active = "Change active category"
@@ -375,6 +391,22 @@ $Global:Languages = @{
         add_categories_available = "Available categories:"
         add_subcategories_available = "Available subcategories:"
         add_no_subcategory = "No subcategory (null)"
+
+        # Team Hitless
+        source_title = "Leaderboard source:"
+        source_teamhitless = "Team Hitless (hitless leaderboards)"
+        th_loading_games = "Loading Team Hitless games..."
+        th_games_title = "Team Hitless games:"
+        th_no_games = "No game found on Team Hitless."
+        th_loading_page = "Loading leaderboards..."
+        th_no_tables = "No leaderboard found on this page."
+        th_categories_title = "Available leaderboards:"
+        th_table_label = "Table {0}"
+        th_table_preview = "Runs: {0} · WR: {1} ({2})"
+        final_source = "Source   :"
+        final_page = "Page     :"
+        details_source = "Source:"
+        details_page = "Team Hitless page:"
         
         # Final settings
         final_config = "========[ FINAL CONFIGURATION ]========"
@@ -521,7 +553,7 @@ $Global:Languages = @{
     }
     es = @{
         # Main menu
-        menu_title = "Gestor de Leaderboard SRC by karlitto__ v1.6.1"
+        menu_title = "Gestor de Leaderboard SRC by karlitto__ v2.0"
         menu_add_category = "Añadir una nueva categoría"
         menu_view_details = "Ver detalles de una categoría existente"
         menu_change_active = "Cambiar categoría activa"
@@ -583,6 +615,22 @@ $Global:Languages = @{
         add_categories_available = "Categorías disponibles:"
         add_subcategories_available = "Subcategorías disponibles:"
         add_no_subcategory = "Sin subcategoría (null)"
+
+        # Team Hitless
+        source_title = "Fuente del leaderboard:"
+        source_teamhitless = "Team Hitless (leaderboards hitless)"
+        th_loading_games = "Cargando juegos de Team Hitless..."
+        th_games_title = "Juegos de Team Hitless:"
+        th_no_games = "No se encontró ningún juego en Team Hitless."
+        th_loading_page = "Cargando leaderboards..."
+        th_no_tables = "No se encontró ningún leaderboard en esta página."
+        th_categories_title = "Leaderboards disponibles:"
+        th_table_label = "Tabla {0}"
+        th_table_preview = "Runs: {0} · WR: {1} ({2})"
+        final_source = "Fuente   :"
+        final_page = "Página   :"
+        details_source = "Fuente:"
+        details_page = "Página de Team Hitless:"
         
         # Final settings
         final_config = "========[ CONFIGURACIÓN FINAL ]========"
@@ -729,7 +777,7 @@ $Global:Languages = @{
     }
     pt = @{
         # Main menu
-        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v1.6.1"
+        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v2.0"
         menu_add_category = "Adicionar uma nova categoria"
         menu_view_details = "Ver detalhes de uma categoria existente"
         menu_change_active = "Alterar categoria ativa"
@@ -791,6 +839,22 @@ $Global:Languages = @{
         add_categories_available = "Categorias disponíveis:"
         add_subcategories_available = "Subcategorias disponíveis:"
         add_no_subcategory = "Sem subcategoria (null)"
+
+        # Team Hitless
+        source_title = "Fonte do leaderboard:"
+        source_teamhitless = "Team Hitless (leaderboards hitless)"
+        th_loading_games = "Carregando jogos do Team Hitless..."
+        th_games_title = "Jogos do Team Hitless:"
+        th_no_games = "Nenhum jogo encontrado no Team Hitless."
+        th_loading_page = "Carregando leaderboards..."
+        th_no_tables = "Nenhum leaderboard encontrado nesta página."
+        th_categories_title = "Leaderboards disponíveis:"
+        th_table_label = "Tabela {0}"
+        th_table_preview = "Runs: {0} · WR: {1} ({2})"
+        final_source = "Fonte    :"
+        final_page = "Página   :"
+        details_source = "Fonte:"
+        details_page = "Página do Team Hitless:"
         
         # Final settings
         final_config = "========[ CONFIGURAÇÃO FINAL ]========"
@@ -937,7 +1001,7 @@ $Global:Languages = @{
     }
     zh = @{
         # Main menu
-        menu_title = "SRC 排行榜管理器 by karlitto__ v1.6.1 卡里托"
+        menu_title = "SRC 排行榜管理器 by karlitto__ v2.0 卡里托"
         menu_add_category = "添加新类别"
         menu_view_details = "查看现有类别详情"
         menu_change_active = "更改活动类别"
@@ -999,6 +1063,22 @@ $Global:Languages = @{
         add_categories_available = "可用类别："
         add_subcategories_available = "可用子类别："
         add_no_subcategory = "无子类别（空）"
+
+        # Team Hitless
+        source_title = "排行榜来源："
+        source_teamhitless = "Team Hitless（无伤排行榜）"
+        th_loading_games = "正在加载 Team Hitless 游戏..."
+        th_games_title = "Team Hitless 游戏："
+        th_no_games = "在 Team Hitless 上未找到游戏。"
+        th_loading_page = "正在加载排行榜..."
+        th_no_tables = "此页面上未找到排行榜。"
+        th_categories_title = "可用排行榜："
+        th_table_label = "表格 {0}"
+        th_table_preview = "记录：{0} · WR：{1}（{2}）"
+        final_source = "来源     :"
+        final_page = "页面     :"
+        details_source = "来源："
+        details_page = "Team Hitless 页面："
         
         # Final settings
         final_config = "========[ ZUI ZHONG PEI ZHI ]========"
@@ -2538,6 +2618,10 @@ function Test-PlayerInCategory {
     return $false
   }
 
+  if ((Get-PresetSource $preset) -eq "teamhitless") {
+    return Test-PlayerInTeamHitlessCategory -PlayerName $playerName -Preset $preset
+  }
+
   $resolved = Resolve-CategoryDetailsAndVariables $preset
   $categoryId = $resolved.CategoryId
   $variablePairs = $resolved.VariablePairs
@@ -2940,13 +3024,19 @@ function Write-PresetDetails($presetList, $currentConfig) {
   Write-Host (Get-LocalizedString "details_title") -ForegroundColor Cyan
   Write-Host "$(Get-LocalizedString 'details_name') $($selectedPreset.Value.name)" -ForegroundColor White
   Write-Host "$(Get-LocalizedString 'details_category_id') $($selectedPreset.Name)" -ForegroundColor Cyan
-  if ($selectedPreset.Value.categoryId) {
-    Write-Host "$(Get-LocalizedString 'details_src_category_id') $($selectedPreset.Value.categoryId)" -ForegroundColor Cyan
+  if ((Get-PresetSource $selectedPreset.Value) -eq "teamhitless") {
+    Write-Host "$(Get-LocalizedString 'details_source') Team Hitless" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'details_page') https://www.teamhitless.com/$($selectedPreset.Value.teamHitless.slug)/" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
+  } else {
+    if ($selectedPreset.Value.categoryId) {
+      Write-Host "$(Get-LocalizedString 'details_src_category_id') $($selectedPreset.Value.categoryId)" -ForegroundColor Cyan
+    }
+    Write-Host "$(Get-LocalizedString 'details_game_id') $($selectedPreset.Value.gameId)" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
+    $subcat = if ($selectedPreset.Value.subcategory) { $selectedPreset.Value.subcategory } else { (Get-LocalizedString "null_value") }
+    Write-Host "$(Get-LocalizedString 'details_subcategory') $subcat" -ForegroundColor Cyan
   }
-  Write-Host "$(Get-LocalizedString 'details_game_id') $($selectedPreset.Value.gameId)" -ForegroundColor Cyan
-  Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
-  $subcat = if ($selectedPreset.Value.subcategory) { $selectedPreset.Value.subcategory } else { (Get-LocalizedString "null_value") }
-  Write-Host "$(Get-LocalizedString 'details_subcategory') $subcat" -ForegroundColor Cyan
   $isActive = if ($currentConfig.activeCategory -eq $selectedPreset.Name) { (Get-LocalizedString "yes") } else { (Get-LocalizedString "no") }
   Write-Host "$(Get-LocalizedString 'details_active_obs') $isActive" -ForegroundColor $(if ($isActive -eq (Get-LocalizedString "yes")) { "Green" } else { "Yellow" })
   $actionOptions = @(
@@ -3742,6 +3832,421 @@ function New-Preset($currentConfig) {
   }
 }
 
+# === TEAM HITLESS === (asked by lord Owarida)
+# Team Hitless (teamhitless.com) publishes its leaderboards as WordPress pages
+# built with the Divi "Table Maker" module. The REST API returns each page's
+# rendered HTML: every table cell carries its position as dvmd_tm_col_X /
+# dvmd_tm_row_Y classes (row 0 = headers), and a table is named by the nearest
+# <h3> before it, inside the current <h2> section. leaderboard.html
+# (parseTeamHitlessTables) reads pages the same way, so tableIndex values match.
+$Global:TeamHitlessApi = "https://www.teamhitless.com/wp-json/wp/v2/pages"
+
+function Get-PresetSource {
+  param($Preset)
+  if ($Preset -and $Preset.source -eq "teamhitless") { return "teamhitless" }
+  return "speedruncom"
+}
+
+function ConvertFrom-TeamHitlessHtmlText {
+  param([string]$Html)
+  if ([string]::IsNullOrEmpty($Html)) { return "" }
+  $text = [System.Net.WebUtility]::HtmlDecode(($Html -replace '<[^>]+>', ''))
+  return ($text -replace '\s+', ' ').Trim()
+}
+
+function ConvertTo-TeamHitlessKey {
+  param($Text)
+  if (-not $Text) { return "" }
+  return ("$Text" -replace '\s+', ' ').Trim().ToLowerInvariant()
+}
+
+# Display only: "STANDARD DIFFICULTY" -> "Standard Difficulty", "celeste" -> "Celeste"
+function Format-TeamHitlessName {
+  param([string]$Text)
+  if ([string]::IsNullOrWhiteSpace($Text) -or $Text -notmatch '\p{L}') { return $Text }
+  if ($Text -ceq $Text.ToUpperInvariant() -or $Text -ceq $Text.ToLowerInvariant()) {
+    return [System.Globalization.CultureInfo]::InvariantCulture.TextInfo.ToTitleCase($Text.ToLowerInvariant())
+  }
+  return $Text
+}
+
+function Get-TeamHitlessGames {
+  $pages = @()
+  for ($pageNumber = 1; $pageNumber -le 5; $pageNumber++) {
+    try {
+      $batch = @(Invoke-SrcApiJson -Uri "$($Global:TeamHitlessApi)?per_page=100&page=$pageNumber&_fields=id,slug,title" -TimeoutSec 15)
+    } catch {
+      if ($pageNumber -eq 1) { throw }
+      break # past the last page
+    }
+    $pages += $batch
+    if ($batch.Count -lt 100) { break }
+  }
+
+  # Leaderboard pages have "speed" in their slug; hub pages only link to them.
+  $games = foreach ($page in $pages) {
+    $slug = "$($page.slug)"
+    if ($slug -notmatch 'speed' -or $slug -match '^(hitless-speedrun-games|.+-hitless-speedrun)$') { continue }
+    $name = (ConvertFrom-TeamHitlessHtmlText "$($page.title.rendered)") -replace '(?i)\s*speedrun\s*$', ''
+    if ([string]::IsNullOrWhiteSpace($name)) { $name = $slug }
+    [PSCustomObject]@{ Id = $page.id; Slug = $slug; Name = (Format-TeamHitlessName $name.Trim()) }
+  }
+  return @($games | Sort-Object Name)
+}
+
+function Get-TeamHitlessPage {
+  param([Parameter(Mandatory = $true)][string]$Slug)
+
+  $data = Invoke-SrcApiJson -Uri "$($Global:TeamHitlessApi)?slug=$([uri]::EscapeDataString($Slug))&_fields=id,slug,modified,content" -TimeoutSec 15
+  $page = @($data)[0]
+  if (-not $page -or -not $page.content -or -not $page.content.rendered) {
+    throw "Team Hitless page '$Slug' not found."
+  }
+  return $page
+}
+
+function Get-TeamHitlessTables {
+  param([string]$Html)
+
+  $tables = [System.Collections.Generic.List[object]]::new()
+  if ([string]::IsNullOrWhiteSpace($Html)) { return @() }
+
+  $tokens = [regex]::Matches($Html, '(?is)<h([23])\b[^>]*>(.*?)</h\1\s*>|<div\b[^>]*\bclass="([^"]*\bdvmd_table_maker\b[^"]*)"')
+  $section = $null
+  $pendingTitle = $null
+  $sectionLead = $false
+
+  for ($i = 0; $i -lt $tokens.Count; $i++) {
+    $token = $tokens[$i]
+    if ($token.Groups[1].Success) {
+      $text = ConvertFrom-TeamHitlessHtmlText $token.Groups[2].Value
+      if (-not $text) { $text = $null }
+      if ($token.Groups[1].Value -eq "2") {
+        $section = $text
+        $pendingTitle = $null
+        $sectionLead = $true
+      } else {
+        $pendingTitle = $text
+      }
+      continue
+    }
+
+    # The table's cells lie between its opening tag and the next heading/table.
+    $end = if ($i + 1 -lt $tokens.Count) { $tokens[$i + 1].Index } else { $Html.Length }
+    $block = $Html.Substring($token.Index, $end - $token.Index)
+
+    $cells = @{}
+    $maxRow = 0
+    $maxCol = 0
+    foreach ($cell in [regex]::Matches($block, '(?is)<div\b[^>]*\bclass="([^"]*\bdvmd_tm_tcell\b[^"]*)"[^>]*>\s*<(div|h[1-6])\b[^>]*>(.*?)</\2\s*>')) {
+      $colMatch = [regex]::Match($cell.Groups[1].Value, '\bdvmd_tm_col_(\d+)\b')
+      $rowMatch = [regex]::Match($cell.Groups[1].Value, '\bdvmd_tm_row_(\d+)\b')
+      if (-not $colMatch.Success -or -not $rowMatch.Success) { continue }
+      $r = [int]$rowMatch.Groups[1].Value
+      $c = [int]$colMatch.Groups[1].Value
+      $cells["${r}:${c}"] = ConvertFrom-TeamHitlessHtmlText $cell.Groups[3].Value
+      $maxRow = [Math]::Max($maxRow, $r)
+      $maxCol = [Math]::Max($maxCol, $c)
+    }
+
+    $headers = @(for ($c = 0; $c -le $maxCol; $c++) { "$($cells["0:${c}"])" })
+    $playerCol = -1
+    $timeCol = -1
+    for ($c = 0; $c -lt $headers.Count; $c++) {
+      if ($playerCol -lt 0 -and $headers[$c] -match 'player|runner') { $playerCol = $c }
+      if ($timeCol -lt 0 -and $headers[$c] -match 'time|igt|rta') { $timeCol = $c }
+    }
+    if ($playerCol -lt 0) { $playerCol = 1 }
+    if ($timeCol -lt 0) { $timeCol = 2 }
+    $extraCols = @(for ($c = 0; $c -lt $headers.Count; $c++) {
+      if ($c -ne $playerCol -and $c -ne $timeCol -and $headers[$c] -and $headers[$c] -notmatch '^(rank|video)$') { $c }
+    })
+
+    # Placeholder rows ("Test Runner 0:00") and empty rows are skipped.
+    $rows = [System.Collections.Generic.List[object]]::new()
+    for ($r = 1; $r -le $maxRow; $r++) {
+      $player = "$($cells["${r}:${playerCol}"])"
+      $timeText = "$($cells["${r}:${timeCol}"])"
+      $seconds = Convert-TimeStringToSeconds $timeText
+      if (-not $player -or $null -eq $seconds -or $seconds -le 0) { continue }
+      $extras = @(foreach ($c in $extraCols) {
+        $value = "$($cells["${r}:${c}"])"
+        if ($value) { "$($headers[$c]): $value" }
+      })
+      $rows.Add([PSCustomObject]@{ Player = $player; Time = $timeText; Seconds = $seconds; Extras = $extras })
+    }
+
+    $tables.Add([PSCustomObject]@{
+      Index = $tables.Count
+      Section = $section
+      Title = $pendingTitle
+      SectionLead = $sectionLead # first table of its <h2> section
+      Headers = $headers
+      Rows = $rows.ToArray()
+      Signature = (@($rows | ForEach-Object { "$($_.Player)=$($_.Time)" }) -join "|")
+    })
+    $pendingTitle = $null # a heading names only the first table after it
+    $sectionLead = $false
+  }
+
+  return $tables.ToArray()
+}
+
+# Prefer the stored index while its headings still match, then the headings
+# alone (a table was added or removed above), then the bare index.
+function Resolve-TeamHitlessTable {
+  param([array]$Tables, $Reference)
+
+  if (-not $Tables -or -not $Reference) { return $null }
+  $section = ConvertTo-TeamHitlessKey $Reference.section
+  $title = ConvertTo-TeamHitlessKey $Reference.title
+  $index = -1
+  if (-not [int]::TryParse("$($Reference.tableIndex)", [ref]$index)) { $index = -1 }
+
+  $byIndex = if ($index -ge 0 -and $index -lt $Tables.Count) { $Tables[$index] } else { $null }
+  if ($byIndex -and (ConvertTo-TeamHitlessKey $byIndex.Section) -eq $section -and (ConvertTo-TeamHitlessKey $byIndex.Title) -eq $title) {
+    return $byIndex
+  }
+  if ($title) {
+    foreach ($table in $Tables) {
+      if ((ConvertTo-TeamHitlessKey $table.Section) -eq $section -and (ConvertTo-TeamHitlessKey $table.Title) -eq $title) {
+        return $table
+      }
+    }
+  }
+  return $byIndex
+}
+
+function Get-TeamHitlessTableLabel {
+  param($Table)
+
+  $parts = @()
+  if ($Table.Section) { $parts += Format-TeamHitlessName $Table.Section }
+  if ($Table.Title) {
+    $parts += Format-TeamHitlessName $Table.Title
+  } elseif (-not ($Table.Section -and $Table.SectionLead)) {
+    $parts += [string]::Format((Get-LocalizedString "th_table_label"), $Table.Index + 1)
+  }
+  return ($parts -join " - ")
+}
+
+function Get-TeamHitlessTablePreview {
+  param($Table)
+
+  $wr = $Table.Rows | Sort-Object Seconds | Select-Object -First 1
+  if (-not $wr) { return "" }
+  $text = [string]::Format((Get-LocalizedString "th_table_preview"), $Table.Rows.Count, $wr.Player, $wr.Time)
+  if ($wr.Extras.Count -gt 0) {
+    $text += " · " + ($wr.Extras -join " · ")
+  }
+  return $text
+}
+
+function Test-PlayerInTeamHitlessCategory {
+  param([string]$PlayerName, $Preset)
+
+  $page = Get-TeamHitlessPage $Preset.teamHitless.slug
+  $table = Resolve-TeamHitlessTable -Tables @(Get-TeamHitlessTables $page.content.rendered) -Reference $Preset.teamHitless
+  if (-not $table) { return $false }
+
+  $target = $PlayerName.Trim().ToLowerInvariant()
+  foreach ($row in $table.Rows) {
+    if ($row.Player.ToLowerInvariant() -eq $target) { return $true }
+  }
+  return $false
+}
+
+function Get-YesAnswer {
+  switch ($Global:CurrentLanguage) {
+    "en" { "y" }
+    "es" { "s" }
+    "pt" { "s" }
+    "zh" { "y" }
+    default { "o" }
+  }
+}
+
+# "Add a category" entry point: choose the leaderboard source first.
+function Add-NewPreset {
+  param($currentConfig)
+
+  $sourceOptions = @("speedrun.com", (Get-LocalizedString "source_teamhitless"))
+  $sourceIndex = Show-ArrowMenu -Title (Get-LocalizedString "source_title") -Options $sourceOptions -AllowCancel -ContextText (Get-LocalizedString "add_title")
+  if ($sourceIndex -eq 0) {
+    New-Preset $currentConfig
+  } elseif ($sourceIndex -eq 1) {
+    New-TeamHitlessPreset $currentConfig
+  }
+}
+
+function New-TeamHitlessPreset {
+  param($currentConfig)
+
+  Show-ProgressStep -Activity (Get-LocalizedString "th_loading_games") -Status "teamhitless.com" -PercentComplete 20
+  try {
+    $games = @(Get-TeamHitlessGames)
+  } catch {
+    Clear-Progress
+    Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+  Clear-Progress
+
+  if ($games.Count -eq 0) {
+    Write-Host (Get-LocalizedString "th_no_games") -ForegroundColor Red
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  $gameOptions = @($games | ForEach-Object { $_.Name })
+  $lastGameIndex = 0
+  $game = $null
+  $page = $null
+  $table = $null
+
+  :GameLoop while ($true) {
+    $gameIndex = Show-ArrowMenu -Title (Get-LocalizedString "th_games_title") -Options $gameOptions -AllowCancel -SelectedIndex $lastGameIndex -ContextText (Get-LocalizedString "add_title")
+    if ($gameIndex -eq -1) { return }
+    $lastGameIndex = $gameIndex
+    $game = $games[$gameIndex]
+
+    Show-ProgressStep -Activity (Get-LocalizedString "th_loading_page") -Status $game.Name -PercentComplete 50
+    try {
+      $page = Get-TeamHitlessPage $game.Slug
+      $allTables = @(Get-TeamHitlessTables $page.content.rendered)
+    } catch {
+      Clear-Progress
+      Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      continue GameLoop
+    }
+    Clear-Progress
+
+    # Skip empty tables and responsive duplicates (same section, same runs).
+    $seen = @{}
+    $tables = @(foreach ($candidate in $allTables) {
+      if ($candidate.Rows.Count -eq 0) { continue }
+      $key = "$($candidate.Section)`n$($candidate.Signature)"
+      if ($seen.ContainsKey($key)) { continue }
+      $seen[$key] = $true
+      $candidate
+    })
+
+    if ($tables.Count -eq 0) {
+      Write-Host (Get-LocalizedString "th_no_tables") -ForegroundColor Yellow
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      continue GameLoop
+    }
+
+    $tableOptions = @($tables | ForEach-Object { Get-TeamHitlessTableLabel $_ })
+    $tableDescriptions = @($tables | ForEach-Object { Get-TeamHitlessTablePreview $_ })
+    $tableIndex = Show-ArrowMenu -Title (Get-LocalizedString "th_categories_title") -Options $tableOptions -Descriptions $tableDescriptions -AllowCancel -ContextText $game.Name
+    if ($tableIndex -eq -1) { continue GameLoop }
+    $table = $tables[$tableIndex]
+    break
+  }
+
+  try {
+    $categoryLabel = Get-TeamHitlessTableLabel $table
+    $fullName = "$($game.Name) - $categoryLabel (Team Hitless)"
+
+    Clear-Host
+    Write-Host (Get-LocalizedString "final_config") -ForegroundColor Green
+    Write-Host ""
+    Write-Host "$(Get-LocalizedString 'final_source') Team Hitless" -ForegroundColor White
+    Write-Host "$(Get-LocalizedString 'final_game') $($game.Name)" -ForegroundColor White
+    Write-Host "$(Get-LocalizedString 'final_category') $categoryLabel" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'final_page') https://www.teamhitless.com/$($game.Slug)/" -ForegroundColor Cyan
+    Write-Host (Get-TeamHitlessTablePreview $table) -ForegroundColor DarkGray
+    Write-Host ""
+
+    # Preset ID suggestion, e.g. "elde-th-any"
+    $cleanGame = $game.Name -replace '[^a-zA-Z0-9]', ''
+    $gamePart = if ($cleanGame.Length -ge 4) { $cleanGame.Substring(0, 4) } else { $cleanGame }
+    $catPart = $categoryLabel -replace '[^a-zA-Z0-9]', ''
+    $defaultPresetId = (@($gamePart, "th", $catPart) | Where-Object { $_ }) -join "-"
+    $defaultPresetId = $defaultPresetId.ToLower()
+
+    Write-Host (Get-LocalizedString "final_category_id") -ForegroundColor Yellow
+    Write-Host "$(Get-LocalizedString 'final_suggestion') $defaultPresetId" -ForegroundColor Gray
+    $presetId = Read-Host (Get-LocalizedString "final_category_id_prompt")
+    if ([string]::IsNullOrWhiteSpace($presetId)) {
+      $presetId = $defaultPresetId
+    }
+    $presetId = $presetId.Trim()
+
+    if ($currentConfig -and $currentConfig.categories -and $currentConfig.categories.$presetId) {
+      Write-Host ([string]::Format(((Get-LocalizedString "final_id_exists") -replace '%s', '{0}'), $presetId)) -ForegroundColor Red
+      $overwrite = Read-Host (Get-LocalizedString "final_overwrite")
+      if ("$overwrite".ToLower() -ne (Get-YesAnswer)) {
+        Write-Host (Get-LocalizedString "final_operation_cancelled") -ForegroundColor Cyan
+        Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+        $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+        return
+      }
+    }
+
+    $newPreset = [ordered]@{
+      source = "teamhitless"
+      name = $fullName
+      category = $categoryLabel
+      teamHitless = [ordered]@{
+        slug = $game.Slug
+        pageId = $page.id
+        section = $table.Section
+        title = $table.Title
+        tableIndex = $table.Index
+      }
+    }
+
+    $config = Initialize-Config $currentConfig
+    if ($config.categories.GetType().Name -eq "PSCustomObject") {
+      $config.categories | Add-Member -MemberType NoteProperty -Name $presetId -Value $newPreset -Force
+    } else {
+      $config.categories.$presetId = $newPreset
+    }
+
+    $isFirstPreset = $config.categories.Count -eq 1 -or -not $config.activeCategory
+    if ($isFirstPreset) {
+      $config.activeCategory = $presetId
+      $activationMessage = (Get-LocalizedString "final_auto_active")
+    } else {
+      Write-Host ""
+      $activate = Read-Host (Get-LocalizedString "final_activate_now")
+      if ("$activate".ToLower() -eq (Get-YesAnswer)) {
+        $config.activeCategory = $presetId
+        $activationMessage = (Get-LocalizedString "final_active_now")
+      } else {
+        $activationMessage = (Get-LocalizedString "final_saved_inactive")
+      }
+    }
+
+    Save-Config $config
+
+    Write-Host ""
+    Write-Host ([string]::Format(((Get-LocalizedString "final_saved") -replace '%s', '{0}'), $presetId)) -ForegroundColor Green
+    Write-Host "$(Get-LocalizedString 'final_status') $activationMessage" -ForegroundColor Cyan
+    if ($config.activeCategory -eq $presetId) {
+      Write-Host (Get-LocalizedString "final_obs_will_show") -ForegroundColor Green
+    } else {
+      Write-Host (Get-LocalizedString "final_activate_later") -ForegroundColor Cyan
+    }
+    Write-Host ""
+  } catch {
+    Clear-Progress
+    Write-Host ""
+    Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
+  }
+
+  Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+  $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+}
+
 # === NON-INTERACTIVE PROJECT VALIDATION ===
 function Invoke-ProjectValidation {
   $failures = [System.Collections.Generic.List[string]]::new()
@@ -3812,9 +4317,87 @@ function Invoke-ProjectValidation {
       $failures.Add("Time parsing regression detected.")
     }
 
+    # Team Hitless parsing (offline fixture shaped like the Divi Table Maker markup)
+    $thFixture = @'
+<h2>STANDARD DIFFICULTY</h2>
+<h3>Leon</h3>
+<div class="et_pb_module dvmd_table_maker dvmd_table_maker_0"><div role="table" class="dvmd_tm_table"><div class='dvmd_tm_tblock'>
+<div scope="col" class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_0 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Rank</h6></div>
+<div class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_0 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1</div></div>
+<div class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_0 dvmd_tm_row_2"><div class="dvmd_tm_cdata">2</div></div>
+<div scope="col" class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_1 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Player</h6></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata"><a href="/project/a/">Runner&#8217;A</a></div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_2"><div class="dvmd_tm_cdata">Test Runner</div></div>
+<div scope="col" class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_2 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">In-Game Time</h6></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">53:26</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_2"><div class="dvmd_tm_cdata">0:00</div></div>
+<div scope="col" class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_3 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Video</h6></div>
+<div class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_3 dvmd_tm_row_1"><div class="dvmd_tm_cdata"><a href="https://youtu.be/x"><i class="fas fa-play-circle"></i></a></div></div>
+</div></div></div>
+<div class="et_pb_module dvmd_table_maker dvmd_table_maker_1"><div role="table" class="dvmd_tm_table">
+<div scope="col" class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_0 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Rank</h6></div>
+<div scope="col" class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_1 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Player</h6></div>
+<div scope="col" class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_2 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">In-Game Time</h6></div>
+<div scope="col" class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_3 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Scenario</h6></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata">RunnerB</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1:20:08</div></div>
+<div class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_3 dvmd_tm_row_1"><div class="dvmd_tm_cdata">2nd</div></div>
+</div></div>
+<h2>HARDCORE</h2>
+<h3>Claire</h3>
+<div class="et_pb_module dvmd_table_maker dvmd_table_maker_2"><div role="table" class="dvmd_tm_table">
+<div scope="col" class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_0 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Rank</h6></div>
+<div scope="col" class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_1 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Player</h6></div>
+<div scope="col" class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_2 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">RTA Time</h6></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata">RunnerC</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1:02:03.5</div></div>
+</div></div>
+'@
+    $thTables = @(Get-TeamHitlessTables $thFixture)
+    if ($thTables.Count -ne 3 -or
+        $thTables[0].Section -ne "STANDARD DIFFICULTY" -or $thTables[0].Title -ne "Leon" -or
+        $thTables[0].Rows.Count -ne 1 -or $thTables[0].Rows[0].Player -ne "Runner$([char]0x2019)A" -or
+        $thTables[0].Rows[0].Seconds -ne 3206 -or
+        $null -ne $thTables[1].Title -or $thTables[1].Rows[0].Extras[0] -ne "Scenario: 2nd" -or
+        $thTables[2].Section -ne "HARDCORE" -or $thTables[2].Title -ne "Claire" -or
+        [Math]::Abs($thTables[2].Rows[0].Seconds - 3723.5) -gt 0.0001) {
+      $failures.Add("Team Hitless table parsing failed.")
+    }
+    $movedTable = Resolve-TeamHitlessTable -Tables $thTables -Reference ([PSCustomObject]@{ section = "Hardcore"; title = "claire"; tableIndex = 0 })
+    $untitledTable = Resolve-TeamHitlessTable -Tables $thTables -Reference ([PSCustomObject]@{ section = "STANDARD DIFFICULTY"; title = $null; tableIndex = 1 })
+    if (-not $movedTable -or $movedTable.Index -ne 2 -or -not $untitledTable -or $untitledTable.Index -ne 1) {
+      $failures.Add("Team Hitless table resolution failed.")
+    }
+    if ((Get-TeamHitlessTableLabel $thTables[0]) -ne "Standard Difficulty - Leon" -or
+        (Get-TeamHitlessTableLabel $thTables[1]) -ne "Standard Difficulty - Tableau 2") {
+      $failures.Add("Team Hitless table label formatting failed.")
+    }
+
+    $thSample = @'
+{
+  "categories": {
+    "elde-th-any": {
+      "source": "teamhitless",
+      "name": "Elden Ring - Any% (Team Hitless)",
+      "category": "Any%",
+      "teamHitless": { "slug": "elden-ring-speedrun", "section": null, "title": "Any%", "tableIndex": 0 },
+      "personalBest": { "active": true, "time": "1:20:00" }
+    }
+  },
+  "activeCategory": "elde-th-any"
+}
+'@ | ConvertFrom-Json
+    $normalizedTh = Initialize-Config $thSample
+    $thPreset = $normalizedTh.categories.'elde-th-any'
+    if ((Get-PresetSource $thPreset) -ne "teamhitless" -or $thPreset.teamHitless.slug -ne "elden-ring-speedrun" -or
+        (Get-PresetSource $normalizedSample.categories.sample) -ne "speedruncom") {
+      $failures.Add("Team Hitless preset normalization failed.")
+    }
+
     $htmlPath = Join-Path $scriptDir "leaderboard.html"
     $html = Get-Content -LiteralPath $htmlPath -Raw
-    foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId")) {
+    foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId",
+                          "fetchTeamHitlessRuns", "TEAMHITLESS_MIN_REFRESH_MS")) {
       if (-not $html.Contains($marker)) {
         $failures.Add("leaderboard.html is missing validation marker: $marker")
       }
@@ -3889,7 +4472,7 @@ function Start-MainLoop {
         $contextText = $contextLines -join "`n"
         
         $menuItems = @()
-        $menuItems += @{ Label = (Get-LocalizedString "menu_add_category"); Action = { param($cfg) New-Preset $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_add_category"); Action = { param($cfg) Add-NewPreset $cfg } }
         $menuItems += @{ Label = (Get-LocalizedString "menu_view_details"); Action = { param($cfg) Write-PresetDetails $presetList $cfg } }
         $menuItems += @{ Label = (Get-LocalizedString "menu_change_active"); Action = { param($cfg) Update-ActivePreset $presetList $cfg } }
 
@@ -3924,7 +4507,7 @@ function Start-MainLoop {
         Write-Host ""
         Write-Host (Get-LocalizedString "first_launch_no_category") -ForegroundColor Yellow
         Write-Host ""
-        New-Preset $currentConfig
+        Add-NewPreset $currentConfig
       }
     } catch {
       Write-Host ""
