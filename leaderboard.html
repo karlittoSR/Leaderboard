@@ -917,8 +917,9 @@
         let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (r.flagImg) {
           drawRoundedImage(r.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-        } else {
-           // Default flag (Globe)
+        } else if (DATA_SOURCE !== 'teamhitless') {
+           // Default flag (Globe). Team Hitless publishes no countries, so its
+           // rows keep an empty flag slot instead of a globe on every line.
            ctx.save();
            ctx.font = '16px sans-serif'; // Adapted size for the flag box
            ctx.textAlign = 'center';
@@ -1025,8 +1026,9 @@
         let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (playerRow.flagImg) {
           drawRoundedImage(playerRow.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
-        } else {
-           // Default flag (Globe)
+        } else if (DATA_SOURCE !== 'teamhitless') {
+           // Default flag (Globe). Team Hitless publishes no countries, so its
+           // rows keep an empty flag slot instead of a globe on every line.
            ctx.save();
            ctx.font = '16px sans-serif';
            ctx.textAlign = 'center';
