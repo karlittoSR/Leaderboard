@@ -4054,11 +4054,26 @@ function Get-TeamHitlessTables {
 
     # Placeholder rows ("Test Runner 0:00") and empty rows are skipped.
     $rows = [System.Collections.Generic.List[object]]::new()
+    $previousSeconds = 0
     for ($r = 1; $r -le $maxRow; $r++) {
       $player = "$($cells["${r}:${playerCol}"])"
-      $timeText = "$($cells["${r}:${timeCol}"])"
+      # "42:47:034" is minutes:seconds:milliseconds (seconds never have 3 digits).
+      $timeText = "$($cells["${r}:${timeCol}"])" -replace '^(\d+:\d{2}):(\d{3})$', '$1.$2'
       $seconds = Convert-TimeStringToSeconds $timeText
+      # Rows are listed fastest first, so a time below the previous one is a
+      # typo such as "1:35.45" for "1:35:45": read the dot as a colon when that
+      # puts the row back in order.
+      if ($null -ne $seconds -and $seconds -lt $previousSeconds -and $timeText.Split('.').Count -eq 2) {
+        $repairedText = $timeText.Replace('.', ':')
+        $repaired = Convert-TimeStringToSeconds $repairedText
+        # ...but never into an outlier ("52:10.20" must not become 52 hours).
+        if ($null -ne $repaired -and $repaired -ge $previousSeconds -and $repaired -le $previousSeconds * 2) {
+          $seconds = $repaired
+          $timeText = $repairedText
+        }
+      }
       if (-not $player -or $null -eq $seconds -or $seconds -le 0) { continue }
+      $previousSeconds = $seconds
       $extras = @(foreach ($c in $extraCols) {
         $value = "$($cells["${r}:${c}"])"
         if ($value) { "$($headers[$c]): $value" }
@@ -4432,6 +4447,10 @@ function Invoke-ProjectValidation {
 <div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata">RunnerB</div></div>
 <div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1:20:08</div></div>
 <div class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_3 dvmd_tm_row_1"><div class="dvmd_tm_cdata">2nd</div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_2"><div class="dvmd_tm_cdata">RunnerE</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_2"><div class="dvmd_tm_cdata">1:25:07:123</div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_3"><div class="dvmd_tm_cdata">RunnerF</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_3"><div class="dvmd_tm_cdata">95:12:034</div></div>
 </div></div>
 <h2>HARDCORE</h2>
 <h3>Claire</h3>
@@ -4441,6 +4460,8 @@ function Invoke-ProjectValidation {
 <div scope="col" class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_2 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">RTA Time</h6></div>
 <div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata">RunnerC</div></div>
 <div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1:02:03.5</div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_2"><div class="dvmd_tm_cdata">RunnerD</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_2"><div class="dvmd_tm_cdata">1:10.15</div></div>
 </div></div>
 '@
     $thTables = @(Get-TeamHitlessTables $thFixture)
@@ -4449,8 +4470,10 @@ function Invoke-ProjectValidation {
         $thTables[0].Rows.Count -ne 1 -or $thTables[0].Rows[0].Player -ne "Runner$([char]0x2019)A" -or
         $thTables[0].Rows[0].Seconds -ne 3206 -or
         $null -ne $thTables[1].Title -or $thTables[1].Rows[0].Extras[0] -ne "Scenario: 2nd" -or
+        $thTables[1].Rows.Count -ne 2 -or [Math]::Abs($thTables[1].Rows[1].Seconds - 5712.034) -gt 0.0001 -or
         $thTables[2].Section -ne "HARDCORE" -or $thTables[2].Title -ne "Claire" -or
-        [Math]::Abs($thTables[2].Rows[0].Seconds - 3723.5) -gt 0.0001) {
+        [Math]::Abs($thTables[2].Rows[0].Seconds - 3723.5) -gt 0.0001 -or
+        $thTables[2].Rows[1].Seconds -ne 4215 -or $thTables[2].Rows[1].Time -ne "1:10:15") {
       $failures.Add("Team Hitless table parsing failed.")
     }
     $movedTable = Resolve-TeamHitlessTable -Tables $thTables -Reference ([PSCustomObject]@{ section = "Hardcore"; title = "claire"; tableIndex = 0 })

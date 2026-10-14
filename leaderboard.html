@@ -1574,11 +1574,23 @@
 
         // Placeholder rows ("Test Runner 0:00") and empty rows are skipped.
         const rows = [];
+        let previousSeconds = 0;
         for (let r = 1; r <= maxRow; r++) {
           const player = cells.get(`${r}:${playerCol}`) || '';
-          const timeSeconds = parseTimeString(cells.get(`${r}:${timeCol}`));
+          // "42:47:034" is minutes:seconds:milliseconds (seconds never have 3 digits).
+          const timeText = (cells.get(`${r}:${timeCol}`) || '').replace(/^(\d+:\d{2}):(\d{3})$/, '$1.$2');
+          let timeSeconds = parseTimeString(timeText);
+          // Rows are listed fastest first, so a time below the previous one is a
+          // typo such as "1:35.45" for "1:35:45": read the dot as a colon when
+          // that puts the row back in order.
+          if (Number.isFinite(timeSeconds) && timeSeconds < previousSeconds && timeText.split('.').length === 2) {
+            const repaired = parseTimeString(timeText.replace('.', ':'));
+            // ...but never into an outlier ("52:10.20" must not become 52 hours).
+            if (Number.isFinite(repaired) && repaired >= previousSeconds && repaired <= previousSeconds * 2) timeSeconds = repaired;
+          }
           if (!player || !Number.isFinite(timeSeconds) || timeSeconds <= 0) continue;
           rows.push({ player, timeSeconds });
+          previousSeconds = timeSeconds;
         }
 
         tables.push({ index: tables.length, section, title: pendingTitle, rows });
