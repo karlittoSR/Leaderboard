@@ -19,12 +19,14 @@
 ## 第三步：加你的游戏
 
 1. 双击 `configure.ps1` 或者继续 `FIX_ACCESS.bat` 的最后一步
-2. 选**"添加新预设"**
+2. 选**"添加新预设"**，然后选 **speedrun.com**
 3. 打入游戏名（比如："Elden Ring"）
 4. 从列表里选你的游戏
 5. 选个难度/类别（Any%、100% 等等）
 6. 给这个预设起个名字，激活它
 7. 可以关程序了
+
+> **无伤速通：** 选 **Team Hitless**（而不是 speedrun.com）就能显示 [teamhitless.com](https://www.teamhitless.com/hitless-speedrun-games/) 的排行榜。先选游戏，再选排行榜（Any%、All Bosses...）。
 
 ## 第四步：输入你的ID（可选）
 

@@ -40,6 +40,8 @@
     let RANK_ALIGN = 'right';
     let RANK_PREFIX_MODE = 'dot';
     let NAME_SPACING = 4;
+    let LETTER_SPACING = 0; // px between letters of the leaderboard text (-5..10)
+    let LINE_SPACING = 0;   // px added to (or removed from) the row height (-10..10)
     let TIME_FORMAT = '1:25:25.255';
     let PB_SEPARATOR_WIDTH = null;
     let PB_PREFIX = 'PB';
@@ -50,14 +52,24 @@
     let PREFERRED_HEIGHT = 274;
     let CANVAS_DPR = 1;
     let REFRESH_INTERVAL_MS = 30000; // Auto-refresh leaderboard data (0 = disabled)
+    let DATA_SOURCE = 'speedruncom'; // 'speedruncom' or 'teamhitless'
+    let TEAMHITLESS = null;          // { slug, section, title, tableIndex } of a Team Hitless preset
 
     const CONFIG_SCHEMA_VERSION = 2;
+    // Team Hitless leaderboards are WordPress pages. The REST API echoes the request
+    // origin in its CORS headers (OBS serves local files from http://absolute/),
+    // while the HTML pages are blocked for non-browser clients.
+    const TEAMHITLESS_API = 'https://www.teamhitless.com/wp-json/wp/v2/pages';
+    const TEAMHITLESS_MIN_REFRESH_MS = 5 * 60 * 1000; // site is updated by hand: poll gently
+    const TEAMHITLESS_CACHE_MS = 60 * 1000;           // reuse a page across quick config edits
     const DEFAULT_SETTINGS = Object.freeze({
       topCount: 3,
       timeFormat: '1:25:25.255',
       rankAlign: 'left',
       rankPrefixMode: 'dot',
       nameSpacing: 5,
+      letterSpacing: 0,
+      lineSpacing: 0,
       pbSeparatorWidth: 320,
       pbPrefix: 'PB',
       pbColor: '#fffff1',
@@ -115,6 +127,8 @@
       defaults.maxRuns = clampNumber(defaults.maxRuns, DEFAULT_SETTINGS.maxRuns, 10, 200, true);
       defaults.maxRuns = Math.max(defaults.topCount, defaults.maxRuns);
       defaults.nameSpacing = clampNumber(defaults.nameSpacing, DEFAULT_SETTINGS.nameSpacing, 0, 10, true);
+      defaults.letterSpacing = clampNumber(defaults.letterSpacing, DEFAULT_SETTINGS.letterSpacing, -5, 10, true);
+      defaults.lineSpacing = clampNumber(defaults.lineSpacing, DEFAULT_SETTINGS.lineSpacing, -10, 10, true);
       defaults.pbSeparatorWidth = clampNumber(defaults.pbSeparatorWidth, DEFAULT_SETTINGS.pbSeparatorWidth, 50, 4000, true);
       defaults.fontSize = clampNumber(defaults.fontSize, DEFAULT_SETTINGS.fontSize, 14, 24, true);
       defaults.rainbowIntensity = clampNumber(defaults.rainbowIntensity, DEFAULT_SETTINGS.rainbowIntensity, 0, 100, true);
@@ -193,7 +207,12 @@
           const availableCategories = Object.keys(config.categories);
           throw new Error(`Catégorie active "${categoryName}" non trouvée. Options disponibles : ${availableCategories.join(', ')}`);
         }
-        if (!category.gameId || !category.category) {
+        const source = category.source === 'teamhitless' ? 'teamhitless' : 'speedruncom';
+        if (source === 'teamhitless') {
+          if (!category.teamHitless || !category.teamHitless.slug) {
+            throw new Error(`La catégorie active "${categoryName}" ne contient pas teamHitless.slug.`);
+          }
+        } else if (!category.gameId || !category.category) {
           throw new Error(`La catégorie active "${categoryName}" ne contient pas gameId/category.`);
         }
 
@@ -202,7 +221,16 @@
         const categoryChanged = currentActiveCategory !== null && currentActiveCategory !== categoryName;
 
         // Apply category settings
-        GAME_ID = category.gameId;
+        DATA_SOURCE = source;
+        TEAMHITLESS = source === 'teamhitless'
+          ? {
+              slug: String(category.teamHitless.slug),
+              section: category.teamHitless.section || null,
+              title: category.teamHitless.title || null,
+              tableIndex: Number.isInteger(category.teamHitless.tableIndex) ? category.teamHitless.tableIndex : -1
+            }
+          : null;
+        GAME_ID = category.gameId || null;
         const cachedTrophies = trophyAssetCache.get(GAME_ID);
         TROPHY_1ST_URL = cachedTrophies?.[1] || null;
         TROPHY_2ND_URL = cachedTrophies?.[2] || null;
@@ -228,7 +256,9 @@
           ? category.personalBest
           : (config.temporaryRun || null);
         if (PLAYER_NAME && pbRun && pbRun.active && pbRun.time) {
-          TEMPORARY_RUN = { time: String(pbRun.time).trim() };
+          // ranked: false keeps the PB out of the ranking (always shown last),
+          // e.g. a run with hits on a hitless leaderboard.
+          TEMPORARY_RUN = { time: String(pbRun.time).trim(), ranked: pbRun.ranked !== false };
         } else {
           TEMPORARY_RUN = null;
         }
@@ -264,6 +294,9 @@
         // to stay friendly with the speedrun.com API.
         const refreshSeconds = Number(defaults.refreshInterval);
         REFRESH_INTERVAL_MS = refreshSeconds <= 0 ? 0 : refreshSeconds * 1000;
+        if (DATA_SOURCE === 'teamhitless' && REFRESH_INTERVAL_MS > 0) {
+          REFRESH_INTERVAL_MS = Math.max(REFRESH_INTERVAL_MS, TEAMHITLESS_MIN_REFRESH_MS);
+        }
 
         // Initialize rainbow colors table
         initRainbowColors();
@@ -272,7 +305,10 @@
         const customFont = defaults.customFont || '';
         const fontStyle = defaults.fontStyle || 'Arial';
         const fontSize = defaults.fontSize || 18; // Default 18px
-        DRAW.LAYOUT.rowH = Math.max(24, Math.ceil(fontSize * 1.4));
+        // lineSpacing tightens or loosens rows; never below the font size so rows don't overlap.
+        LINE_SPACING = defaults.lineSpacing;
+        LETTER_SPACING = defaults.letterSpacing;
+        DRAW.LAYOUT.rowH = Math.max(fontSize, Math.max(24, Math.ceil(fontSize * 1.4)) + LINE_SPACING);
         
         let selectedFontFamily;
         let isCustomFont = false;
@@ -561,6 +597,21 @@
       ctx.restore();
     }
 
+    // Team Hitless logo (white on transparent, 56x96) shown in the flag slot of
+    // Team Hitless rows, since that site publishes no player countries.
+    const teamHitlessLogo = new Image();
+    teamHitlessLogo.src = 'data:image/png;base64,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';
+
+    // Keeps the logo's aspect ratio and makes it a little taller than a flag so
+    // the thin artwork stays readable, centered in the flag slot.
+    function drawTeamHitlessLogo(x, y) {
+      if (!teamHitlessLogo.complete || !teamHitlessLogo.naturalWidth) return;
+      const h = DRAW.FLAG.h + 5;
+      const w = Math.min(DRAW.FLAG.w, h * teamHitlessLogo.naturalWidth / teamHitlessLogo.naturalHeight);
+      const top = y - DRAW.FLAG.yOffset + (DRAW.FLAG.h - h) / 2;
+      ctx.drawImage(teamHitlessLogo, x + (DRAW.FLAG.w - w) / 2, top, w, h);
+    }
+
     function formatTime(sec) {
       const total = Number(sec);
       if (TIME_FORMAT === '1h25m25s225ms') {
@@ -648,6 +699,7 @@
     }
 
     function getRankColor(position) {
+      if (!Number.isFinite(position) || position < 0) return DRAW.COLORS.other; // e.g. unranked PB ("--")
       return [DRAW.COLORS.top1, DRAW.COLORS.top2, DRAW.COLORS.top3, DRAW.COLORS.other][Math.min(position, 3)];
     }
 
@@ -770,8 +822,16 @@
     }
 
     // Measure text and cache by index (row number)
+    // Canvas letter spacing (Chromium 99+, i.e. every supported OBS). Resizing the
+    // canvas resets context state, so it is applied before each measure and draw;
+    // measurements include it, which keeps the columns aligned.
+    function applyLetterSpacing() {
+      if ('letterSpacing' in ctx) ctx.letterSpacing = `${LETTER_SPACING}px`;
+    }
+
     function measureAndCache(text, font, cache, idx) {
       ctx.font = font;
+      applyLetterSpacing();
       const width = ctx.measureText(text).width;
       if (!cache[idx]) cache[idx] = {};
       cache[idx][font] = width;
@@ -813,6 +873,7 @@
       ctx.shadowOffsetY = DRAW.SHADOW.offsetY;
       ctx.font = DRAW.FONT_BASE;
       ctx.textAlign = 'left';
+      applyLetterSpacing();
 
       const allDisplay = [...topRuns, ...carouselBatch];
       const phaseBase = (Date.now() / 30) % 360;
@@ -892,6 +953,8 @@
         let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (r.flagImg) {
           drawRoundedImage(r.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
+        } else if (DATA_SOURCE === 'teamhitless') {
+          drawTeamHitlessLogo(x, y);
         } else {
            // Default flag (Globe)
            ctx.save();
@@ -1000,6 +1063,8 @@
         let x = colRank + fixedMaxRankW + NAME_SPACING;
         if (playerRow.flagImg) {
           drawRoundedImage(playerRow.flagImg, x, y - DRAW.FLAG.yOffset, DRAW.FLAG.w, DRAW.FLAG.h, DRAW.FLAG.radius);
+        } else if (DATA_SOURCE === 'teamhitless') {
+          drawTeamHitlessLogo(x, y);
         } else {
            // Default flag (Globe)
            ctx.save();
@@ -1296,6 +1361,7 @@
 
     function calculateColumnWidths(allRuns, playerRow) {
       ctx.font = DRAW.FONT_BASE;
+      applyLetterSpacing();
       let maxRankW = 0;
       let maxNameBlock = 0;
       const trophyWidth = DRAW.TROPHY.w;  // Width for trophy icons
@@ -1377,99 +1443,267 @@
       startRenderLoop();
     }
 
+    // Fetches the speedrun.com leaderboard and maps it to overlay run rows.
+    async function fetchSpeedrunComRuns(signal) {
+      const { categoryId, variablePairs } = await resolveCategoryAndVariable(signal);
+
+      // Build leaderboard URL. An active PB needs the complete leaderboard so
+      // its temporary rank is calculated against every run, not just the
+      // configured display window (for example, maxRuns: 100).
+      let lbUrl;
+      const limit = Math.max(TOP_COUNT, MAX_RUNS || 0);
+      const needsGameAssets = USE_TROPHY_ICONS && !trophyAssetCache.has(GAME_ID);
+      const embedParams = needsGameAssets ? 'game,players' : 'players';
+      const query = new URLSearchParams();
+      if (!(PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time)) {
+        query.set('top', limit);
+      }
+      query.set('embed', embedParams);
+
+      if (Array.isArray(variablePairs) && variablePairs.length > 0) {
+        for (const pair of variablePairs) {
+          if (pair.variableId && pair.valueId) {
+            query.set(`var-${pair.variableId}`, pair.valueId);
+          }
+        }
+      }
+
+      if (LEVEL_ID) {
+        lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?${query}`;
+      } else {
+        lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?${query}`;
+      }
+
+      const lb = await fetchJSON(lbUrl, {
+        signal,
+        timeout: TEMPORARY_RUN ? 20000 : 10000
+      });
+      if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+
+      // Extract trophy URLs from embedded game data (only if trophy icons enabled)
+      if (USE_TROPHY_ICONS && lb.data.game?.data?.assets) {
+        const assets = lb.data.game.data.assets;
+        TROPHY_1ST_URL = assets['trophy-1st']?.uri || null;
+        TROPHY_2ND_URL = assets['trophy-2nd']?.uri || null;
+        TROPHY_3RD_URL = assets['trophy-3rd']?.uri || null;
+        trophyAssetCache.set(GAME_ID, {
+          1: TROPHY_1ST_URL,
+          2: TROPHY_2ND_URL,
+          3: TROPHY_3RD_URL
+        });
+      }
+
+      // Build player map
+      const playerMap = new Map();
+      if (lb.data.players?.data) {
+        for (const player of lb.data.players.data) {
+          const displayName = player.rel === 'guest' ? player.name : (player.names?.international || player.id);
+          playerMap.set(player.id, {
+            name: displayName,
+            style: player['name-style'] || null,
+            country: player.location?.country?.code || null
+          });
+        }
+      }
+
+      // Process runs
+      const allRuns = (lb.data.runs || []).map((entry) => {
+        const run = entry.run;
+        const players = (run.players || []).map((p) => {
+          if (p.rel === 'guest') return p.name;
+          const info = playerMap.get(p.id);
+          return info ? info.name : p.id;
+        });
+
+        const firstPlayer = run.players?.[0];
+        const playerInfo = firstPlayer && firstPlayer.rel !== 'guest'
+          ? (playerMap.get(firstPlayer.id) || { name: players[0] || 'Inconnu', style: null, country: null })
+          : { name: players[0] || 'Inconnu', style: null, country: null };
+
+        const timeSeconds = Number.isFinite(run.times?.primary_t) ? run.times.primary_t : 0;
+        return {
+          rank: entry.place || 0,
+          player: playerInfo.name,
+          players,
+          nameStyle: playerInfo.style,
+          country: normalizeCountry(playerInfo.country),
+          time: formatTime(timeSeconds),
+          timeSeconds,
+          submitted: run.submitted
+        };
+      });
+
+      return allRuns;
+    }
+
+    // === Team Hitless ===
+    // Leaderboards are Divi "Table Maker" grids: every cell carries its position as
+    // dvmd_tm_col_X / dvmd_tm_row_Y classes (row 0 = headers). A table is named by
+    // the nearest <h3> before it, inside the current <h2> section. configure.ps1
+    // (Get-TeamHitlessTables) reads pages the same way so tableIndex values match.
+    const teamHitlessPageCache = new Map(); // slug -> { fetchedAt, tables }
+
+    function cleanHeadingText(text) {
+      return String(text || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeHeading(text) {
+      return cleanHeadingText(text).toLowerCase();
+    }
+
+    function parseTeamHitlessTables(html) {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const tables = [];
+      let section = null;
+      let pendingTitle = null;
+
+      for (const el of doc.querySelectorAll('h2, h3, div.dvmd_table_maker')) {
+        if (el.tagName === 'H2') {
+          section = cleanHeadingText(el.textContent) || null;
+          pendingTitle = null;
+          continue;
+        }
+        if (el.tagName === 'H3') {
+          pendingTitle = cleanHeadingText(el.textContent) || null;
+          continue;
+        }
+
+        const cells = new Map();
+        let maxRow = 0;
+        let maxCol = 0;
+        for (const cell of el.querySelectorAll('.dvmd_tm_tcell')) {
+          const col = /\bdvmd_tm_col_(\d+)\b/.exec(cell.className);
+          const row = /\bdvmd_tm_row_(\d+)\b/.exec(cell.className);
+          if (!col || !row) continue;
+          const r = Number(row[1]);
+          const c = Number(col[1]);
+          cells.set(`${r}:${c}`, cleanHeadingText(cell.textContent));
+          maxRow = Math.max(maxRow, r);
+          maxCol = Math.max(maxCol, c);
+        }
+
+        const headers = [];
+        for (let c = 0; c <= maxCol; c++) headers.push(cells.get(`0:${c}`) || '');
+        const findCol = (pattern, fallback) => {
+          const idx = headers.findIndex(h => pattern.test(h));
+          return idx >= 0 ? idx : fallback;
+        };
+        const playerCol = findCol(/player|runner/i, 1);
+        const timeCol = findCol(/time|igt|rta/i, 2);
+
+        // Placeholder rows ("Test Runner 0:00") and empty rows are skipped.
+        const rows = [];
+        let previousSeconds = 0;
+        for (let r = 1; r <= maxRow; r++) {
+          const player = cells.get(`${r}:${playerCol}`) || '';
+          // "42:47:034" is minutes:seconds:milliseconds (seconds never have 3 digits).
+          const timeText = (cells.get(`${r}:${timeCol}`) || '').replace(/^(\d+:\d{2}):(\d{3})$/, '$1.$2');
+          let timeSeconds = parseTimeString(timeText);
+          // Rows are listed fastest first, so a time below the previous one is a
+          // typo such as "1:35.45" for "1:35:45": read the dot as a colon when
+          // that puts the row back in order.
+          if (Number.isFinite(timeSeconds) && timeSeconds < previousSeconds && timeText.split('.').length === 2) {
+            const repaired = parseTimeString(timeText.replace('.', ':'));
+            // ...but never into an outlier ("52:10.20" must not become 52 hours).
+            if (Number.isFinite(repaired) && repaired >= previousSeconds && repaired <= previousSeconds * 2) timeSeconds = repaired;
+          }
+          if (!player || !Number.isFinite(timeSeconds) || timeSeconds <= 0) continue;
+          rows.push({ player, timeSeconds });
+          previousSeconds = timeSeconds;
+        }
+
+        tables.push({ index: tables.length, section, title: pendingTitle, rows });
+        pendingTitle = null; // a heading names only the first table after it
+      }
+
+      return tables;
+    }
+
+    // Prefer the stored index while its headings still match, then the headings
+    // alone (a table was added or removed above), then the bare index.
+    function resolveTeamHitlessTable(tables, ref) {
+      const section = normalizeHeading(ref.section);
+      const title = normalizeHeading(ref.title);
+      const matches = t => normalizeHeading(t.section) === section && normalizeHeading(t.title) === title;
+      const byIndex = tables[ref.tableIndex] || null;
+      if (byIndex && matches(byIndex)) return byIndex;
+      if (title) {
+        const found = tables.find(matches);
+        if (found) return found;
+      }
+      return byIndex;
+    }
+
+    // Team Hitless names have no colors, so each player gets one from a palette
+    // of distinct hues. It is derived from the name (FNV-1a hash), so a player
+    // keeps the same color across refreshes; a color already used by one of the
+    // two previous rows moves to the next hue so neighbours stay distinguishable.
+    const TEAMHITLESS_NAME_COLORS = [
+      '#ee4444', '#ef8241', '#f0c03e', '#b5e655', '#4cc86a', '#2ed1b0',
+      '#44bbee', '#6f8cff', '#9a7cf4', '#d070f0', '#f772c5', '#ff9a8a'
+    ];
+
+    function getTeamHitlessNameStyles(names) {
+      const usedIndexes = [];
+      return names.map(name => {
+        let hash = 0x811c9dc5;
+        for (const ch of String(name).toLowerCase()) {
+          hash ^= ch.codePointAt(0);
+          hash = Math.imul(hash, 0x01000193) >>> 0;
+        }
+        let idx = hash % TEAMHITLESS_NAME_COLORS.length;
+        while (usedIndexes.slice(-2).includes(idx)) idx = (idx + 1) % TEAMHITLESS_NAME_COLORS.length;
+        usedIndexes.push(idx);
+        const color = TEAMHITLESS_NAME_COLORS[idx];
+        return { style: 'solid', color: { light: color, dark: color } };
+      });
+    }
+
+    async function fetchTeamHitlessRuns(signal) {
+      const slug = TEAMHITLESS.slug;
+      let cached = teamHitlessPageCache.get(slug);
+      if (!cached || performance.now() - cached.fetchedAt > TEAMHITLESS_CACHE_MS) {
+        const url = `${TEAMHITLESS_API}?slug=${encodeURIComponent(slug)}&_fields=slug,modified,content`;
+        const pages = await fetchJSON(url, { signal, timeout: 15000 });
+        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        const page = Array.isArray(pages) ? pages[0] : null;
+        if (!page?.content?.rendered) {
+          throw new Error(`Page Team Hitless "${slug}" introuvable`);
+        }
+        cached = { fetchedAt: performance.now(), tables: parseTeamHitlessTables(page.content.rendered) };
+        teamHitlessPageCache.set(slug, cached);
+      }
+
+      const table = resolveTeamHitlessTable(cached.tables, TEAMHITLESS);
+      if (!table) {
+        const label = TEAMHITLESS.title || TEAMHITLESS.section || `#${TEAMHITLESS.tableIndex + 1}`;
+        throw new Error(`Classement Team Hitless "${label}" introuvable sur "${slug}"`);
+      }
+
+      // Team Hitless has no countries, submission dates, trophy assets or name colors.
+      const nameStyles = getTeamHitlessNameStyles(table.rows.map(row => row.player));
+      return table.rows.map((row, i) => ({
+        rank: 0,
+        player: row.player,
+        players: [row.player],
+        nameStyle: nameStyles[i],
+        country: null,
+        time: formatTime(row.timeSeconds),
+        timeSeconds: row.timeSeconds,
+        submitted: null
+      }));
+    }
+
     async function loadTop({ resetCarousel = false } = {}) {
       const generation = ++loadGeneration;
       if (activeLoadController) activeLoadController.abort();
       const controller = new AbortController();
       activeLoadController = controller;
       try {
-        const { categoryId, variablePairs } = await resolveCategoryAndVariable(controller.signal);
-        
-        // Build leaderboard URL. An active PB needs the complete leaderboard so
-        // its temporary rank is calculated against every run, not just the
-        // configured display window (for example, maxRuns: 100).
-        let lbUrl;
-        const limit = Math.max(TOP_COUNT, MAX_RUNS || 0);
-        const needsGameAssets = USE_TROPHY_ICONS && !trophyAssetCache.has(GAME_ID);
-        const embedParams = needsGameAssets ? 'game,players' : 'players';
-        const query = new URLSearchParams();
-        if (!(PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time)) {
-          query.set('top', limit);
-        }
-        query.set('embed', embedParams);
-
-        if (Array.isArray(variablePairs) && variablePairs.length > 0) {
-          for (const pair of variablePairs) {
-            if (pair.variableId && pair.valueId) {
-              query.set(`var-${pair.variableId}`, pair.valueId);
-            }
-          }
-        }
-
-        if (LEVEL_ID) {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/level/${LEVEL_ID}/${categoryId}?${query}`;
-        } else {
-          lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?${query}`;
-        }
-        
-        const lb = await fetchJSON(lbUrl, {
-          signal: controller.signal,
-          timeout: TEMPORARY_RUN ? 20000 : 10000
-        });
+        const allRuns = DATA_SOURCE === 'teamhitless'
+          ? await fetchTeamHitlessRuns(controller.signal)
+          : await fetchSpeedrunComRuns(controller.signal);
         if (generation !== loadGeneration || controller.signal.aborted) return false;
-
-        // Extract trophy URLs from embedded game data (only if trophy icons enabled)
-        if (USE_TROPHY_ICONS && lb.data.game?.data?.assets) {
-          const assets = lb.data.game.data.assets;
-          TROPHY_1ST_URL = assets['trophy-1st']?.uri || null;
-          TROPHY_2ND_URL = assets['trophy-2nd']?.uri || null;
-          TROPHY_3RD_URL = assets['trophy-3rd']?.uri || null;
-          trophyAssetCache.set(GAME_ID, {
-            1: TROPHY_1ST_URL,
-            2: TROPHY_2ND_URL,
-            3: TROPHY_3RD_URL
-          });
-        }
-
-        // Build player map
-        const playerMap = new Map();
-        if (lb.data.players?.data) {
-          for (const player of lb.data.players.data) {
-            const displayName = player.rel === 'guest' ? player.name : (player.names?.international || player.id);
-            playerMap.set(player.id, {
-              name: displayName,
-              style: player['name-style'] || null,
-              country: player.location?.country?.code || null
-            });
-          }
-        }
-
-        // Process runs
-        const allRuns = (lb.data.runs || []).map((entry) => {
-          const run = entry.run;
-          const players = (run.players || []).map((p) => {
-            if (p.rel === 'guest') return p.name;
-            const info = playerMap.get(p.id);
-            return info ? info.name : p.id;
-          });
-
-          const firstPlayer = run.players?.[0];
-          const playerInfo = firstPlayer && firstPlayer.rel !== 'guest'
-            ? (playerMap.get(firstPlayer.id) || { name: players[0] || 'Inconnu', style: null, country: null })
-            : { name: players[0] || 'Inconnu', style: null, country: null };
-
-          const timeSeconds = Number.isFinite(run.times?.primary_t) ? run.times.primary_t : 0;
-          return {
-            rank: entry.place || 0,
-            player: playerInfo.name,
-            players,
-            nameStyle: playerInfo.style,
-            country: normalizeCountry(playerInfo.country),
-            time: formatTime(timeSeconds),
-            timeSeconds,
-            submitted: run.submitted
-          };
-        });
 
         if (PLAYER_NAME && TEMPORARY_RUN && TEMPORARY_RUN.time) {
           const target = PLAYER_NAME.toLowerCase();
@@ -1488,16 +1722,22 @@
               time: formatTime(tempSeconds),
               timeSeconds: tempSeconds,
               submitted: new Date().toISOString(),
-              isTemporary: true
+              isTemporary: true,
+              isUnranked: TEMPORARY_RUN.ranked === false
             });
           }
         }
 
+        // An unranked PB sorts after every official run, whatever its time, and
+        // is displayed with "--" instead of a position.
+        const rankingTime = r => (r.isUnranked || !Number.isFinite(r.timeSeconds))
+          ? Number.POSITIVE_INFINITY
+          : r.timeSeconds;
         let sortedRuns = allRuns
           .map((r, idx) => ({ ...r, _idx: idx }))
           .sort((a, b) => {
-            const aTime = Number.isFinite(a.timeSeconds) ? a.timeSeconds : Number.POSITIVE_INFINITY;
-            const bTime = Number.isFinite(b.timeSeconds) ? b.timeSeconds : Number.POSITIVE_INFINITY;
+            const aTime = rankingTime(a);
+            const bTime = rankingTime(b);
             if (aTime !== bTime) return aTime - bTime;
             return a._idx - b._idx;
           });
@@ -1508,7 +1748,9 @@
         sortedRuns = sortedRuns.map((r, idx) => {
           const copy = { ...r };
           delete copy._idx;
-          if (r.timeSeconds === lastTime) {
+          if (r.isUnranked) {
+            copy.rank = '--'; // shown without a position, after every official run
+          } else if (r.timeSeconds === lastTime) {
             copy.rank = lastRank;
           } else {
             copy.rank = idx + 1;

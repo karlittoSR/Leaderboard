@@ -7,7 +7,7 @@ param(
 
 # PowerShell script to manage speedrun.com presets easily
 # Manages multiple games and categories for streamers
-# Version 1.6.1 - Accurate PB ranks, resilient refresh, safe configuration saves
+# Version 2.0 - Team Hitless leaderboards alongside speedrun.com
 # By karlitto__
 
 # Ensure we're in the correct directory (where the script is located)
@@ -50,6 +50,8 @@ $Global:DefaultConfigJSON = @'
     "rankAlign": "left",
     "rankPrefixMode": "dot",
     "nameSpacing": 5,
+    "letterSpacing": 0,
+    "lineSpacing": 0,
     "pbSeparatorWidth": 320,
     "pbPrefix": "PB",
     "pbColor": "fffff1",
@@ -105,7 +107,7 @@ $Global:DefaultConfigJSON = @'
 $Global:Languages = @{
     fr = @{
         # Main menu
-        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v1.6.1"
+        menu_title = "Gestionnaire de Leaderboard SRC by karlitto__ v2.0"
         menu_add_category = "Ajouter une nouvelle catégorie"
         menu_view_details = "Voir les détails d'une catégorie existante"
         menu_change_active = "Changer la catégorie active"
@@ -167,6 +169,22 @@ $Global:Languages = @{
         add_categories_available = "Catégories disponibles :"
         add_subcategories_available = "Sous-catégories disponibles :"
         add_no_subcategory = "Aucune sous-catégorie (null)"
+
+        # Team Hitless
+        source_title = "Source du classement :"
+        source_teamhitless = "Team Hitless (classements hitless)"
+        th_loading_games = "Chargement des jeux Team Hitless..."
+        th_games_title = "Jeux Team Hitless :"
+        th_no_games = "Aucun jeu trouvé sur Team Hitless."
+        th_loading_page = "Chargement des classements..."
+        th_no_tables = "Aucun classement trouvé sur cette page."
+        th_categories_title = "Classements disponibles :"
+        th_table_label = "Tableau {0}"
+        th_table_preview = "Runs : {0} · WR : {1} ({2})"
+        final_source = "Source   :"
+        final_page = "Page     :"
+        details_source = "Source :"
+        details_page = "Page Team Hitless :"
         
         # Final settings
         final_config = "========[ CONFIGURATION FINALE ]========"
@@ -227,7 +245,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Valeur invalide."
         parameters_saved = "[OK] Valeur mise à jour"
         parameters_invalid_format = "Format invalide."
-        parameters_flag_override_prompt = "Entrer un override (AA BB, ex: CR FR) :"
+        parameters_flag_override_prompt = "Entrer un override (AA BB, ex: CR FR), ou un code seul pour le supprimer (ex: CR) :"
         parameters_visuals_section_layout = "Mise en page"
         parameters_visuals_section_list_ranks = "Liste et rangs"
         parameters_visuals_section_category_name = "Nom de catégorie"
@@ -254,6 +272,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Espace vertical entre le nom de catégorie et le classement (12-50px)"
         param_desc_maxNameWidthVisible = "Nombre maximum de caractères pour les noms des joueurs"
         param_desc_nameSpacing = "Espacement horizontal du nom du joueur"
+        param_desc_letterSpacing = "Espacement entre les lettres en pixels (-5 à 10, 0 = normal). Négatif pour resserrer, positif pour aérer une police serrée"
+        param_desc_lineSpacing = "Espacement vertical ajouté entre les lignes en pixels (-10 à 10, 0 = normal)"
         param_desc_timeFormat = "Format d'affichage des temps de run"
         param_desc_pbSeparatorWidth = "Largeur de la ligne séparatrice avant le PB"
         param_desc_pbPrefix = "Texte de préfixe personnalisé avant le PB (1-3 lettres)"
@@ -296,6 +316,9 @@ $Global:Languages = @{
         temp_time_check_status = "Recherche dans la catégorie sélectionnée"
         temp_time_disabled = "PB temporaire désactivé (joueur introuvable dans cette catégorie)."
         temp_time_player_warn = "Attention : ce pseudo n'apparaît pas dans le classement de cette catégorie. Le PB sera affiché comme entrée temporaire."
+        temp_time_action_ranked = "Classer mon PB dans le classement : {0}"
+        temp_time_ranked_on = "[OK] Le PB est classé selon son temps."
+        temp_time_ranked_off = "[OK] Le PB est affiché sans rang (--), sans décaler le classement."
         
         # Reset
         reset_confirm = "Êtes-vous sûr de vouloir réinitialiser la configuration ? (o/N)"
@@ -313,7 +336,7 @@ $Global:Languages = @{
     }
     en = @{
         # Main menu
-        menu_title = "SRC Leaderboard Manager by karlitto__ v1.6.1"
+        menu_title = "SRC Leaderboard Manager by karlitto__ v2.0"
         menu_add_category = "Add a new category"
         menu_view_details = "View details of an existing category"
         menu_change_active = "Change active category"
@@ -375,6 +398,22 @@ $Global:Languages = @{
         add_categories_available = "Available categories:"
         add_subcategories_available = "Available subcategories:"
         add_no_subcategory = "No subcategory (null)"
+
+        # Team Hitless
+        source_title = "Leaderboard source:"
+        source_teamhitless = "Team Hitless (hitless leaderboards)"
+        th_loading_games = "Loading Team Hitless games..."
+        th_games_title = "Team Hitless games:"
+        th_no_games = "No game found on Team Hitless."
+        th_loading_page = "Loading leaderboards..."
+        th_no_tables = "No leaderboard found on this page."
+        th_categories_title = "Available leaderboards:"
+        th_table_label = "Table {0}"
+        th_table_preview = "Runs: {0} · WR: {1} ({2})"
+        final_source = "Source   :"
+        final_page = "Page     :"
+        details_source = "Source:"
+        details_page = "Team Hitless page:"
         
         # Final settings
         final_config = "========[ FINAL CONFIGURATION ]========"
@@ -435,7 +474,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Invalid value."
         parameters_saved = "[OK] Value updated"
         parameters_invalid_format = "Invalid format."
-        parameters_flag_override_prompt = "Enter override (AA BB, e.g. CR FR):"
+        parameters_flag_override_prompt = "Enter override (AA BB, e.g. CR FR), or a single code to remove it (e.g. CR):"
         parameters_visuals_section_layout = "Layout"
         parameters_visuals_section_list_ranks = "List and ranks"
         parameters_visuals_section_category_name = "Category Name"
@@ -462,6 +501,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Vertical space between category name and leaderboard (12-50px)"
         param_desc_maxNameWidthVisible = "Maximum characters for player names"
         param_desc_nameSpacing = "Horizontal spacing of player name"
+        param_desc_letterSpacing = "Space between letters in pixels (-5 to 10, 0 = normal). Negative tightens, positive loosens a narrow font"
+        param_desc_lineSpacing = "Extra vertical space between rows in pixels (-10 to 10, 0 = normal)"
         param_desc_timeFormat = "Format for displaying run times"
         param_desc_pbSeparatorWidth = "Width of the separator line before PB"
         param_desc_pbPrefix = "Custom prefix text before player's PB (1-3 letters)"
@@ -504,6 +545,9 @@ $Global:Languages = @{
         temp_time_check_status = "Searching in selected category"
         temp_time_disabled = "Temporary PB disabled (player not found in this category)."
         temp_time_player_warn = "Warning: this name isn't on this category's leaderboard. The PB will show as a temporary entry."
+        temp_time_action_ranked = "Rank my PB in the leaderboard: {0}"
+        temp_time_ranked_on = "[OK] The PB is ranked by its time."
+        temp_time_ranked_off = "[OK] The PB is shown without a rank (--), without shifting the leaderboard."
         
         # Reset
         reset_confirm = "Are you sure you want to reset the configuration? (y/N)"
@@ -521,7 +565,7 @@ $Global:Languages = @{
     }
     es = @{
         # Main menu
-        menu_title = "Gestor de Leaderboard SRC by karlitto__ v1.6.1"
+        menu_title = "Gestor de Leaderboard SRC by karlitto__ v2.0"
         menu_add_category = "Añadir una nueva categoría"
         menu_view_details = "Ver detalles de una categoría existente"
         menu_change_active = "Cambiar categoría activa"
@@ -583,6 +627,22 @@ $Global:Languages = @{
         add_categories_available = "Categorías disponibles:"
         add_subcategories_available = "Subcategorías disponibles:"
         add_no_subcategory = "Sin subcategoría (null)"
+
+        # Team Hitless
+        source_title = "Fuente del leaderboard:"
+        source_teamhitless = "Team Hitless (leaderboards hitless)"
+        th_loading_games = "Cargando juegos de Team Hitless..."
+        th_games_title = "Juegos de Team Hitless:"
+        th_no_games = "No se encontró ningún juego en Team Hitless."
+        th_loading_page = "Cargando leaderboards..."
+        th_no_tables = "No se encontró ningún leaderboard en esta página."
+        th_categories_title = "Leaderboards disponibles:"
+        th_table_label = "Tabla {0}"
+        th_table_preview = "Runs: {0} · WR: {1} ({2})"
+        final_source = "Fuente   :"
+        final_page = "Página   :"
+        details_source = "Fuente:"
+        details_page = "Página de Team Hitless:"
         
         # Final settings
         final_config = "========[ CONFIGURACIÓN FINAL ]========"
@@ -643,7 +703,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Valor inválido."
         parameters_saved = "[OK] Valor actualizado"
         parameters_invalid_format = "Formato inválido."
-        parameters_flag_override_prompt = "Introduce override (AA BB, ej.: CR FR):"
+        parameters_flag_override_prompt = "Introduce override (AA BB, ej.: CR FR), o un solo código para eliminarlo (ej.: CR):"
         parameters_visuals_section_layout = "Diseño"
         parameters_visuals_section_list_ranks = "Lista y rankings"
         parameters_visuals_section_category_name = "Nombre de categoría"
@@ -670,6 +730,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Espacio vertical entre nombre de categoría y clasificación (12-50px)"
         param_desc_maxNameWidthVisible = "Máximo de caracteres para nombres de jugadores"
         param_desc_nameSpacing = "Espaciado horizontal del nombre del jugador"
+        param_desc_letterSpacing = "Espacio entre letras en píxeles (-5 a 10, 0 = normal). Negativo para juntar, positivo para separar una fuente estrecha"
+        param_desc_lineSpacing = "Espacio vertical adicional entre filas en píxeles (-10 a 10, 0 = normal)"
         param_desc_timeFormat = "Formato para mostrar los tiempos de run"
         param_desc_pbSeparatorWidth = "Ancho de la línea separadora antes del PB"
         param_desc_pbPrefix = "Texto de prefijo personalizado antes del PB (1-3 letras)"
@@ -712,6 +774,9 @@ $Global:Languages = @{
         temp_time_check_status = "Buscando en la categoría seleccionada"
         temp_time_disabled = "PB temporal desactivado (jugador no encontrado en esta categoría)."
         temp_time_player_warn = "Advertencia: este nombre no está en la clasificación de esta categoría. El PB se mostrará como entrada temporal."
+        temp_time_action_ranked = "Clasificar mi PB en el leaderboard: {0}"
+        temp_time_ranked_on = "[OK] El PB se clasifica según su tiempo."
+        temp_time_ranked_off = "[OK] El PB se muestra sin posición (--), sin desplazar el leaderboard."
         
         # Reset
         reset_confirm = "¿Seguro que quieres restablecer la configuración? (s/N)"
@@ -729,7 +794,7 @@ $Global:Languages = @{
     }
     pt = @{
         # Main menu
-        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v1.6.1"
+        menu_title = "Gerenciador de Leaderboard SRC by karlitto__ v2.0"
         menu_add_category = "Adicionar uma nova categoria"
         menu_view_details = "Ver detalhes de uma categoria existente"
         menu_change_active = "Alterar categoria ativa"
@@ -791,6 +856,22 @@ $Global:Languages = @{
         add_categories_available = "Categorias disponíveis:"
         add_subcategories_available = "Subcategorias disponíveis:"
         add_no_subcategory = "Sem subcategoria (null)"
+
+        # Team Hitless
+        source_title = "Fonte do leaderboard:"
+        source_teamhitless = "Team Hitless (leaderboards hitless)"
+        th_loading_games = "Carregando jogos do Team Hitless..."
+        th_games_title = "Jogos do Team Hitless:"
+        th_no_games = "Nenhum jogo encontrado no Team Hitless."
+        th_loading_page = "Carregando leaderboards..."
+        th_no_tables = "Nenhum leaderboard encontrado nesta página."
+        th_categories_title = "Leaderboards disponíveis:"
+        th_table_label = "Tabela {0}"
+        th_table_preview = "Runs: {0} · WR: {1} ({2})"
+        final_source = "Fonte    :"
+        final_page = "Página   :"
+        details_source = "Fonte:"
+        details_page = "Página do Team Hitless:"
         
         # Final settings
         final_config = "========[ CONFIGURAÇÃO FINAL ]========"
@@ -851,7 +932,7 @@ $Global:Languages = @{
         parameters_invalid_number = "Valor inválido."
         parameters_saved = "[OK] Valor atualizado"
         parameters_invalid_format = "Formato inválido."
-        parameters_flag_override_prompt = "Digite override (AA BB, ex.: CR FR):"
+        parameters_flag_override_prompt = "Digite override (AA BB, ex.: CR FR), ou um único código para removê-lo (ex.: CR):"
         parameters_visuals_section_layout = "Layout"
         parameters_visuals_section_list_ranks = "Lista e rankings"
         parameters_visuals_section_category_name = "Nome da categoria"
@@ -878,6 +959,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Espaço vertical entre nome da categoria e classificação (12-50px)"
         param_desc_maxNameWidthVisible = "Máximo de caracteres para nomes de jogadores"
         param_desc_nameSpacing = "Espaçamento horizontal do nome do jogador"
+        param_desc_letterSpacing = "Espaço entre letras em pixels (-5 a 10, 0 = normal). Negativo aperta, positivo espaça uma fonte estreita"
+        param_desc_lineSpacing = "Espaço vertical extra entre linhas em pixels (-10 a 10, 0 = normal)"
         param_desc_timeFormat = "Formato para exibir os tempos de run"
         param_desc_pbSeparatorWidth = "Largura da linha separadora antes do PB"
         param_desc_pbPrefix = "Texto de prefixo personalizado antes do PB (1-3 letras)"
@@ -920,6 +1003,9 @@ $Global:Languages = @{
         temp_time_check_status = "Buscando na categoria selecionada"
         temp_time_disabled = "PB temporário desativado (jogador não encontrado nesta categoria)."
         temp_time_player_warn = "Aviso: este nome não está na classificação desta categoria. O PB será exibido como entrada temporária."
+        temp_time_action_ranked = "Classificar meu PB no leaderboard: {0}"
+        temp_time_ranked_on = "[OK] O PB é classificado pelo seu tempo."
+        temp_time_ranked_off = "[OK] O PB é exibido sem posição (--), sem deslocar o leaderboard."
         
         # Reset
         reset_confirm = "Tem certeza que deseja redefinir a configuração? (s/N)"
@@ -937,7 +1023,7 @@ $Global:Languages = @{
     }
     zh = @{
         # Main menu
-        menu_title = "SRC 排行榜管理器 by karlitto__ v1.6.1 卡里托"
+        menu_title = "SRC 排行榜管理器 by karlitto__ v2.0 卡里托"
         menu_add_category = "添加新类别"
         menu_view_details = "查看现有类别详情"
         menu_change_active = "更改活动类别"
@@ -999,6 +1085,22 @@ $Global:Languages = @{
         add_categories_available = "可用类别："
         add_subcategories_available = "可用子类别："
         add_no_subcategory = "无子类别（空）"
+
+        # Team Hitless
+        source_title = "排行榜来源："
+        source_teamhitless = "Team Hitless（无伤排行榜）"
+        th_loading_games = "正在加载 Team Hitless 游戏..."
+        th_games_title = "Team Hitless 游戏："
+        th_no_games = "在 Team Hitless 上未找到游戏。"
+        th_loading_page = "正在加载排行榜..."
+        th_no_tables = "此页面上未找到排行榜。"
+        th_categories_title = "可用排行榜："
+        th_table_label = "表格 {0}"
+        th_table_preview = "记录：{0} · WR：{1}（{2}）"
+        final_source = "来源     :"
+        final_page = "页面     :"
+        details_source = "来源："
+        details_page = "Team Hitless 页面："
         
         # Final settings
         final_config = "========[ ZUI ZHONG PEI ZHI ]========"
@@ -1059,7 +1161,7 @@ $Global:Languages = @{
         parameters_invalid_number = "无效的数值。"
         parameters_saved = "[OK] 值已更新"
         parameters_invalid_format = "格式无效。"
-        parameters_flag_override_prompt = "输入覆写代码（AA BB，例如：CR FR）："
+        parameters_flag_override_prompt = "输入覆写代码（AA BB，例如：CR FR），或只输入一个代码以删除它（例如：CR）："
         parameters_visuals_section_layout = "布局"
         parameters_visuals_section_list_ranks = "列表和名次"
         parameters_visuals_section_category_name = "类别名称"
@@ -1086,6 +1188,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "类别名称和排行榜之间的垂直间距（12-50px）"
         param_desc_maxNameWidthVisible = "玩家名称的最大字符数"
         param_desc_nameSpacing = "玩家名称的水平间距"
+        param_desc_letterSpacing = "字母间距（像素，-5 到 10，0 = 正常）。负值收紧，正值让紧凑的字体更宽松"
+        param_desc_lineSpacing = "行与行之间额外的垂直间距（像素，-10 到 10，0 = 正常）"
         param_desc_timeFormat = "显示记录时间的格式"
         param_desc_pbSeparatorWidth = "PB前的分隔线宽度"
         param_desc_pbPrefix = "玩家PB前的自定义前缀文本（1-3个字母）"
@@ -1128,6 +1232,9 @@ $Global:Languages = @{
         temp_time_check_status = "在所选类别中查找"
         temp_time_disabled = "临时PB已禁用（该类别中未找到玩家）。"
         temp_time_player_warn = "警告：该名称不在此类别的排行榜中。个人最佳将显示为临时条目。"
+        temp_time_action_ranked = "在排行榜中为我的 PB 排名：{0}"
+        temp_time_ranked_on = "[OK] PB 将按时间排名。"
+        temp_time_ranked_off = "[OK] PB 不显示名次（--），不影响排行榜。"
         
         # Reset
         reset_confirm = "您确定要重置配置吗？(y/N)"
@@ -1394,18 +1501,16 @@ function Set-Language {
         }
         foreach ($item in $Items) {
           if ($item.type -eq "flagOverride") {
+            # Wrap in @(): PSObject.Properties has no Count of its own, so with two
+            # or more overrides .Count returned an array instead of a number.
             $flagProps = @()
-            if ($config.flagOverrides) {
-              $flagProps = $config.flagOverrides.PSObject.Properties
+            if ($config.flagOverrides -is [System.Collections.IDictionary]) {
+              $flagProps = @($config.flagOverrides.GetEnumerator() | ForEach-Object { [PSCustomObject]@{ Name = $_.Key; Value = $_.Value } })
+            } elseif ($config.flagOverrides) {
+              $flagProps = @($config.flagOverrides.PSObject.Properties)
             }
             if ($flagProps.Count -gt 0) {
-              $first = $flagProps | Select-Object -First 1
-              $extraCount = $flagProps.Count - 1
-              if ($extraCount -gt 0) {
-                $currentValue = "$($first.Name)->$($first.Value) +$extraCount"
-              } else {
-                $currentValue = "$($first.Name)->$($first.Value)"
-              }
+              $currentValue = ($flagProps | ForEach-Object { "$($_.Name)->$($_.Value)" }) -join ", "
             } else {
               $currentValue = (Get-LocalizedString "not_defined")
             }
@@ -1469,6 +1574,18 @@ function Set-Language {
               $config.flagOverrides[$from] = $to
             } else {
               $config.flagOverrides | Add-Member -MemberType NoteProperty -Name $from -Value $to -Force
+            }
+            Save-Config $config
+            Clear-Host
+            Write-Host (Get-LocalizedString "parameters_saved") -ForegroundColor Green
+            Start-Sleep -Milliseconds 400
+          } elseif ($text -match '^(?<from>[A-Za-z]{2})$') {
+            # A single code removes that override.
+            $from = $Matches.from.ToUpperInvariant()
+            if ($config.flagOverrides -is [System.Collections.IDictionary]) {
+              $config.flagOverrides.Remove($from)
+            } elseif ($config.flagOverrides) {
+              $config.flagOverrides.PSObject.Properties.Remove($from)
             }
             Save-Config $config
             Clear-Host
@@ -1640,6 +1757,8 @@ function Set-Language {
           @{ key = "fontSize"; label = "fontSize"; type = "int"; min = 14; max = 24; desc = "param_desc_fontSize" }
           @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 60; desc = "param_desc_maxNameWidthVisible" }
           @{ key = "nameSpacing"; label = "nameSpacing"; type = "int"; min = 0; max = 10; desc = "param_desc_nameSpacing" }
+          @{ key = "letterSpacing"; label = "letterSpacing"; type = "int"; min = -5; max = 10; desc = "param_desc_letterSpacing" }
+          @{ key = "lineSpacing"; label = "lineSpacing"; type = "int"; min = -10; max = 10; desc = "param_desc_lineSpacing" }
           @{ key = "timeFormat"; label = "timeFormat"; type = "enum"; options = @("1:25:25.255", "1h25m25s225ms"); desc = "param_desc_timeFormat" }
         ) }
       @{ key = "pb"; label = (Get-LocalizedString "parameters_visuals_section_pb"); items = @(
@@ -1758,10 +1877,19 @@ function Get-CategoryPB {
   return $null
 }
 
+# ranked = $false shows the PB without a rank ("--") instead of ranking it by time (default: ranked).
+function Test-CategoryPBRanked {
+  param($category)
+  $pb = Get-CategoryPB $category
+  if ($pb -and $pb.ranked -eq $false) { return $false }
+  return $true
+}
+
 function Set-CategoryPB {
-  param($category, $active, $time)
+  param($category, $active, $time, $ranked = $null)
   if (-not $category) { return }
-  $pb = @{ active = $active; time = $time }
+  if ($null -eq $ranked) { $ranked = Test-CategoryPBRanked $category }
+  $pb = [ordered]@{ active = $active; time = $time; ranked = [bool]$ranked }
   if ($category.GetType().Name -eq "PSCustomObject") {
     $category | Add-Member -MemberType NoteProperty -Name "personalBest" -Value $pb -Force
   } else {
@@ -1868,6 +1996,8 @@ function Initialize-Config {
     rankAlign = "left"
     rankPrefixMode = "dot"
     nameSpacing = 5
+    letterSpacing = 0
+    lineSpacing = 0
     pbSeparatorWidth = 320
     pbPrefix = "PB"
     pbColor = "#fffff1"
@@ -1930,6 +2060,8 @@ function Initialize-Config {
     runsPerBatch = @(1, 5)
     maxRuns = @(10, 200)
     nameSpacing = @(0, 10)
+    letterSpacing = @(-5, 10)
+    lineSpacing = @(-10, 10)
     pbSeparatorWidth = @(50, 4000)
     fontSize = @(14, 24)
     rainbowIntensity = @(0, 100)
@@ -2538,6 +2670,10 @@ function Test-PlayerInCategory {
     return $false
   }
 
+  if ((Get-PresetSource $preset) -eq "teamhitless") {
+    return Test-PlayerInTeamHitlessCategory -PlayerName $playerName -Preset $preset
+  }
+
   $resolved = Resolve-CategoryDetailsAndVariables $preset
   $categoryId = $resolved.CategoryId
   $variablePairs = $resolved.VariablePairs
@@ -2730,6 +2866,9 @@ function Set-TemporaryRun {
 
   $actionItems = @()
   $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_set"); Key = "set" }
+  $isRanked = Test-CategoryPBRanked $activeCat
+  $rankedState = if ($isRanked) { (Get-LocalizedString "yes") } else { (Get-LocalizedString "no") }
+  $actionItems += @{ Label = [string]::Format((Get-LocalizedString "temp_time_action_ranked"), $rankedState); Key = "ranked" }
   if ($categoriesWithPB.Count -gt 0) {
     $actionItems += @{ Label = (Get-LocalizedString "temp_time_action_clear"); Key = "clear" }
   }
@@ -2742,6 +2881,26 @@ function Set-TemporaryRun {
 
   $actionKey = $actionItems[$actionIndex].Key
   if ($actionKey -eq "back") {
+    return
+  }
+
+  if ($actionKey -eq "ranked") {
+    $activePB = Get-CategoryPB $activeCat
+    $pbActive = if ($activePB) { [bool]$activePB.active } else { $false }
+    $pbTime = if ($activePB) { $activePB.time } else { $null }
+    Set-CategoryPB $activeCat $pbActive $pbTime (-not $isRanked)
+
+    Save-Config $config
+
+    Clear-Host
+    if (-not $isRanked) {
+      Write-Host (Get-LocalizedString "temp_time_ranked_on") -ForegroundColor Green
+    } else {
+      Write-Host (Get-LocalizedString "temp_time_ranked_off") -ForegroundColor Yellow
+    }
+    Write-Host ""
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
     return
   }
 
@@ -2830,7 +2989,8 @@ function Show-ArrowMenu {
   
   $currentIndex = $SelectedIndex
   $maxIndex = $Options.Count - 1
-  
+  $scrollTop = 0
+
   # Flush input buffer to prevent ghost inputs
   while ($Host.UI.RawUI.KeyAvailable) { 
     $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown,IncludeKeyUp") | Out-Null 
@@ -2849,9 +3009,46 @@ function Show-ArrowMenu {
       Write-Host ""
     }
     
+    # A list taller than the window would push the title and first entries out
+    # of view, so show only a slice that follows the selection.
+    $firstVisible = 0
+    $lastVisible = $maxIndex
+    $isScrolling = $false
+    $windowHeight = 0
+    $windowWidth = 80
+    try {
+      $windowHeight = $Host.UI.RawUI.WindowSize.Height
+      $windowWidth = [Math]::Max(1, $Host.UI.RawUI.WindowSize.Width)
+    } catch { }
+    if ($windowHeight -gt 0) {
+      $reservedLines = 3 # blank line after the list, instructions, cursor line
+      foreach ($line in @(($ContextText -split "`n") | Where-Object { $ContextText })) {
+        $reservedLines += [Math]::Max(1, [Math]::Ceiling($line.Length / $windowWidth))
+      }
+      if ($Title) { $reservedLines += 2 }
+      if ($Descriptions.Count -gt 0) {
+        $longestDescription = ($Descriptions | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
+        $reservedLines += 1 + [Math]::Max(1, [Math]::Ceiling($longestDescription / $windowWidth))
+      }
+      $visibleSlots = $windowHeight - $reservedLines - 2 # "more above/below" lines
+      if ($Options.Count -gt ($visibleSlots + 2) -and $visibleSlots -ge 3) {
+        $isScrolling = $true
+        if ($currentIndex -lt $scrollTop) { $scrollTop = $currentIndex }
+        if ($currentIndex -ge $scrollTop + $visibleSlots) { $scrollTop = $currentIndex - $visibleSlots + 1 }
+        $scrollTop = [Math]::Max(0, [Math]::Min($scrollTop, $Options.Count - $visibleSlots))
+        $firstVisible = $scrollTop
+        $lastVisible = $scrollTop + $visibleSlots - 1
+      }
+    }
+
+    if ($isScrolling) {
+      $hiddenAbove = if ($firstVisible -gt 0) { "  ▲ ($firstVisible)" } else { "" }
+      Write-Host $hiddenAbove -ForegroundColor DarkGray
+    }
+
     $removeLabel = Get-LocalizedString "menu_remove_category"
     $deleteLabel = Get-LocalizedString "details_delete_category"
-    for ($i = 0; $i -lt $Options.Count; $i++) {
+    for ($i = $firstVisible; $i -le $lastVisible; $i++) {
       $isRemove = $Options[$i] -eq $removeLabel -or $Options[$i] -eq $deleteLabel -or $i -in $ColoredOptions
       if ($i -eq $currentIndex) {
         $color = if ($isRemove) { "Red" } else { "Yellow" }
@@ -2861,7 +3058,12 @@ function Show-ArrowMenu {
         Write-Host "  $($Options[$i])" -ForegroundColor $color
       }
     }
-    
+
+    if ($isScrolling) {
+      $hiddenBelow = if ($lastVisible -lt $maxIndex) { "  ▼ ($($maxIndex - $lastVisible))" } else { "" }
+      Write-Host $hiddenBelow -ForegroundColor DarkGray
+    }
+
     Write-Host ""
     
     # Show description for currently selected item if available
@@ -2940,13 +3142,19 @@ function Write-PresetDetails($presetList, $currentConfig) {
   Write-Host (Get-LocalizedString "details_title") -ForegroundColor Cyan
   Write-Host "$(Get-LocalizedString 'details_name') $($selectedPreset.Value.name)" -ForegroundColor White
   Write-Host "$(Get-LocalizedString 'details_category_id') $($selectedPreset.Name)" -ForegroundColor Cyan
-  if ($selectedPreset.Value.categoryId) {
-    Write-Host "$(Get-LocalizedString 'details_src_category_id') $($selectedPreset.Value.categoryId)" -ForegroundColor Cyan
+  if ((Get-PresetSource $selectedPreset.Value) -eq "teamhitless") {
+    Write-Host "$(Get-LocalizedString 'details_source') Team Hitless" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'details_page') https://www.teamhitless.com/$($selectedPreset.Value.teamHitless.slug)/" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
+  } else {
+    if ($selectedPreset.Value.categoryId) {
+      Write-Host "$(Get-LocalizedString 'details_src_category_id') $($selectedPreset.Value.categoryId)" -ForegroundColor Cyan
+    }
+    Write-Host "$(Get-LocalizedString 'details_game_id') $($selectedPreset.Value.gameId)" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
+    $subcat = if ($selectedPreset.Value.subcategory) { $selectedPreset.Value.subcategory } else { (Get-LocalizedString "null_value") }
+    Write-Host "$(Get-LocalizedString 'details_subcategory') $subcat" -ForegroundColor Cyan
   }
-  Write-Host "$(Get-LocalizedString 'details_game_id') $($selectedPreset.Value.gameId)" -ForegroundColor Cyan
-  Write-Host "$(Get-LocalizedString 'details_category') $($selectedPreset.Value.category)" -ForegroundColor Cyan
-  $subcat = if ($selectedPreset.Value.subcategory) { $selectedPreset.Value.subcategory } else { (Get-LocalizedString "null_value") }
-  Write-Host "$(Get-LocalizedString 'details_subcategory') $subcat" -ForegroundColor Cyan
   $isActive = if ($currentConfig.activeCategory -eq $selectedPreset.Name) { (Get-LocalizedString "yes") } else { (Get-LocalizedString "no") }
   Write-Host "$(Get-LocalizedString 'details_active_obs') $isActive" -ForegroundColor $(if ($isActive -eq (Get-LocalizedString "yes")) { "Green" } else { "Yellow" })
   $actionOptions = @(
@@ -3742,6 +3950,436 @@ function New-Preset($currentConfig) {
   }
 }
 
+# === TEAM HITLESS === (asked by lord Owarida)
+# Team Hitless (teamhitless.com) publishes its leaderboards as WordPress pages
+# built with the Divi "Table Maker" module. The REST API returns each page's
+# rendered HTML: every table cell carries its position as dvmd_tm_col_X /
+# dvmd_tm_row_Y classes (row 0 = headers), and a table is named by the nearest
+# <h3> before it, inside the current <h2> section. leaderboard.html
+# (parseTeamHitlessTables) reads pages the same way, so tableIndex values match.
+$Global:TeamHitlessApi = "https://www.teamhitless.com/wp-json/wp/v2/pages"
+
+function Get-PresetSource {
+  param($Preset)
+  if ($Preset -and $Preset.source -eq "teamhitless") { return "teamhitless" }
+  return "speedruncom"
+}
+
+function ConvertFrom-TeamHitlessHtmlText {
+  param([string]$Html)
+  if ([string]::IsNullOrEmpty($Html)) { return "" }
+  $text = [System.Net.WebUtility]::HtmlDecode(($Html -replace '<[^>]+>', ''))
+  return ($text -replace '\s+', ' ').Trim()
+}
+
+function ConvertTo-TeamHitlessKey {
+  param($Text)
+  if (-not $Text) { return "" }
+  return ("$Text" -replace '\s+', ' ').Trim().ToLowerInvariant()
+}
+
+# Display only: "STANDARD DIFFICULTY" -> "Standard Difficulty", "celeste" -> "Celeste"
+function Format-TeamHitlessName {
+  param([string]$Text)
+  if ([string]::IsNullOrWhiteSpace($Text) -or $Text -notmatch '\p{L}') { return $Text }
+  if ($Text -ceq $Text.ToUpperInvariant() -or $Text -ceq $Text.ToLowerInvariant()) {
+    return [System.Globalization.CultureInfo]::InvariantCulture.TextInfo.ToTitleCase($Text.ToLowerInvariant())
+  }
+  return $Text
+}
+
+function Get-TeamHitlessGames {
+  $pages = @()
+  for ($pageNumber = 1; $pageNumber -le 5; $pageNumber++) {
+    try {
+      $batch = @(Invoke-SrcApiJson -Uri "$($Global:TeamHitlessApi)?per_page=100&page=$pageNumber&_fields=id,slug,title" -TimeoutSec 15)
+    } catch {
+      if ($pageNumber -eq 1) { throw }
+      break # past the last page
+    }
+    $pages += $batch
+    if ($batch.Count -lt 100) { break }
+  }
+
+  # Leaderboard pages have "speed" in their slug; hub pages only link to them.
+  $games = foreach ($page in $pages) {
+    $slug = "$($page.slug)"
+    if ($slug -notmatch 'speed' -or $slug -match '^(hitless-speedrun-games|.+-hitless-speedrun)$') { continue }
+    $name = (ConvertFrom-TeamHitlessHtmlText "$($page.title.rendered)") -replace '(?i)\s*speedrun\s*$', ''
+    if ([string]::IsNullOrWhiteSpace($name)) { $name = $slug }
+    [PSCustomObject]@{ Id = $page.id; Slug = $slug; Name = (Format-TeamHitlessName $name.Trim()) }
+  }
+  return @($games | Sort-Object Name)
+}
+
+function Get-TeamHitlessPage {
+  param([Parameter(Mandatory = $true)][string]$Slug)
+
+  $data = Invoke-SrcApiJson -Uri "$($Global:TeamHitlessApi)?slug=$([uri]::EscapeDataString($Slug))&_fields=id,slug,modified,content" -TimeoutSec 15
+  $page = @($data)[0]
+  if (-not $page -or -not $page.content -or -not $page.content.rendered) {
+    throw "Team Hitless page '$Slug' not found."
+  }
+  return $page
+}
+
+function Get-TeamHitlessTables {
+  param([string]$Html)
+
+  $tables = [System.Collections.Generic.List[object]]::new()
+  if ([string]::IsNullOrWhiteSpace($Html)) { return @() }
+
+  $tokens = [regex]::Matches($Html, '(?is)<h([23])\b[^>]*>(.*?)</h\1\s*>|<div\b[^>]*\bclass="([^"]*\bdvmd_table_maker\b[^"]*)"')
+  $section = $null
+  $pendingTitle = $null
+  $sectionLead = $false
+
+  for ($i = 0; $i -lt $tokens.Count; $i++) {
+    $token = $tokens[$i]
+    if ($token.Groups[1].Success) {
+      $text = ConvertFrom-TeamHitlessHtmlText $token.Groups[2].Value
+      if (-not $text) { $text = $null }
+      if ($token.Groups[1].Value -eq "2") {
+        $section = $text
+        $pendingTitle = $null
+        $sectionLead = $true
+      } else {
+        $pendingTitle = $text
+      }
+      continue
+    }
+
+    # The table's cells lie between its opening tag and the next heading/table.
+    $end = if ($i + 1 -lt $tokens.Count) { $tokens[$i + 1].Index } else { $Html.Length }
+    $block = $Html.Substring($token.Index, $end - $token.Index)
+
+    $cells = @{}
+    $maxRow = 0
+    $maxCol = 0
+    foreach ($cell in [regex]::Matches($block, '(?is)<div\b[^>]*\bclass="([^"]*\bdvmd_tm_tcell\b[^"]*)"[^>]*>\s*<(div|h[1-6])\b[^>]*>(.*?)</\2\s*>')) {
+      $colMatch = [regex]::Match($cell.Groups[1].Value, '\bdvmd_tm_col_(\d+)\b')
+      $rowMatch = [regex]::Match($cell.Groups[1].Value, '\bdvmd_tm_row_(\d+)\b')
+      if (-not $colMatch.Success -or -not $rowMatch.Success) { continue }
+      $r = [int]$rowMatch.Groups[1].Value
+      $c = [int]$colMatch.Groups[1].Value
+      $cells["${r}:${c}"] = ConvertFrom-TeamHitlessHtmlText $cell.Groups[3].Value
+      $maxRow = [Math]::Max($maxRow, $r)
+      $maxCol = [Math]::Max($maxCol, $c)
+    }
+
+    $headers = @(for ($c = 0; $c -le $maxCol; $c++) { "$($cells["0:${c}"])" })
+    $playerCol = -1
+    $timeCol = -1
+    for ($c = 0; $c -lt $headers.Count; $c++) {
+      if ($playerCol -lt 0 -and $headers[$c] -match 'player|runner') { $playerCol = $c }
+      if ($timeCol -lt 0 -and $headers[$c] -match 'time|igt|rta') { $timeCol = $c }
+    }
+    if ($playerCol -lt 0) { $playerCol = 1 }
+    if ($timeCol -lt 0) { $timeCol = 2 }
+    $extraCols = @(for ($c = 0; $c -lt $headers.Count; $c++) {
+      if ($c -ne $playerCol -and $c -ne $timeCol -and $headers[$c] -and $headers[$c] -notmatch '^(rank|video)$') { $c }
+    })
+
+    # Placeholder rows ("Test Runner 0:00") and empty rows are skipped.
+    $rows = [System.Collections.Generic.List[object]]::new()
+    $previousSeconds = 0
+    for ($r = 1; $r -le $maxRow; $r++) {
+      $player = "$($cells["${r}:${playerCol}"])"
+      # "42:47:034" is minutes:seconds:milliseconds (seconds never have 3 digits).
+      $timeText = "$($cells["${r}:${timeCol}"])" -replace '^(\d+:\d{2}):(\d{3})$', '$1.$2'
+      $seconds = Convert-TimeStringToSeconds $timeText
+      # Rows are listed fastest first, so a time below the previous one is a
+      # typo such as "1:35.45" for "1:35:45": read the dot as a colon when that
+      # puts the row back in order.
+      if ($null -ne $seconds -and $seconds -lt $previousSeconds -and $timeText.Split('.').Count -eq 2) {
+        $repairedText = $timeText.Replace('.', ':')
+        $repaired = Convert-TimeStringToSeconds $repairedText
+        # ...but never into an outlier ("52:10.20" must not become 52 hours).
+        if ($null -ne $repaired -and $repaired -ge $previousSeconds -and $repaired -le $previousSeconds * 2) {
+          $seconds = $repaired
+          $timeText = $repairedText
+        }
+      }
+      if (-not $player -or $null -eq $seconds -or $seconds -le 0) { continue }
+      $previousSeconds = $seconds
+      $extras = @(foreach ($c in $extraCols) {
+        $value = "$($cells["${r}:${c}"])"
+        if ($value) { "$($headers[$c]): $value" }
+      })
+      $rows.Add([PSCustomObject]@{ Player = $player; Time = $timeText; Seconds = $seconds; Extras = $extras })
+    }
+
+    $tables.Add([PSCustomObject]@{
+      Index = $tables.Count
+      Section = $section
+      Title = $pendingTitle
+      SectionLead = $sectionLead # first table of its <h2> section
+      Headers = $headers
+      Rows = $rows.ToArray()
+      Signature = (@($rows | ForEach-Object { "$($_.Player)=$($_.Time)" }) -join "|")
+    })
+    $pendingTitle = $null # a heading names only the first table after it
+    $sectionLead = $false
+  }
+
+  return $tables.ToArray()
+}
+
+# Prefer the stored index while its headings still match, then the headings
+# alone (a table was added or removed above), then the bare index.
+function Resolve-TeamHitlessTable {
+  param([array]$Tables, $Reference)
+
+  if (-not $Tables -or -not $Reference) { return $null }
+  $section = ConvertTo-TeamHitlessKey $Reference.section
+  $title = ConvertTo-TeamHitlessKey $Reference.title
+  $index = -1
+  if (-not [int]::TryParse("$($Reference.tableIndex)", [ref]$index)) { $index = -1 }
+
+  $byIndex = if ($index -ge 0 -and $index -lt $Tables.Count) { $Tables[$index] } else { $null }
+  if ($byIndex -and (ConvertTo-TeamHitlessKey $byIndex.Section) -eq $section -and (ConvertTo-TeamHitlessKey $byIndex.Title) -eq $title) {
+    return $byIndex
+  }
+  if ($title) {
+    foreach ($table in $Tables) {
+      if ((ConvertTo-TeamHitlessKey $table.Section) -eq $section -and (ConvertTo-TeamHitlessKey $table.Title) -eq $title) {
+        return $table
+      }
+    }
+  }
+  return $byIndex
+}
+
+function Get-TeamHitlessTableLabel {
+  param($Table)
+
+  $parts = @()
+  if ($Table.Section) { $parts += Format-TeamHitlessName $Table.Section }
+  if ($Table.Title) {
+    $parts += Format-TeamHitlessName $Table.Title
+  } elseif (-not ($Table.Section -and $Table.SectionLead)) {
+    $parts += [string]::Format((Get-LocalizedString "th_table_label"), $Table.Index + 1)
+  }
+  return ($parts -join " - ")
+}
+
+function Get-TeamHitlessTablePreview {
+  param($Table)
+
+  $wr = $Table.Rows | Sort-Object Seconds | Select-Object -First 1
+  if (-not $wr) { return "" }
+  $text = [string]::Format((Get-LocalizedString "th_table_preview"), $Table.Rows.Count, $wr.Player, $wr.Time)
+  if ($wr.Extras.Count -gt 0) {
+    $text += " · " + ($wr.Extras -join " · ")
+  }
+  return $text
+}
+
+function Test-PlayerInTeamHitlessCategory {
+  param([string]$PlayerName, $Preset)
+
+  $page = Get-TeamHitlessPage $Preset.teamHitless.slug
+  $table = Resolve-TeamHitlessTable -Tables @(Get-TeamHitlessTables $page.content.rendered) -Reference $Preset.teamHitless
+  if (-not $table) { return $false }
+
+  $target = $PlayerName.Trim().ToLowerInvariant()
+  foreach ($row in $table.Rows) {
+    if ($row.Player.ToLowerInvariant() -eq $target) { return $true }
+  }
+  return $false
+}
+
+function Get-YesAnswer {
+  switch ($Global:CurrentLanguage) {
+    "en" { "y" }
+    "es" { "s" }
+    "pt" { "s" }
+    "zh" { "y" }
+    default { "o" }
+  }
+}
+
+# "Add a category" entry point: choose the leaderboard source first.
+function Add-NewPreset {
+  param($currentConfig)
+
+  $sourceOptions = @("speedrun.com", (Get-LocalizedString "source_teamhitless"))
+  $sourceIndex = Show-ArrowMenu -Title (Get-LocalizedString "source_title") -Options $sourceOptions -AllowCancel -ContextText (Get-LocalizedString "add_title")
+  if ($sourceIndex -eq 0) {
+    New-Preset $currentConfig
+  } elseif ($sourceIndex -eq 1) {
+    New-TeamHitlessPreset $currentConfig
+  }
+}
+
+function New-TeamHitlessPreset {
+  param($currentConfig)
+
+  Show-ProgressStep -Activity (Get-LocalizedString "th_loading_games") -Status "teamhitless.com" -PercentComplete 20
+  try {
+    $games = @(Get-TeamHitlessGames)
+  } catch {
+    Clear-Progress
+    Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+  Clear-Progress
+
+  if ($games.Count -eq 0) {
+    Write-Host (Get-LocalizedString "th_no_games") -ForegroundColor Red
+    Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+    return
+  }
+
+  $gameOptions = @($games | ForEach-Object { $_.Name })
+  $lastGameIndex = 0
+  $game = $null
+  $page = $null
+  $table = $null
+
+  :GameLoop while ($true) {
+    $gameIndex = Show-ArrowMenu -Title (Get-LocalizedString "th_games_title") -Options $gameOptions -AllowCancel -SelectedIndex $lastGameIndex -ContextText (Get-LocalizedString "add_title")
+    if ($gameIndex -eq -1) { return }
+    $lastGameIndex = $gameIndex
+    $game = $games[$gameIndex]
+
+    Show-ProgressStep -Activity (Get-LocalizedString "th_loading_page") -Status $game.Name -PercentComplete 50
+    try {
+      $page = Get-TeamHitlessPage $game.Slug
+      $allTables = @(Get-TeamHitlessTables $page.content.rendered)
+    } catch {
+      Clear-Progress
+      Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      continue GameLoop
+    }
+    Clear-Progress
+
+    # Skip empty tables and responsive duplicates (same section, same runs).
+    $seen = @{}
+    $tables = @(foreach ($candidate in $allTables) {
+      if ($candidate.Rows.Count -eq 0) { continue }
+      $key = "$($candidate.Section)`n$($candidate.Signature)"
+      if ($seen.ContainsKey($key)) { continue }
+      $seen[$key] = $true
+      $candidate
+    })
+
+    if ($tables.Count -eq 0) {
+      Write-Host (Get-LocalizedString "th_no_tables") -ForegroundColor Yellow
+      Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+      $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+      continue GameLoop
+    }
+
+    $tableOptions = @($tables | ForEach-Object { Get-TeamHitlessTableLabel $_ })
+    $tableDescriptions = @($tables | ForEach-Object { Get-TeamHitlessTablePreview $_ })
+    $tableIndex = Show-ArrowMenu -Title (Get-LocalizedString "th_categories_title") -Options $tableOptions -Descriptions $tableDescriptions -AllowCancel -ContextText $game.Name
+    if ($tableIndex -eq -1) { continue GameLoop }
+    $table = $tables[$tableIndex]
+    break
+  }
+
+  try {
+    $categoryLabel = Get-TeamHitlessTableLabel $table
+    $fullName = "$($game.Name) - $categoryLabel (Team Hitless)"
+
+    Clear-Host
+    Write-Host (Get-LocalizedString "final_config") -ForegroundColor Green
+    Write-Host ""
+    Write-Host "$(Get-LocalizedString 'final_source') Team Hitless" -ForegroundColor White
+    Write-Host "$(Get-LocalizedString 'final_game') $($game.Name)" -ForegroundColor White
+    Write-Host "$(Get-LocalizedString 'final_category') $categoryLabel" -ForegroundColor Cyan
+    Write-Host "$(Get-LocalizedString 'final_page') https://www.teamhitless.com/$($game.Slug)/" -ForegroundColor Cyan
+    Write-Host (Get-TeamHitlessTablePreview $table) -ForegroundColor DarkGray
+    Write-Host ""
+
+    # Preset ID suggestion, e.g. "elde-th-any"
+    $cleanGame = $game.Name -replace '[^a-zA-Z0-9]', ''
+    $gamePart = if ($cleanGame.Length -ge 4) { $cleanGame.Substring(0, 4) } else { $cleanGame }
+    $catPart = $categoryLabel -replace '[^a-zA-Z0-9]', ''
+    $defaultPresetId = (@($gamePart, "th", $catPart) | Where-Object { $_ }) -join "-"
+    $defaultPresetId = $defaultPresetId.ToLower()
+
+    Write-Host (Get-LocalizedString "final_category_id") -ForegroundColor Yellow
+    Write-Host "$(Get-LocalizedString 'final_suggestion') $defaultPresetId" -ForegroundColor Gray
+    $presetId = Read-Host (Get-LocalizedString "final_category_id_prompt")
+    if ([string]::IsNullOrWhiteSpace($presetId)) {
+      $presetId = $defaultPresetId
+    }
+    $presetId = $presetId.Trim()
+
+    if ($currentConfig -and $currentConfig.categories -and $currentConfig.categories.$presetId) {
+      Write-Host ([string]::Format(((Get-LocalizedString "final_id_exists") -replace '%s', '{0}'), $presetId)) -ForegroundColor Red
+      $overwrite = Read-Host (Get-LocalizedString "final_overwrite")
+      if ("$overwrite".ToLower() -ne (Get-YesAnswer)) {
+        Write-Host (Get-LocalizedString "final_operation_cancelled") -ForegroundColor Cyan
+        Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+        $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+        return
+      }
+    }
+
+    $newPreset = [ordered]@{
+      source = "teamhitless"
+      name = $fullName
+      category = $categoryLabel
+      teamHitless = [ordered]@{
+        slug = $game.Slug
+        pageId = $page.id
+        section = $table.Section
+        title = $table.Title
+        tableIndex = $table.Index
+      }
+    }
+
+    $config = Initialize-Config $currentConfig
+    if ($config.categories.GetType().Name -eq "PSCustomObject") {
+      $config.categories | Add-Member -MemberType NoteProperty -Name $presetId -Value $newPreset -Force
+    } else {
+      $config.categories.$presetId = $newPreset
+    }
+
+    $isFirstPreset = $config.categories.Count -eq 1 -or -not $config.activeCategory
+    if ($isFirstPreset) {
+      $config.activeCategory = $presetId
+      $activationMessage = (Get-LocalizedString "final_auto_active")
+    } else {
+      Write-Host ""
+      $activate = Read-Host (Get-LocalizedString "final_activate_now")
+      if ("$activate".ToLower() -eq (Get-YesAnswer)) {
+        $config.activeCategory = $presetId
+        $activationMessage = (Get-LocalizedString "final_active_now")
+      } else {
+        $activationMessage = (Get-LocalizedString "final_saved_inactive")
+      }
+    }
+
+    Save-Config $config
+
+    Write-Host ""
+    Write-Host ([string]::Format(((Get-LocalizedString "final_saved") -replace '%s', '{0}'), $presetId)) -ForegroundColor Green
+    Write-Host "$(Get-LocalizedString 'final_status') $activationMessage" -ForegroundColor Cyan
+    if ($config.activeCategory -eq $presetId) {
+      Write-Host (Get-LocalizedString "final_obs_will_show") -ForegroundColor Green
+    } else {
+      Write-Host (Get-LocalizedString "final_activate_later") -ForegroundColor Cyan
+    }
+    Write-Host ""
+  } catch {
+    Clear-Progress
+    Write-Host ""
+    Write-Host "$(Get-LocalizedString 'error_general') $_" -ForegroundColor Red
+  }
+
+  Write-Host (Get-LocalizedString "continue_key") -ForegroundColor Gray
+  $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+}
+
 # === NON-INTERACTIVE PROJECT VALIDATION ===
 function Invoke-ProjectValidation {
   $failures = [System.Collections.Generic.List[string]]::new()
@@ -3755,7 +4393,7 @@ function Invoke-ProjectValidation {
 
     $requiredDefaults = @(
       "topCount", "runsPerBatch", "maxRuns", "displayWidth", "displayHeight",
-      "fontSize", "pbColor", "categoryNameColor", "refreshInterval"
+      "fontSize", "pbColor", "categoryNameColor", "refreshInterval", "letterSpacing", "lineSpacing"
     )
     foreach ($key in $requiredDefaults) {
       if (-not ($normalizedDefault.defaults.PSObject.Properties.Name -contains $key)) {
@@ -3812,9 +4450,111 @@ function Invoke-ProjectValidation {
       $failures.Add("Time parsing regression detected.")
     }
 
+    # Team Hitless parsing (offline fixture shaped like the Divi Table Maker markup)
+    $thFixture = @'
+<h2>STANDARD DIFFICULTY</h2>
+<h3>Leon</h3>
+<div class="et_pb_module dvmd_table_maker dvmd_table_maker_0"><div role="table" class="dvmd_tm_table"><div class='dvmd_tm_tblock'>
+<div scope="col" class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_0 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Rank</h6></div>
+<div class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_0 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1</div></div>
+<div class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_0 dvmd_tm_row_2"><div class="dvmd_tm_cdata">2</div></div>
+<div scope="col" class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_1 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Player</h6></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata"><a href="/project/a/">Runner&#8217;A</a></div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_2"><div class="dvmd_tm_cdata">Test Runner</div></div>
+<div scope="col" class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_2 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">In-Game Time</h6></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">53:26</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_2"><div class="dvmd_tm_cdata">0:00</div></div>
+<div scope="col" class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_3 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Video</h6></div>
+<div class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_3 dvmd_tm_row_1"><div class="dvmd_tm_cdata"><a href="https://youtu.be/x"><i class="fas fa-play-circle"></i></a></div></div>
+</div></div></div>
+<div class="et_pb_module dvmd_table_maker dvmd_table_maker_1"><div role="table" class="dvmd_tm_table">
+<div scope="col" class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_0 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Rank</h6></div>
+<div scope="col" class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_1 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Player</h6></div>
+<div scope="col" class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_2 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">In-Game Time</h6></div>
+<div scope="col" class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_3 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Scenario</h6></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata">RunnerB</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1:20:08</div></div>
+<div class="dvmd_table_maker_item_3 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_3 dvmd_tm_row_1"><div class="dvmd_tm_cdata">2nd</div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_2"><div class="dvmd_tm_cdata">RunnerE</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_2"><div class="dvmd_tm_cdata">1:25:07:123</div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_3"><div class="dvmd_tm_cdata">RunnerF</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_3"><div class="dvmd_tm_cdata">95:12:034</div></div>
+</div></div>
+<h2>HARDCORE</h2>
+<h3>Claire</h3>
+<div class="et_pb_module dvmd_table_maker dvmd_table_maker_2"><div role="table" class="dvmd_tm_table">
+<div scope="col" class="dvmd_table_maker_item_0 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_0 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Rank</h6></div>
+<div scope="col" class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_1 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">Player</h6></div>
+<div scope="col" class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_chead dvmd_tm_col_2 dvmd_tm_row_0"><h6 class="dvmd_tm_cdata">RTA Time</h6></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_1"><div class="dvmd_tm_cdata">RunnerC</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_1"><div class="dvmd_tm_cdata">1:02:03.5</div></div>
+<div class="dvmd_table_maker_item_1 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_1 dvmd_tm_row_2"><div class="dvmd_tm_cdata">RunnerD</div></div>
+<div class="dvmd_table_maker_item_2 dvmd_tm_tcell dvmd_tm_tdata dvmd_tm_col_2 dvmd_tm_row_2"><div class="dvmd_tm_cdata">1:10.15</div></div>
+</div></div>
+'@
+    $thTables = @(Get-TeamHitlessTables $thFixture)
+    if ($thTables.Count -ne 3 -or
+        $thTables[0].Section -ne "STANDARD DIFFICULTY" -or $thTables[0].Title -ne "Leon" -or
+        $thTables[0].Rows.Count -ne 1 -or $thTables[0].Rows[0].Player -ne "Runner$([char]0x2019)A" -or
+        $thTables[0].Rows[0].Seconds -ne 3206 -or
+        $null -ne $thTables[1].Title -or $thTables[1].Rows[0].Extras[0] -ne "Scenario: 2nd" -or
+        $thTables[1].Rows.Count -ne 2 -or [Math]::Abs($thTables[1].Rows[1].Seconds - 5712.034) -gt 0.0001 -or
+        $thTables[2].Section -ne "HARDCORE" -or $thTables[2].Title -ne "Claire" -or
+        [Math]::Abs($thTables[2].Rows[0].Seconds - 3723.5) -gt 0.0001 -or
+        $thTables[2].Rows[1].Seconds -ne 4215 -or $thTables[2].Rows[1].Time -ne "1:10:15") {
+      $failures.Add("Team Hitless table parsing failed.")
+    }
+    $movedTable = Resolve-TeamHitlessTable -Tables $thTables -Reference ([PSCustomObject]@{ section = "Hardcore"; title = "claire"; tableIndex = 0 })
+    $untitledTable = Resolve-TeamHitlessTable -Tables $thTables -Reference ([PSCustomObject]@{ section = "STANDARD DIFFICULTY"; title = $null; tableIndex = 1 })
+    if (-not $movedTable -or $movedTable.Index -ne 2 -or -not $untitledTable -or $untitledTable.Index -ne 1) {
+      $failures.Add("Team Hitless table resolution failed.")
+    }
+    if ((Get-TeamHitlessTableLabel $thTables[0]) -ne "Standard Difficulty - Leon" -or
+        (Get-TeamHitlessTableLabel $thTables[1]) -ne "Standard Difficulty - Tableau 2") {
+      $failures.Add("Team Hitless table label formatting failed.")
+    }
+
+    $thSample = @'
+{
+  "categories": {
+    "elde-th-any": {
+      "source": "teamhitless",
+      "name": "Elden Ring - Any% (Team Hitless)",
+      "category": "Any%",
+      "teamHitless": { "slug": "elden-ring-speedrun", "section": null, "title": "Any%", "tableIndex": 0 },
+      "personalBest": { "active": true, "time": "1:20:00" }
+    }
+  },
+  "activeCategory": "elde-th-any"
+}
+'@ | ConvertFrom-Json
+    $normalizedTh = Initialize-Config $thSample
+    $thPreset = $normalizedTh.categories.'elde-th-any'
+    if ((Get-PresetSource $thPreset) -ne "teamhitless" -or $thPreset.teamHitless.slug -ne "elden-ring-speedrun" -or
+        (Get-PresetSource $normalizedSample.categories.sample) -ne "speedruncom") {
+      $failures.Add("Team Hitless preset normalization failed.")
+    }
+
+    # Letter/line spacing: default 0, clamped to -5..10 and -10..10
+    $spacingSample = Initialize-Config ('{ "defaults": { "letterSpacing": 99, "lineSpacing": -50 }, "categories": {} }' | ConvertFrom-Json)
+    if ($normalizedDefault.defaults.letterSpacing -ne 0 -or $normalizedDefault.defaults.lineSpacing -ne 0 -or
+        $spacingSample.defaults.letterSpacing -ne 10 -or $spacingSample.defaults.lineSpacing -ne -10) {
+      $failures.Add("Letter/line spacing normalization failed.")
+    }
+
+    # PB ranking option: ranked by default, kept when the PB time changes
+    $rankedDefault = Test-CategoryPBRanked $thPreset
+    Set-CategoryPB $thPreset $true "1:10:00" $false
+    Set-CategoryPB $thPreset $true "1:05:00"
+    if (-not $rankedDefault -or (Test-CategoryPBRanked $thPreset) -or $thPreset.personalBest.time -ne "1:05:00") {
+      $failures.Add("PB ranking option handling failed.")
+    }
+
     $htmlPath = Join-Path $scriptDir "leaderboard.html"
     $html = Get-Content -LiteralPath $htmlPath -Raw
-    foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId")) {
+    foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId",
+                          "fetchTeamHitlessRuns", "TEAMHITLESS_MIN_REFRESH_MS", "drawTeamHitlessLogo",
+                          "getTeamHitlessNameStyles", "isUnranked", "applyLetterSpacing")) {
       if (-not $html.Contains($marker)) {
         $failures.Add("leaderboard.html is missing validation marker: $marker")
       }
@@ -3889,7 +4629,7 @@ function Start-MainLoop {
         $contextText = $contextLines -join "`n"
         
         $menuItems = @()
-        $menuItems += @{ Label = (Get-LocalizedString "menu_add_category"); Action = { param($cfg) New-Preset $cfg } }
+        $menuItems += @{ Label = (Get-LocalizedString "menu_add_category"); Action = { param($cfg) Add-NewPreset $cfg } }
         $menuItems += @{ Label = (Get-LocalizedString "menu_view_details"); Action = { param($cfg) Write-PresetDetails $presetList $cfg } }
         $menuItems += @{ Label = (Get-LocalizedString "menu_change_active"); Action = { param($cfg) Update-ActivePreset $presetList $cfg } }
 
@@ -3924,7 +4664,7 @@ function Start-MainLoop {
         Write-Host ""
         Write-Host (Get-LocalizedString "first_launch_no_category") -ForegroundColor Yellow
         Write-Host ""
-        New-Preset $currentConfig
+        Add-NewPreset $currentConfig
       }
     } catch {
       Write-Host ""
