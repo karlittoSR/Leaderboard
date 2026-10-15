@@ -50,6 +50,8 @@ $Global:DefaultConfigJSON = @'
     "rankAlign": "left",
     "rankPrefixMode": "dot",
     "nameSpacing": 5,
+    "letterSpacing": 0,
+    "lineSpacing": 0,
     "pbSeparatorWidth": 320,
     "pbPrefix": "PB",
     "pbColor": "fffff1",
@@ -270,6 +272,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Espace vertical entre le nom de catégorie et le classement (12-50px)"
         param_desc_maxNameWidthVisible = "Nombre maximum de caractères pour les noms des joueurs"
         param_desc_nameSpacing = "Espacement horizontal du nom du joueur"
+        param_desc_letterSpacing = "Espacement entre les lettres en pixels (-5 à 10, 0 = normal). Négatif pour resserrer, positif pour aérer une police serrée"
+        param_desc_lineSpacing = "Espacement vertical ajouté entre les lignes en pixels (-10 à 10, 0 = normal)"
         param_desc_timeFormat = "Format d'affichage des temps de run"
         param_desc_pbSeparatorWidth = "Largeur de la ligne séparatrice avant le PB"
         param_desc_pbPrefix = "Texte de préfixe personnalisé avant le PB (1-3 lettres)"
@@ -497,6 +501,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Vertical space between category name and leaderboard (12-50px)"
         param_desc_maxNameWidthVisible = "Maximum characters for player names"
         param_desc_nameSpacing = "Horizontal spacing of player name"
+        param_desc_letterSpacing = "Space between letters in pixels (-5 to 10, 0 = normal). Negative tightens, positive loosens a narrow font"
+        param_desc_lineSpacing = "Extra vertical space between rows in pixels (-10 to 10, 0 = normal)"
         param_desc_timeFormat = "Format for displaying run times"
         param_desc_pbSeparatorWidth = "Width of the separator line before PB"
         param_desc_pbPrefix = "Custom prefix text before player's PB (1-3 letters)"
@@ -724,6 +730,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Espacio vertical entre nombre de categoría y clasificación (12-50px)"
         param_desc_maxNameWidthVisible = "Máximo de caracteres para nombres de jugadores"
         param_desc_nameSpacing = "Espaciado horizontal del nombre del jugador"
+        param_desc_letterSpacing = "Espacio entre letras en píxeles (-5 a 10, 0 = normal). Negativo para juntar, positivo para separar una fuente estrecha"
+        param_desc_lineSpacing = "Espacio vertical adicional entre filas en píxeles (-10 a 10, 0 = normal)"
         param_desc_timeFormat = "Formato para mostrar los tiempos de run"
         param_desc_pbSeparatorWidth = "Ancho de la línea separadora antes del PB"
         param_desc_pbPrefix = "Texto de prefijo personalizado antes del PB (1-3 letras)"
@@ -951,6 +959,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "Espaço vertical entre nome da categoria e classificação (12-50px)"
         param_desc_maxNameWidthVisible = "Máximo de caracteres para nomes de jogadores"
         param_desc_nameSpacing = "Espaçamento horizontal do nome do jogador"
+        param_desc_letterSpacing = "Espaço entre letras em pixels (-5 a 10, 0 = normal). Negativo aperta, positivo espaça uma fonte estreita"
+        param_desc_lineSpacing = "Espaço vertical extra entre linhas em pixels (-10 a 10, 0 = normal)"
         param_desc_timeFormat = "Formato para exibir os tempos de run"
         param_desc_pbSeparatorWidth = "Largura da linha separadora antes do PB"
         param_desc_pbPrefix = "Texto de prefixo personalizado antes do PB (1-3 letras)"
@@ -1178,6 +1188,8 @@ $Global:Languages = @{
         param_desc_categoryNameSpacing = "类别名称和排行榜之间的垂直间距（12-50px）"
         param_desc_maxNameWidthVisible = "玩家名称的最大字符数"
         param_desc_nameSpacing = "玩家名称的水平间距"
+        param_desc_letterSpacing = "字母间距（像素，-5 到 10，0 = 正常）。负值收紧，正值让紧凑的字体更宽松"
+        param_desc_lineSpacing = "行与行之间额外的垂直间距（像素，-10 到 10，0 = 正常）"
         param_desc_timeFormat = "显示记录时间的格式"
         param_desc_pbSeparatorWidth = "PB前的分隔线宽度"
         param_desc_pbPrefix = "玩家PB前的自定义前缀文本（1-3个字母）"
@@ -1745,6 +1757,8 @@ function Set-Language {
           @{ key = "fontSize"; label = "fontSize"; type = "int"; min = 14; max = 24; desc = "param_desc_fontSize" }
           @{ key = "maxNameWidthVisible"; label = (Get-LocalizedString "parameters_visuals_max_name_chars"); type = "int"; min = 4; max = 60; desc = "param_desc_maxNameWidthVisible" }
           @{ key = "nameSpacing"; label = "nameSpacing"; type = "int"; min = 0; max = 10; desc = "param_desc_nameSpacing" }
+          @{ key = "letterSpacing"; label = "letterSpacing"; type = "int"; min = -5; max = 10; desc = "param_desc_letterSpacing" }
+          @{ key = "lineSpacing"; label = "lineSpacing"; type = "int"; min = -10; max = 10; desc = "param_desc_lineSpacing" }
           @{ key = "timeFormat"; label = "timeFormat"; type = "enum"; options = @("1:25:25.255", "1h25m25s225ms"); desc = "param_desc_timeFormat" }
         ) }
       @{ key = "pb"; label = (Get-LocalizedString "parameters_visuals_section_pb"); items = @(
@@ -1982,6 +1996,8 @@ function Initialize-Config {
     rankAlign = "left"
     rankPrefixMode = "dot"
     nameSpacing = 5
+    letterSpacing = 0
+    lineSpacing = 0
     pbSeparatorWidth = 320
     pbPrefix = "PB"
     pbColor = "#fffff1"
@@ -2044,6 +2060,8 @@ function Initialize-Config {
     runsPerBatch = @(1, 5)
     maxRuns = @(10, 200)
     nameSpacing = @(0, 10)
+    letterSpacing = @(-5, 10)
+    lineSpacing = @(-10, 10)
     pbSeparatorWidth = @(50, 4000)
     fontSize = @(14, 24)
     rainbowIntensity = @(0, 100)
@@ -4375,7 +4393,7 @@ function Invoke-ProjectValidation {
 
     $requiredDefaults = @(
       "topCount", "runsPerBatch", "maxRuns", "displayWidth", "displayHeight",
-      "fontSize", "pbColor", "categoryNameColor", "refreshInterval"
+      "fontSize", "pbColor", "categoryNameColor", "refreshInterval", "letterSpacing", "lineSpacing"
     )
     foreach ($key in $requiredDefaults) {
       if (-not ($normalizedDefault.defaults.PSObject.Properties.Name -contains $key)) {
@@ -4517,6 +4535,13 @@ function Invoke-ProjectValidation {
       $failures.Add("Team Hitless preset normalization failed.")
     }
 
+    # Letter/line spacing: default 0, clamped to -5..10 and -10..10
+    $spacingSample = Initialize-Config ('{ "defaults": { "letterSpacing": 99, "lineSpacing": -50 }, "categories": {} }' | ConvertFrom-Json)
+    if ($normalizedDefault.defaults.letterSpacing -ne 0 -or $normalizedDefault.defaults.lineSpacing -ne 0 -or
+        $spacingSample.defaults.letterSpacing -ne 10 -or $spacingSample.defaults.lineSpacing -ne -10) {
+      $failures.Add("Letter/line spacing normalization failed.")
+    }
+
     # PB ranking option: ranked by default, kept when the PB time changes
     $rankedDefault = Test-CategoryPBRanked $thPreset
     Set-CategoryPB $thPreset $true "1:10:00" $false
@@ -4529,7 +4554,7 @@ function Invoke-ProjectValidation {
     $html = Get-Content -LiteralPath $htmlPath -Raw
     foreach ($marker in @("CONFIG_SCHEMA_VERSION = 2", "activeLoadController", "scheduleRenderWake", "categoryId",
                           "fetchTeamHitlessRuns", "TEAMHITLESS_MIN_REFRESH_MS", "drawTeamHitlessLogo",
-                          "getTeamHitlessNameStyles", "isUnranked")) {
+                          "getTeamHitlessNameStyles", "isUnranked", "applyLetterSpacing")) {
       if (-not $html.Contains($marker)) {
         $failures.Add("leaderboard.html is missing validation marker: $marker")
       }

@@ -74,6 +74,7 @@ Settings are stored in `config.json`. The main display options are under `defaul
 | `timeFormat` | Standard or unit-based time display |
 | `pbColor`, `pbUseRainbow` | Temporary PB appearance |
 | `fontStyle`, `fontSize` | Leaderboard typography |
+| `letterSpacing`, `lineSpacing` | Letter spacing (-5 to 10 px) and row spacing (-10 to 10 px) to adapt tight or loose fonts; `0` by default |
 | `categoryNameVisible` | Shows or hides the category title |
 
 `maxRuns` only limits displayed entries. When a temporary PB is active, its rank is calculated against the complete speedrun.com category rather than the displayed subset.

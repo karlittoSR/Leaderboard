@@ -40,6 +40,8 @@
     let RANK_ALIGN = 'right';
     let RANK_PREFIX_MODE = 'dot';
     let NAME_SPACING = 4;
+    let LETTER_SPACING = 0; // px between letters of the leaderboard text (-5..10)
+    let LINE_SPACING = 0;   // px added to (or removed from) the row height (-10..10)
     let TIME_FORMAT = '1:25:25.255';
     let PB_SEPARATOR_WIDTH = null;
     let PB_PREFIX = 'PB';
@@ -66,6 +68,8 @@
       rankAlign: 'left',
       rankPrefixMode: 'dot',
       nameSpacing: 5,
+      letterSpacing: 0,
+      lineSpacing: 0,
       pbSeparatorWidth: 320,
       pbPrefix: 'PB',
       pbColor: '#fffff1',
@@ -123,6 +127,8 @@
       defaults.maxRuns = clampNumber(defaults.maxRuns, DEFAULT_SETTINGS.maxRuns, 10, 200, true);
       defaults.maxRuns = Math.max(defaults.topCount, defaults.maxRuns);
       defaults.nameSpacing = clampNumber(defaults.nameSpacing, DEFAULT_SETTINGS.nameSpacing, 0, 10, true);
+      defaults.letterSpacing = clampNumber(defaults.letterSpacing, DEFAULT_SETTINGS.letterSpacing, -5, 10, true);
+      defaults.lineSpacing = clampNumber(defaults.lineSpacing, DEFAULT_SETTINGS.lineSpacing, -10, 10, true);
       defaults.pbSeparatorWidth = clampNumber(defaults.pbSeparatorWidth, DEFAULT_SETTINGS.pbSeparatorWidth, 50, 4000, true);
       defaults.fontSize = clampNumber(defaults.fontSize, DEFAULT_SETTINGS.fontSize, 14, 24, true);
       defaults.rainbowIntensity = clampNumber(defaults.rainbowIntensity, DEFAULT_SETTINGS.rainbowIntensity, 0, 100, true);
@@ -299,7 +305,10 @@
         const customFont = defaults.customFont || '';
         const fontStyle = defaults.fontStyle || 'Arial';
         const fontSize = defaults.fontSize || 18; // Default 18px
-        DRAW.LAYOUT.rowH = Math.max(24, Math.ceil(fontSize * 1.4));
+        // lineSpacing tightens or loosens rows; never below the font size so rows don't overlap.
+        LINE_SPACING = defaults.lineSpacing;
+        LETTER_SPACING = defaults.letterSpacing;
+        DRAW.LAYOUT.rowH = Math.max(fontSize, Math.max(24, Math.ceil(fontSize * 1.4)) + LINE_SPACING);
         
         let selectedFontFamily;
         let isCustomFont = false;
@@ -813,8 +822,16 @@
     }
 
     // Measure text and cache by index (row number)
+    // Canvas letter spacing (Chromium 99+, i.e. every supported OBS). Resizing the
+    // canvas resets context state, so it is applied before each measure and draw;
+    // measurements include it, which keeps the columns aligned.
+    function applyLetterSpacing() {
+      if ('letterSpacing' in ctx) ctx.letterSpacing = `${LETTER_SPACING}px`;
+    }
+
     function measureAndCache(text, font, cache, idx) {
       ctx.font = font;
+      applyLetterSpacing();
       const width = ctx.measureText(text).width;
       if (!cache[idx]) cache[idx] = {};
       cache[idx][font] = width;
@@ -856,6 +873,7 @@
       ctx.shadowOffsetY = DRAW.SHADOW.offsetY;
       ctx.font = DRAW.FONT_BASE;
       ctx.textAlign = 'left';
+      applyLetterSpacing();
 
       const allDisplay = [...topRuns, ...carouselBatch];
       const phaseBase = (Date.now() / 30) % 360;
@@ -1343,6 +1361,7 @@
 
     function calculateColumnWidths(allRuns, playerRow) {
       ctx.font = DRAW.FONT_BASE;
+      applyLetterSpacing();
       let maxRankW = 0;
       let maxNameBlock = 0;
       const trophyWidth = DRAW.TROPHY.w;  // Width for trophy icons

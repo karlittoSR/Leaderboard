@@ -6,6 +6,8 @@
     "rankAlign": "left",
     "rankPrefixMode": "dot",
     "nameSpacing": 5,
+    "letterSpacing": 0,
+    "lineSpacing": 0,
     "pbSeparatorWidth": 320,
     "pbPrefix": "PB",
     "pbColor": "fffff1",
