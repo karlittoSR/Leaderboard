@@ -1446,7 +1446,7 @@
     // Fetches the speedrun.com leaderboard and maps it to overlay run rows.
     async function fetchSpeedrunComRuns(signal) {
       const { categoryId, variablePairs } = await resolveCategoryAndVariable(signal);
-      
+
       // Build leaderboard URL. An active PB needs the complete leaderboard so
       // its temporary rank is calculated against every run, not just the
       // configured display window (for example, maxRuns: 100).
@@ -1473,7 +1473,7 @@
       } else {
         lbUrl = `https://www.speedrun.com/api/v1/leaderboards/${GAME_ID}/category/${categoryId}?${query}`;
       }
-      
+
       const lb = await fetchJSON(lbUrl, {
         signal,
         timeout: TEMPORARY_RUN ? 20000 : 10000
